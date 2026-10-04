@@ -28,7 +28,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: bash scripts/ci/check-migrations.sh
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
       - name: Replay every migration on a clean database
