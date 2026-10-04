@@ -1,0 +1,31 @@
+name: Task
+description: A unit of work on the roadmap
+labels: [task]
+body:
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Roadmap stage
+      options:
+        - M0 Repo foundations
+        - M1 Fisher logbook
+        - M2 Vessel and fisher registry
+        - M3 Return to port
+        - M4a Plant receiving (minimal)
+        - M4 Processing plant (full)
+        - M5 Packaging and dispatch
+        - M6 Market and customer feedback
+        - Platform layer
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs to exist when this is done
+    validations:
+      required: true
+  - type: textarea
+    id: unknowns
+    attributes:
+      label: Open questions
+      description: Anything marked TO CONFIRM that blocks this.

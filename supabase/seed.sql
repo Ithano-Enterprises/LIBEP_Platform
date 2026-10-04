@@ -1,0 +1,2 @@
+-- Local-only seed data, replayed by `supabase db reset`.
+-- Reference data that production needs belongs in a migration, not here.

@@ -1,0 +1,35 @@
+name: Apps
+# One job per app. Each job is a no-op until that app has a package.json.
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'scripts/ci/check-app.sh'
+      - '.github/workflows/apps.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [logbook, plant-dashboard]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install, lint, typecheck, test
+        env:
+          APP: apps/${{ matrix.app }}
+          CI: 'true'
+        run: bash scripts/ci/check-app.sh "$APP"

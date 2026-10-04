@@ -1,0 +1,62 @@
+name: Database
+# Runs only when the database or functions change, to save Actions minutes
+# (private repos on the Free plan get 2,000 per month).
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/ci/check-migrations.sh'
+      - '.github/workflows/db-migrations.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  migrations:
+    name: Migrations valid and immutable
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history, needed to diff against the base branch
+      - name: Names and immutability
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/ci/check-migrations.sh
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Replay every migration on a clean database
+        run: |
+          supabase db start
+          supabase db reset
+
+  functions:
+    name: Edge Functions (fmt, lint, typecheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - id: detect
+        run: |
+          if [ -n "$(find supabase/functions -name '*.ts' -print -quit)" ]; then
+            echo "has_ts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Edge Function code yet, skipping."
+          fi
+      - uses: denoland/setup-deno@v2
+        if: steps.detect.outputs.has_ts == 'true'
+        with:
+          deno-version: v2.x
+      - name: fmt, lint, check
+        if: steps.detect.outputs.has_ts == 'true'
+        working-directory: supabase/functions
+        run: |
+          deno fmt --check
+          deno lint
+          find . -name 'index.ts' -print0 | xargs -0 -r deno check

@@ -94,3 +94,31 @@ links to LIBEP, which links to the Aurora Africa Ventures platform.
 
 Pre-code. The repository structure, contribution rules and PR automations
 are in place. No schema, app or dashboard code has been written yet.
+
+## What lives where
+
+| Path | Contents | Owner role | Status |
+|---|---|---|---|
+| `supabase/migrations/` | Postgres schema, one concern per migration | Backend / tech lead | empty, pass 1 next |
+| `supabase/functions/` | Edge Functions (Deno/TypeScript). `sync-batch` is the single write path | Backend / tech lead | not started |
+| `apps/logbook/` | Fisher phone app, React Native (Expo), offline-first | Mobile app developer | not started |
+| `apps/plant-dashboard/` | Plant receiving website (minimal slice) | Plant dashboard developer | not started |
+| `infra/` | AWS and local site server, later | Cloud / integration / testing | empty by decision |
+| `docs/` | Roadmap, team, decision records, setup | Project lead | active |
+| `.github/`, `scripts/` | PR template, issue forms, CI and PR automations | Cloud / integration / testing | active |
+
+Who owns what: [docs/TEAM.md](docs/TEAM.md). Why it is laid out this way:
+[ADR 0002](docs/decisions/0002-repo-and-source-control.md) and
+[ADR 0003](docs/decisions/0003-team-roles-apps-and-stack.md).
+
+## Quick start
+
+```powershell
+git clone https://github.com/Ithano-Enterprises/LIEBP_Platform.git
+cd LIEBP_Platform
+git config core.hooksPath .githooks   # one time, blocks direct pushes to main/Develop
+git switch Develop
+git switch -c feat/your-change
+```
+
+Database setup: [docs/setup/supabase-local.md](docs/setup/supabase-local.md).

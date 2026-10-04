@@ -1,0 +1,12 @@
+#!/bin/sh
+# Blocks direct pushes to main and Develop from this machine.
+# Enable once per clone:  git config core.hooksPath .githooks
+# Deliberate override (e.g. the very first push):  git push --no-verify
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/Develop)
+      echo "Blocked: direct push to ${remote_ref#refs/heads/}. Push a branch and open a PR." >&2
+      exit 1 ;;
+  esac
+done
+exit 0

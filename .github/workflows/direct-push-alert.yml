@@ -1,0 +1,42 @@
+name: Direct push alert
+# Free plan cannot block direct pushes to main/Develop. This makes them
+# visible instead: if the pushed commit did not arrive through a merged PR,
+# an issue is opened naming who pushed what.
+on:
+  push:
+    branches: [main, Develop]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.ref.replace('refs/heads/', '');
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              ...context.repo, commit_sha: context.sha,
+            });
+            const viaPr = prs.some((p) => p.merged_at && p.base.ref === branch);
+            if (viaPr) { core.info('Commit arrived via a merged PR.'); return; }
+            await github.rest.issues.create({
+              ...context.repo,
+              title: `Direct push to ${branch} by @${context.actor}`,
+              labels: ['process'],
+              body: [
+                `Commit ${context.sha} was pushed to \`${branch}\` without a merged pull request.`,
+                '',
+                `- Pusher: @${context.actor}`,
+                `- Compare: ${context.payload.compare}`,
+                '',
+                'All changes to `main` and `Develop` go through a PR (see CONTRIBUTING.md).',
+                'Close this issue once the change has been reviewed after the fact, or reverted.',
+              ].join('\n'),
+            });
+            core.warning(`Direct push to ${branch} by ${context.actor}`);

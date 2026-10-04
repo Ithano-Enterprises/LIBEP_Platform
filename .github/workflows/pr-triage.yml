@@ -1,0 +1,31 @@
+name: PR triage
+# Labels the PR by area and requests reviewers from .github/reviewers.json.
+# Stands in for CODEOWNERS, which GitHub ignores on private Free-plan repos.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/labeler@v5
+
+  reviewers:
+    if: github.actor != 'dependabot[bot]' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const assign = require('./scripts/ci/assign-reviewers.js');
+            await assign({ github, context, core });

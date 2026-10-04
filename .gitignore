@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+supabase/.branches/
+supabase/.temp/
+*.log

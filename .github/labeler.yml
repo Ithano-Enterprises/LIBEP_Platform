@@ -1,0 +1,15 @@
+area/backend:
+  - changed-files:
+      - any-glob-to-any-file: 'supabase/**'
+area/logbook-app:
+  - changed-files:
+      - any-glob-to-any-file: 'apps/logbook/**'
+area/plant-dashboard:
+  - changed-files:
+      - any-glob-to-any-file: 'apps/plant-dashboard/**'
+area/infra-ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', '.githooks/**', 'scripts/**', 'infra/**']
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '*.md']
