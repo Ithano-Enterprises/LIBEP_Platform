@@ -9,7 +9,9 @@
 # the Free plan GitHub accepts them but does not enforce them.
 param([int]$Approvals = 0)
 
-$repo = 'Ithano-Enterprises/LIEBP_Platform'
+# Read from the clone's remote, so the script survives a repo rename.
+$repo = gh repo view --json nameWithOwner --jq '.nameWithOwner'
+if (-not $repo) { throw 'Could not detect the repo. Run this from inside the clone, logged in to gh.' }
 
 # The one check required to pass. It must be a check that runs on EVERY pull
 # request. Database and Apps checks only run when their folders change, so

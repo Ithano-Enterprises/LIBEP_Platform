@@ -1,11 +1,11 @@
 {
-  "max": 2,
+  "max": 3,
   "areas": [
-    { "name": "backend",         "paths": ["supabase/"],             "reviewers": ["TO_CONFIRM_3_backend_techlead"] },
-    { "name": "logbook-app",     "paths": ["apps/logbook/"],         "reviewers": ["TO_CONFIRM_2_mobile"] },
-    { "name": "plant-dashboard", "paths": ["apps/plant-dashboard/"], "reviewers": ["TO_CONFIRM_4_plant"] },
-    { "name": "infra-ci",        "paths": [".github/", ".githooks/", "scripts/", "infra/"], "reviewers": ["TO_CONFIRM_5_cloud"] },
+    { "name": "backend",         "paths": ["supabase/"],             "reviewers": ["aaronandrew146-stack"] },
+    { "name": "logbook-app",     "paths": ["apps/logbook/"],         "reviewers": ["BenjaminKaggwa"] },
+    { "name": "plant-dashboard", "paths": ["apps/plant-dashboard/"], "reviewers": ["natemmuchai"] },
+    { "name": "infra-ci",        "paths": [".github/", ".githooks/", "scripts/", "infra/"], "reviewers": ["BenjaminKaggwa", "aaronandrew146-stack", "RWKarimi"] },
     { "name": "docs",            "paths": ["docs/", "README.md", "CONTRIBUTING.md", "CLAUDE.md"], "reviewers": ["RWKarimi"] }
   ],
-  "fallback": ["TO_CONFIRM_3_backend_techlead", "RWKarimi"]
+  "fallback": ["aaronandrew146-stack", "RWKarimi"]
 }

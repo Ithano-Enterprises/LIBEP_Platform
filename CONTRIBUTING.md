@@ -86,7 +86,7 @@ after a hotfix is squashed too. That is fine; the content ends up identical.
 
 Routing is in `.github/reviewers.json`: path prefix -> the role that owns it
 (see `docs/TEAM.md`). The PR author is skipped; if the owner is the author,
-the technical lead is requested, then the project lead. Any PR touching
+the technical lead and the project lead are both requested. Any PR touching
 `supabase/` requests the backend developer, whoever wrote it. `CODEOWNERS`
 is not used yet; the workflow predates the repo going public and still
 does the job.
