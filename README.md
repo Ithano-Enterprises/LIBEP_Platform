@@ -115,8 +115,8 @@ Who owns what: [docs/TEAM.md](docs/TEAM.md). Why it is laid out this way:
 ## Quick start
 
 ```powershell
-git clone https://github.com/Ithano-Enterprises/LIEBP_Platform.git
-cd LIEBP_Platform
+git clone https://github.com/Ithano-Enterprises/LIBEP_Platform.git
+cd LIBEP_Platform
 git config core.hooksPath .githooks   # one time, blocks direct pushes to main/Develop
 git switch Develop
 git switch -c feat/your-change
