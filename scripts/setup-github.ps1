@@ -2,7 +2,9 @@
 # Requires the GitHub CLI, logged in as an org admin:  gh auth login
 # Safe to re-run.
 $ErrorActionPreference = 'Stop'
-$repo = 'Ithano-Enterprises/LIEBP_Platform'
+# Read from the clone's remote, so the script survives a repo rename.
+$repo = gh repo view --json nameWithOwner --jq '.nameWithOwner'
+if (-not $repo) { throw 'Could not detect the repo. Run this from inside the clone, logged in to gh.' }
 
 # Develop is the default so new PRs target it without anyone thinking.
 # Squash keeps Develop's history one-line-per-PR; merge commits stay enabled
