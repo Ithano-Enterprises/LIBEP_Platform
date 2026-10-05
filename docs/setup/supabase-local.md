@@ -26,7 +26,7 @@ supabase --version
 
 ```powershell
 supabase login
-cd <path to>\LIEBP_Platform
+cd <path to>\LIBEP_Platform
 supabase link --project-ref YOUR_REF_HERE
 ```
 
