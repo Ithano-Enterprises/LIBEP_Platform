@@ -28,9 +28,10 @@ the platform is built in later stages, see
 | Fishers | Their own record of what they landed |
 | LAMCOT, Lamu County Department of Fisheries, Beach Management Units | Catch data recorded at the source instead of reconstructed afterwards |
 
-**Built by** Ithano Enterprises, a team of five: project lead and UX
-designer, mobile app developer, backend developer and technical lead, plant
-dashboard developer, and cloud, integration and testing developer. See
+**Built by** Ithano Enterprises, a team of five covering six roles:
+project lead and UX designer, mobile app developer, backend developer and
+technical lead, plant dashboard developer, cloud, integration and testing
+developer, and AI/ML developer. See
 [docs/TEAM.md](docs/TEAM.md).
 
 ## How the data flows
