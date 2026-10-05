@@ -1,6 +1,6 @@
 # 0002. Repo layout and source control
 
-Status: accepted (2026-10-02). Decision 2 superseded by [ADR 0003](0003-team-roles-apps-and-stack.md)
+Status: accepted (2026-10-02). Decision 2 superseded by [ADR 0003](0003-team-roles-apps-and-stack.md), decisions 4 and 5 by [ADR 0004](0004-public-repo-and-rulesets.md)
 
 ## Context
 

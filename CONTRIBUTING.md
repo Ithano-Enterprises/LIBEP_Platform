@@ -17,7 +17,8 @@
 1. `git switch Develop && git pull`
 2. `git switch -c feat/short-description`
 3. Commit small. Push. Open a PR into `Develop`.
-4. CI must be green and one teammate must approve.
+4. CI must be green. Once a second person has access, one teammate must
+   also approve.
 5. **Squash merge** into `Develop`. Delete the branch.
 6. Releases: open a PR `Develop` -> `main` and use a **merge commit**, not
    squash. Squashing a release makes `main` and `Develop` diverge and every
@@ -48,30 +49,47 @@ CI rejects anything else.
   after the release PR merges.
 - Never run `supabase db reset --linked`. It wipes the hosted database.
 
-## What is enforced and what is not
+## What is enforced
 
-This repo is private on the GitHub Free plan, so GitHub **will not** enforce
-branch protection. These are the substitutes:
+The repo is public, so GitHub enforces branch rulesets on `main` and
+`Develop`. They are created by `scripts/setup-rulesets.ps1`.
 
-| Rule | Mechanism | Strength |
+| Rule | Enforced by | Strength |
 |---|---|---|
-| No direct push to `main` / `Develop` | Local `pre-push` hook | Blocks, but only if you ran `git config core.hooksPath .githooks` |
-| Same | `direct-push-alert` workflow | Does not block. Opens an issue naming the commit and author |
-| PR title, branch name, target branch | `pr-checks` workflow | Red check on the PR |
-| Migrations valid and immutable | `db-migrations` workflow | Red check on the PR |
-| App lint, typecheck, tests | `apps` workflow | Red check on the PR |
-| Reviewer requested | `assign-reviewers` workflow | Requests review. Cannot require approval |
+| No direct push to `main` / `Develop` | Ruleset | Blocked by GitHub |
+| No force push, no branch deletion | Ruleset | Blocked by GitHub |
+| PR title, branch name, target branch | Ruleset + `pr-checks` workflow | Merge is locked until it passes |
+| Squash only into `Develop`, merge commit only into `main` | Ruleset | Other merge buttons are disabled |
+| Approvals before merge | Ruleset | Currently 0, see below |
+| Migrations valid and immutable | `db-migrations` workflow | Red check. Does **not** lock the merge |
+| App lint, typecheck, tests | `apps` workflow | Red check. Does **not** lock the merge |
+| Reviewer requested | `assign-reviewers` workflow | Requests review |
 
-Nothing stops someone merging a red PR. Do not. If the team moves to the
-Team plan or the repo goes public, replace all of this with a ruleset.
+Two gaps, both deliberate:
+
+- **Approvals are 0** while one person has access, because GitHub does not
+  let you approve your own PR. When a second person is added, run
+  `.\scripts\setup-rulesets.ps1 -Approvals 1`.
+- **Database and Apps checks cannot lock a merge.** They only run when
+  `supabase/` or `apps/` change, and a required check that never starts
+  would block every other PR forever. Do not merge on red. This gets closed
+  when there is real schema and app code to protect (see ADR 0004).
+
+The local `pre-push` hook and the `direct-push-alert` workflow are kept as
+a second layer: the hook gives a clearer message than GitHub's rejection,
+and the alert fires if a ruleset is ever switched off.
+
+Because `Develop` is squash-only, a back-merge of `main` into `Develop`
+after a hotfix is squashed too. That is fine; the content ends up identical.
 
 ## Reviewers
 
 Routing is in `.github/reviewers.json`: path prefix -> the role that owns it
 (see `docs/TEAM.md`). The PR author is skipped; if the owner is the author,
 the technical lead is requested, then the project lead. Any PR touching
-`supabase/` requests the backend developer, whoever wrote it. `CODEOWNERS` is not used because GitHub ignores
-it on private Free-plan repos.
+`supabase/` requests the backend developer, whoever wrote it. `CODEOWNERS`
+is not used yet; the workflow predates the repo going public and still
+does the job.
 
 ## Apps
 
