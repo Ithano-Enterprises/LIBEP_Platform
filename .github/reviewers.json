@@ -5,7 +5,7 @@
     { "name": "logbook-app",     "paths": ["apps/logbook/"],         "reviewers": ["TO_CONFIRM_2_mobile"] },
     { "name": "plant-dashboard", "paths": ["apps/plant-dashboard/"], "reviewers": ["TO_CONFIRM_4_plant"] },
     { "name": "infra-ci",        "paths": [".github/", ".githooks/", "scripts/", "infra/"], "reviewers": ["TO_CONFIRM_5_cloud"] },
-    { "name": "docs",            "paths": ["docs/", "README.md", "CONTRIBUTING.md", "CLAUDE.md"], "reviewers": ["TO_CONFIRM_1_lead"] }
+    { "name": "docs",            "paths": ["docs/", "README.md", "CONTRIBUTING.md", "CLAUDE.md"], "reviewers": ["RWKarimi"] }
   ],
-  "fallback": ["TO_CONFIRM_3_backend_techlead", "TO_CONFIRM_1_lead"]
+  "fallback": ["TO_CONFIRM_3_backend_techlead", "RWKarimi"]
 }
