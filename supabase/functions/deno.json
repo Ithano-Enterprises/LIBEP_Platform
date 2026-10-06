@@ -1,0 +1,13 @@
+{
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check **/*.ts",
+    "test": "deno test --no-prompt",
+    "verify": "deno task check && deno task test"
+  },
+  "compilerOptions": {
+    "strict": true
+  },
+  "fmt": {
+    "lineWidth": 100
+  }
+}
