@@ -64,8 +64,25 @@ cancellation/timeouts, rate limits, browser-origin policy and real integration.
 These depend on the unresolved Phase 1 contract and remaining Phase 3 schema.
 
 This work is stacked after PR #22 and PR #20. Review and merge dependencies first.
-The Phase 3 commit passed Supabase CI replay and all 16 pgTAP assertions; the
-Phase 4 head must independently pass CI before review completion.
+The Phase 3 and Phase 4 published commits passed Supabase CI replay and all
+16 pgTAP assertions. Phase 4 also passed 22 Deno tests.
+
+## Phase 5: corrections and reporting — conversion arithmetic only
+
+Tracking: [issue #25](https://github.com/Ithano-Enterprises/LIBEP_Platform/issues/25).
+
+Implemented: private PostgreSQL numeric conversion helper, 17 pgTAP assertions
+and integration guidance for unknown conversions and partial reporting totals.
+Twenty local embedded-PostgreSQL checks passed. No real factor is selected or
+seeded; there is no production reporting view.
+
+Incomplete: correction permissions/approval/concurrency; accepted catch and
+correction tables; effective read view; species/reference data; factor provenance,
+applicability and versions; reconciliation queue; scoped read access and reporting
+integration. Local Supabase replay is still unavailable without Docker.
+
+This branch includes the prior foundation commits and depends on PRs #20, #22
+and #24. Publishing helpers does not complete Phases 1-5 or enable app integration.
 
 ## Later phases
 
