@@ -27,17 +27,28 @@ CI database-test discovery and behavioral unit-test execution on every PR.
 Incomplete:
 - Docker is not installed on the current development machine, so local database
   startup/reset and database acceptance tests have not been run here.
-- SQL acceptance cases await real migrations and the accepted contract.
+- Full schema acceptance cases await the accepted contract; Phase 3 adds only
+  invariant-helper tests, not application behavior coverage.
 - Required-check enforcement and review approval settings are unchanged.
 - App integration, outage/recovery tests and hosted deployment are not covered
   by the six unit tests.
-- CI results and teammate review must be assessed before merging this branch.
+- Phase 2 PR #20 passed GitHub PR checks, Deno tests and database replay.
+  Teammate review and local Docker verification are still incomplete.
 
-## Phase 3: database foundation — blocked by Phase 1
+## Phase 3: database foundation — partial implementation
 
-No migrations are introduced by Phase 2. Begin implementation only for fields,
-authorization and migration passes whose contract is settled. Do not interpret
-publishing a proposal or passing tooling checks as schema approval.
+Tracking: [issue #21](https://github.com/Ithano-Enterprises/LIBEP_Platform/issues/21).
+
+Implemented: private UUIDv4 domain, reusable append-only trigger function and
+16 pgTAP assertions on a disposable table. Seventeen checks also passed in a
+local embedded PostgreSQL runtime (PGlite), which is not Supabase/Docker replay.
+These implement locked invariants without choosing catch fields or permissions.
+
+Incomplete: actual catch/identity/correction/reference tables, production trigger
+attachment, RLS/read views, effort fields and accepted migration-pass scope.
+These remain blocked by the Phase 1 contract decisions. Local Supabase replay
+also remains blocked by missing Docker. This branch depends on Phase 2 PR #20;
+it should not merge before that foundation is reviewed and adopted.
 
 ## Later phases
 

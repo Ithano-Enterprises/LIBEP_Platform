@@ -51,8 +51,8 @@ The reset erases the local development database and replays migrations. Preserve
 any local data you need first. Never add --linked or a hosted database URL.
 
 Add transactional pgTAP cases in supabase/tests as migrations are introduced.
-There are currently no SQL acceptance cases. CI reports this explicitly instead
-of presenting the empty suite as application verification. The broader local
+Phase 3 adds invariant-helper pgTAP cases; full schema acceptance cases remain
+incomplete. If no SQL cases are present, CI reports that explicitly. The broader local
 stack needed for future endpoint integration can be started with supabase start;
 that step is not needed for the credential-free unit tests.
 
