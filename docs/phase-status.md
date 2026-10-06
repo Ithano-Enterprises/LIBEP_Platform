@@ -50,6 +50,23 @@ These remain blocked by the Phase 1 contract decisions. Local Supabase replay
 also remains blocked by missing Docker. This branch depends on Phase 2 PR #20;
 it should not merge before that foundation is reviewed and adopted.
 
+## Phase 4: reliable sync — transport groundwork only
+
+Tracking: [issue #23](https://github.com/Ithano-Enterprises/LIBEP_Platform/issues/23).
+
+Implemented: bearer credential syntax extraction and bounded streamed JSON input
+with safe input errors. Sixteen new transport tests pass; 22 total Deno tests pass
+locally. No sync endpoint is deployed and no application writes are implemented.
+
+Incomplete: token verification, device permissions, accepted record schema,
+atomic persistence, duplicate-content policy, durable acknowledgements, request
+cancellation/timeouts, rate limits, browser-origin policy and real integration.
+These depend on the unresolved Phase 1 contract and remaining Phase 3 schema.
+
+This work is stacked after PR #22 and PR #20. Review and merge dependencies first.
+The Phase 3 commit passed Supabase CI replay and all 16 pgTAP assertions; the
+Phase 4 head must independently pass CI before review completion.
+
 ## Later phases
 
 Sync, corrections/views, app integration and pilot release retain the dependencies
