@@ -13,3 +13,7 @@ for real authorization, correction, conversion and read-view behavior as the
 accepted schema lands. Use separate sessions/integration tests for concurrency,
 offline retries and interrupted network requests. A passing helper suite does
 not verify an unimplemented sync endpoint or production table protection.
+
+`kg_conversion_test.sql` adds 17 assertions for exact decimal arithmetic, unknown
+inputs, rejected invalid factors and restricted direct execution. Fixtures are
+synthetic and do not establish a valid field conversion or reporting policy.
