@@ -1,16 +1,15 @@
 # Database acceptance tests
 
-Add transactional pgTAP tests as `*_test.sql` files here when migrations land.
 Run `supabase test db --local` after replaying migrations on the local database.
-CI runs the same tests after a clean replay. With no SQL tests yet, CI explicitly
-reports that database behavior is untested; a successful replay is not evidence
-of correct authorization, immutability or retry behavior.
+CI runs these tests after a clean replay.
 
-Each test should use synthetic fixtures and end with a rollback. Include tests
-under application roles and the backend service role, not only the database
-owner. In particular, exercise append-only triggers, unauthorized reads through
-views, conflicting IDs, retries and concurrent correction behavior as the
-accepted contract introduces them. Use integration tests for concurrent sessions.
+`ledger_invariants_test.sql` contains 16 pgTAP assertions covering the private
+UUIDv4 domain and append-only trigger against a disposable fixture. Its explicit
+service-role DML grants ensure rejection is caused by the trigger rather than
+missing table privileges. Everything is rolled back at the end.
 
-Do not create tests that assert an unapproved schema proposal. No schema exists
-yet, so this directory intentionally contains no pretend application tests.
+These are helper-invariant tests, not catches-schema acceptance tests. Add cases
+for real authorization, correction, conversion and read-view behavior as the
+accepted schema lands. Use separate sessions/integration tests for concurrency,
+offline retries and interrupted network requests. A passing helper suite does
+not verify an unimplemented sync endpoint or production table protection.
