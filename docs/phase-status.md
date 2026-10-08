@@ -1,5 +1,8 @@
 # Backend phase status
 
+For teammate setup and integration dependencies, see the
+[shared backend handoff](backend-handoff.md).
+
 ## Phase 1: contract review — incomplete
 
 Published proposal: [PR #18](https://github.com/Ithano-Enterprises/LIBEP_Platform/pull/18).
@@ -73,8 +76,10 @@ Tracking: [issue #25](https://github.com/Ithano-Enterprises/LIBEP_Platform/issue
 
 Implemented: private PostgreSQL numeric conversion helper, 17 pgTAP assertions
 and integration guidance for unknown conversions and partial reporting totals.
-Twenty local embedded-PostgreSQL checks passed. No real factor is selected or
-seeded; there is no production reporting view.
+Twenty local embedded-PostgreSQL checks passed.
+[CI on c716839](https://github.com/Ithano-Enterprises/LIBEP_Platform/actions/runs/37496139510)
+passed migration replay, 33 pgTAP assertions and 22 Deno tests. No real factor is
+selected or seeded; there is no production reporting view.
 
 Incomplete: correction permissions/approval/concurrency; accepted catch and
 correction tables; effective read view; species/reference data; factor provenance,

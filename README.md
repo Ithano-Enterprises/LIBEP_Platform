@@ -93,15 +93,21 @@ links to LIBEP, which links to the Aurora Africa Ventures platform.
 
 ## Status
 
-Pre-code. The repository structure, contribution rules and PR automations
-are in place. No schema, app or dashboard code has been written yet.
+Backend foundation code and tests are available on this feature branch for
+review: UUID validation, append-only guards, request parsing and conversion
+arithmetic. Application tables, the sync endpoint and reporting views are still
+unimplemented; the app and dashboard remain unstarted in this checkout.
+
+Start with the [shared backend handoff](docs/backend-handoff.md) for branch
+availability, reusable components, setup, integration boundaries and next steps.
+See [phase status](docs/phase-status.md) for the incomplete work in each phase.
 
 ## What lives where
 
 | Path | Contents | Owner role | Status |
 |---|---|---|---|
-| `supabase/migrations/` | Postgres schema, one concern per migration | Backend / tech lead | empty, pass 1 next |
-| `supabase/functions/` | Edge Functions (Deno/TypeScript). `sync-batch` is the single write path | Backend / tech lead | not started |
+| `supabase/migrations/` | Postgres schema, one concern per migration | Backend / tech lead | private helpers only; application schema pending |
+| `supabase/functions/` | Edge Functions (Deno/TypeScript). `sync-batch` is the single write path | Backend / tech lead | shared helpers; endpoint pending |
 | `apps/logbook/` | Fisher phone app, React Native (Expo), offline-first | Mobile app developer | not started |
 | `apps/plant-dashboard/` | Plant receiving website (minimal slice) | Plant dashboard developer | not started |
 | `infra/` | AWS and local site server, later | Cloud / integration / testing | empty by decision |
