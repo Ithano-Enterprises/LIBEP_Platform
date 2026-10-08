@@ -1,8 +1,10 @@
 # Backend development and verification
 
-This setup is local. Do not link a hosted project to run these checks. The first
-backend code implements only the UUIDv4 validation invariant from ADR 0001; it
-is not a deployed sync endpoint or an accepted schema contract.
+This setup is local. Do not link a hosted project to run these checks. The backend
+foundation provides
+UUIDv4 validation, append-only guards, bounded request parsing and exact conversion
+arithmetic. It is not a deployed sync endpoint or an accepted schema contract.
+See the [shared handoff](../backend-handoff.md) before integrating an app.
 
 ## Prerequisites
 
@@ -35,6 +37,7 @@ only to a separately identified integration test command when needed.
 
 The first six unit tests cover the UUIDv4 syntax constraint, including wrong
 versions, variant bits, malformed strings, non-string values and generated IDs.
+Sixteen additional tests cover bounded request input, for 22 Deno tests in total.
 They do not establish database uniqueness, record ownership or sync behavior.
 
 ## Database checks (Docker required)
@@ -51,8 +54,9 @@ The reset erases the local development database and replays migrations. Preserve
 any local data you need first. Never add --linked or a hosted database URL.
 
 Add transactional pgTAP cases in supabase/tests as migrations are introduced.
-Phase 3 adds invariant-helper pgTAP cases; full schema acceptance cases remain
-incomplete. If no SQL cases are present, CI reports that explicitly. The broader local
+There are 16 ledger-invariant and 17 conversion assertions, 33 in total.
+Full application schema acceptance cases remain incomplete. If no SQL cases are
+present, CI reports that explicitly. The broader local
 stack needed for future endpoint integration can be started with supabase start;
 that step is not needed for the credential-free unit tests.
 
