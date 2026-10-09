@@ -70,10 +70,11 @@ Two gaps, both deliberate:
 - **Approvals are 0** while one person has access, because GitHub does not
   let you approve your own PR. When a second person is added, run
   `.\scripts\setup-rulesets.ps1 -Approvals 1`.
-- **Database and Apps checks cannot lock a merge.** They only run when
-  `supabase/` or `apps/` change, and a required check that never starts
-  would block every other PR forever. Do not merge on red. This gets closed
-  when there is real schema and app code to protect (see ADR 0004).
+- **Database and Apps checks are not yet required by the rulesets.** The
+  Database workflow on this branch now runs on every PR, so its stable jobs
+  can become required after adoption. Apps checks remain path-filtered; requiring
+  a check that never starts can block unrelated PRs. Do not merge on red.
+  Ruleset changes remain a separate integration step (see ADR 0004).
 
 The local `pre-push` hook and the `direct-push-alert` workflow are kept as
 a second layer: the hook gives a clearer message than GitHub's rejection,
@@ -101,3 +102,9 @@ scripts named `lint`, `typecheck` and `test` if they exist. Use those names.
 
 Never commit `.env`. Copy `.env.example`. The Supabase service role key never
 goes into either app.
+
+## Shared backend integration
+
+Read the [backend handoff](docs/backend-handoff.md) before depending on an
+unmerged backend branch. It records available helpers, contract gaps, review
+order and the evidence needed before either app can use a real endpoint.
