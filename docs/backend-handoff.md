@@ -5,6 +5,9 @@ this repository. Source ownership determines review responsibility; it does not
 require the app owners to wait for Aaron to explain the code privately. Use the
 shared repository, issues and reviewed contract for handoffs.
 
+For a beginner-friendly inventory and failure report, read
+[backend progress explained](backend-progress-explained.md).
+
 ## Availability and compatibility
 
 The backend foundation is on `feat/reporting-conversion`, in draft
@@ -84,7 +87,7 @@ not new assignments or claims that app work has already begun.
 | Sync contract | Aaron and Benjamin finalize atomicity, errors, limits and durable acknowledgements | Versioned request/response schema, fixtures and retry tests |
 | Reporting | Confirm real species/unit sources and factor provenance; preserve unknown conversions | Scoped view definitions and tests for unknown/partial totals |
 | Plant receiving | Ryan and Nate specify receipt contents, splitting and discrepancies | Agreed receiving contract before backend tables or client bindings |
-| Local verification | Install pinned Deno/Supabase on PATH and install/start Docker on the development machine | Prerequisite check, local reset and pgTAP all pass |
+| Local verification | Provide pinned Deno/Supabase via PATH or executable overrides and install/start Docker | Prerequisite check, local reset and pgTAP all pass |
 
 Once the minimum catch/access contract is accepted, build one complete slice:
 **save offline -> authenticate device -> POST /sync-batch -> commit once ->

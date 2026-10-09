@@ -13,7 +13,7 @@ See the [shared handoff](../backend-handoff.md) before integrating an app.
 - Supabase CLI 2.116.0, matching CI.
 - A working Docker installation and daemon for database checks.
 
-Run the read-only prerequisite check from the repository root:
+Run the prerequisite check from the repository root:
 
 ```sh
 bash scripts/check-backend-tools.sh
@@ -21,8 +21,26 @@ bash scripts/check-backend-tools.sh
 
 It reports missing commands and an unavailable Docker daemon, exits nonzero
 when prerequisites are missing, and does not print keys or start/reset anything.
-The tools must be available on PATH. A locally installed Deno executable also
-works; Node/npm are not required by the committed backend test harness.
+Tools can be on PATH or provided as executable paths using `DENO_BIN`,
+`SUPABASE_BIN` and `DOCKER_BIN`. The checker does not start/reset databases, but
+an invoked CLI may initialize its own local configuration when reporting its
+version. Node/npm are not required by the committed backend test harness.
+
+For a downloaded Deno executable outside PATH:
+
+```sh
+DENO_BIN="/absolute/path/to/deno" bash scripts/ci/check-backend.sh
+```
+
+For the prerequisite check, supply the locations that differ on your machine:
+
+```sh
+DENO_BIN="/absolute/path/to/deno" SUPABASE_BIN="/absolute/path/to/supabase" bash scripts/check-backend-tools.sh
+```
+
+These variables contain an executable path, not a command with arguments. They
+do not install tools or replace Docker. Use the selected Supabase executable
+when running database commands below, or add its directory to PATH.
 
 ## Fast checks (no Docker or credentials)
 
