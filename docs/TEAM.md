@@ -10,7 +10,7 @@ paths (`.github/reviewers.json`) and is the person to ask.
 | 3 | Backend developer / technical lead | Build the APIs, database and business rules. Connect the apps and prevent duplicate or incorrect records | `supabase/` | @aaronandrew146-stack |
 | 4 | Plant dashboard developer | Build the website for receiving fish, confirming weights, issuing receipts and viewing operational records | `apps/plant-dashboard/` | @natemmuchai |
 | 5 | Cloud, integration and testing developer | Set up AWS and the local site server, connect equipment, manage deployments and test outages and recovery | `.github/`, `.githooks/`, `scripts/`, `infra/`, releases to hosted Supabase | @BenjaminKaggwa, @aaronandrew146-stack. @RWKarimi also reviews these paths |
-| 6 | AI/ML developer | AI/ML for all products | `[TO CONFIRM]` | `[TO CONFIRM: username pending]` |
+| 6 | AI/ML developer | AI/ML for all products | `ml/` | `@myles332006` |
 
 ## Rules that follow from this
 
