@@ -100,7 +100,9 @@ unimplemented; the app and dashboard remain unstarted in this checkout.
 
 Start with the [shared backend handoff](docs/backend-handoff.md) for branch
 availability, reusable components, setup, integration boundaries and next steps.
-See [phase status](docs/phase-status.md) for the incomplete work in each phase.
+See [backend progress explained](docs/backend-progress-explained.md) for a
+beginner-friendly inventory and failure report, and [phase status](docs/phase-status.md)
+for the incomplete work in each phase.
 
 ## What lives where
 
