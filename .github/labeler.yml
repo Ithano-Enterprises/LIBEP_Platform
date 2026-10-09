@@ -10,6 +10,9 @@ area/plant-dashboard:
 area/infra-ci:
   - changed-files:
       - any-glob-to-any-file: ['.github/**', '.githooks/**', 'scripts/**', 'infra/**']
+area/ml:
+     - changed-files:
+         - any-glob-to-any-file: 'ml/**'
 area/docs:
   - changed-files:
       - any-glob-to-any-file: ['docs/**', '*.md']

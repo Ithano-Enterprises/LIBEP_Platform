@@ -5,7 +5,8 @@
     { "name": "logbook-app",     "paths": ["apps/logbook/"],         "reviewers": ["BenjaminKaggwa"] },
     { "name": "plant-dashboard", "paths": ["apps/plant-dashboard/"], "reviewers": ["natemmuchai"] },
     { "name": "infra-ci",        "paths": [".github/", ".githooks/", "scripts/", "infra/"], "reviewers": ["BenjaminKaggwa", "aaronandrew146-stack", "RWKarimi"] },
-    { "name": "docs",            "paths": ["docs/", "README.md", "CONTRIBUTING.md", "CLAUDE.md"], "reviewers": ["RWKarimi"] }
+    { "name": "docs",            "paths": ["docs/", "README.md", "CONTRIBUTING.md", "CLAUDE.md"], "reviewers": ["RWKarimi"] },
+    { "name": "ml",              "paths": ["ml/"],                   "reviewers": ["myles332006", "RWKarimi"] }
   ],
   "fallback": ["aaronandrew146-stack", "RWKarimi"]
 }
