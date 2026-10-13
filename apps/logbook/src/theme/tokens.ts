@@ -57,6 +57,14 @@ export const DAY: Palette = {
 
 export const palettes: Record<Mode, Palette> = { night: NIGHT, day: DAY };
 
+// Tier chips (S = captain estimate, W = plant weight), from the design's
+// chip(). Fixed colours outside the palette.
+export const tierChip = {
+  sNight: { border: '#8B93A0', text: '#8B93A0' },
+  sDay: { background: '#55606B', text: '#FFFFFF' },
+  w: { background: '#3FBF7F', text: '#07120C' },
+} as const;
+
 // Font roles used by text. Screens read the active set with useFontSet()
 // rather than importing a family name, so a font-load failure can swap the
 // whole app to system fonts.
