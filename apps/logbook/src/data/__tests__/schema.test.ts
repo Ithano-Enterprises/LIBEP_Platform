@@ -1,11 +1,12 @@
 import { migrate, MIGRATIONS } from '../schema';
 import { openTestRepo } from '../../test/sqlite';
-import { seedDevFixtures } from '../../dev/fixtures/seed';
+import { seedDevReference } from '../../dev/fixtures/seed';
 import { devSpecies } from '../../dev/fixtures/reference';
 
 async function seeded() {
   const ctx = await openTestRepo();
-  await seedDevFixtures(ctx.db, ctx.repo, ctx.deps.clock.now());
+  await seedDevReference(ctx.db);
+  await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
   const trip = (await ctx.repo.getOpenTrip())!;
   const species = devSpecies.find((s) => s.local_name === 'tewa')!;
   const c = await ctx.repo.logCatch({ speciesId: species.id, quantity: 2.4, gps: null });

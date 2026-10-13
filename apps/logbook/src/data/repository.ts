@@ -1,6 +1,7 @@
 import type { SqlDb, SqlValue } from './sql';
 import type {
   CatchCorrection,
+  ClosedTrip,
   CatchRecord,
   DeviceProfile,
   Entry,
@@ -334,6 +335,21 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     );
   }
 
+  async function listClosedTrips(): Promise<ClosedTrip[]> {
+    const trips = await db.getAllAsync<TripStart & { arrival_at: string; landing_site_id: string }>(
+      `SELECT s.*, c.arrival_at, c.landing_site_id
+         FROM trip_starts s
+         JOIN trip_closes c ON c.trip_id = s.trip_id
+        ORDER BY s.departure_at DESC`,
+      [],
+    );
+    const out: ClosedTrip[] = [];
+    for (const { arrival_at, landing_site_id, ...start } of trips) {
+      out.push({ start, arrival_at, landing_site_id, entries: await listTripEntries(start.trip_id) });
+    }
+    return out;
+  }
+
   async function getSyncState(recordId: string): Promise<SyncStateValue | null> {
     const row = await db.getFirstAsync<{ state: SyncStateValue }>(
       'SELECT state FROM sync_state WHERE record_id = ?',
@@ -373,6 +389,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     correctCatch,
     closeTrip,
     listTripEntries,
+    listClosedTrips,
     getSyncState,
     getPreferences,
     setPreference,
