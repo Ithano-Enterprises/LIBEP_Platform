@@ -20,6 +20,6 @@ export async function openLogbook(deps: RepoDeps = defaultDeps): Promise<Reposit
   await migrate(db);
   await ensureDevice(db, deps.uuid);
   const repo = createRepository(db, deps);
-  if (__DEV__) await seedDevFixtures(db, repo, deps.clock.now());
+  if (__DEV__) await seedDevFixtures(db, deps);
   return repo;
 }

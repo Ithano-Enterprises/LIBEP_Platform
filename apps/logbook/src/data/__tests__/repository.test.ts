@@ -1,14 +1,22 @@
 import { DataError, isValidQuantity, makeShortRef } from '../repository';
 import { openTestRepo } from '../../test/sqlite';
-import { seedDevFixtures } from '../../dev/fixtures/seed';
-import { devHoldCodes, devMenus, devSpecies, devVessel } from '../../dev/fixtures/reference';
+import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
+import {
+  devHoldCodes,
+  devMenus,
+  devOpenTripEntries,
+  devPreviousTripEntries,
+  devSpecies,
+  devVessel,
+} from '../../dev/fixtures/reference';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const speciesId = (name: string) => devSpecies.find((s) => s.local_name === name)!.id;
 
 async function seeded() {
   const ctx = await openTestRepo();
-  await seedDevFixtures(ctx.db, ctx.repo, ctx.deps.clock.now());
+  await seedDevReference(ctx.db);
+  await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
   return ctx;
 }
 
@@ -36,13 +44,28 @@ describe('quantity rules', () => {
 });
 
 describe('dev fixtures', () => {
-  it('seed once, link the device and open a trip', async () => {
-    const ctx = await seeded();
-    expect(await seedDevFixtures(ctx.db, ctx.repo, ctx.deps.clock.now())).toBe(false);
+  it('seed once: reference data, one closed trip and an open trip with entries', async () => {
+    const ctx = await openTestRepo();
+    expect(await seedDevFixtures(ctx.db, ctx.deps)).toBe(true);
+    expect(await seedDevFixtures(ctx.db, ctx.deps)).toBe(false);
+
     const profile = await ctx.repo.getDeviceProfile();
     expect(profile?.vessel.name).toBe(devVessel.name);
     expect(profile?.home_site.name).toBe('Mokowe');
-    expect(await ctx.repo.getOpenTrip()).not.toBeNull();
+
+    const open = (await ctx.repo.getOpenTrip())!;
+    const entries = await ctx.repo.listTripEntries(open.trip_id);
+    expect(entries).toHaveLength(devOpenTripEntries.length);
+    // newest first, states as in the fixture
+    expect(entries.map((e) => e.sync_state)).toEqual(
+      [...devOpenTripEntries].reverse().map((e) => e.state),
+    );
+    expect(entries.every((e) => e.recorded_at < ctx.deps.clock.now().toISOString())).toBe(true);
+
+    const closed = await ctx.repo.listClosedTrips();
+    expect(closed).toHaveLength(1);
+    expect(closed[0].entries).toHaveLength(devPreviousTripEntries.length);
+    expect(closed[0].start.departure_at < open.departure_at).toBe(true);
   });
 
   it('menus come back in the fixture order with hold codes', async () => {

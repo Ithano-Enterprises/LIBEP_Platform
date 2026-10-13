@@ -104,4 +104,12 @@ export type Entry = CatchRecord & {
   sync_state: SyncStateValue;
 };
 
+/** A closed trip with its entries, for the previous trips list. */
+export type ClosedTrip = {
+  start: TripStart;
+  arrival_at: string;
+  landing_site_id: string;
+  entries: Entry[];
+};
+
 export type Preferences = { lang: 'sw' | 'en'; mode: 'night' | 'day'; unit: 't' | 'kg' };

@@ -73,3 +73,39 @@ export const devHoldCodes: Record<string, HoldCode> = {
 // Open trip: crew of 4 as in the design prototype; departure 2h30 before
 // seeding so the trip always looks current. [TO CONFIRM: not real values]
 export const devOpenTrip = { crewDeparted: 4, departedMinutesAgo: 150 };
+
+// Sample entries so the trip home list can be checked on a phone. Species,
+// tonnes, positions and states copied from the design prototype's mock
+// entries, oldest first. Times are relative to seeding.
+// [TO CONFIRM: not real catches; GPS accuracy 15 m is the design's example]
+type DevEntry = {
+  species: string;
+  t: number;
+  lat: number;
+  lon: number;
+  state: 'on_device' | 'waiting' | 'sent' | 'being_checked';
+};
+
+export const devOpenTripEntries: DevEntry[] = [
+  { species: 'tafi', t: 1.4, lat: -2.24, lon: 41.05, state: 'sent' },
+  { species: 'mzia', t: 1.3, lat: -2.25, lon: 41.04, state: 'being_checked' },
+  { species: 'kibua', t: 3.1, lat: -2.26, lon: 41.02, state: 'sent' },
+  { species: 'kolekole', t: 1.6, lat: -2.28, lon: 41.01, state: 'sent' },
+  { species: 'changu', t: 0.4, lat: -2.3, lon: 40.99, state: 'waiting' },
+  { species: 'kibua', t: 5.6, lat: -2.31, lon: 40.97, state: 'waiting' },
+  { species: 'nguru', t: 1.2, lat: -2.29, lon: 40.95, state: 'on_device' },
+  { species: 'tewa', t: 2.4, lat: -2.27, lon: 40.93, state: 'on_device' },
+];
+
+// One closed trip from the previous day, all sent.
+export const devPreviousTripEntries: DevEntry[] = [
+  { species: 'changu', t: 0.9, lat: -2.24, lon: 41.05, state: 'sent' },
+  { species: 'tewa', t: 1.6, lat: -2.25, lon: 41.03, state: 'sent' },
+  { species: 'kibua', t: 4.8, lat: -2.27, lon: 41.0, state: 'sent' },
+  { species: 'nguru', t: 2.2, lat: -2.3, lon: 40.98, state: 'sent' },
+  { species: 'kibua', t: 6.4, lat: -2.29, lon: 40.96, state: 'sent' },
+];
+
+export const devGpsAccuracyM = 15;
+export const devEntryStepMinutes = 17;
+export const devTripHours = 6;
