@@ -9,14 +9,41 @@ import { PlaceholderTag } from '../../ui/PlaceholderTag';
 import { PreferenceToggles } from '../../ui/PreferenceToggles';
 import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 
-// S2.1 header (phone): vessel name and registration, the mode/language
-// toggles, then the chips row with the offline button.
-export function Header({ profile }: { profile: DeviceProfile }) {
+// S2.1 header. Phone: vessel name and registration with the mode/language
+// toggles, then the chips row with the offline button. Tablet: one row,
+// vessel, chips, toggles.
+export function Header({ profile, wide = false }: { profile: DeviceProfile; wide?: boolean }) {
   const c = useTheme();
   const t = useStrings();
   const net = useNetworkState();
   const f = useFontSet();
   const offline = net.isConnected === false || net.isInternetReachable === false;
+
+  const chips = (
+    <View style={[styles.chips, wide && styles.chipsWide]}>
+      <Chip icon="weight" mono label={`${profile.vessel.tonnage_class} t`} />
+      <Chip icon="wave" label={t.zone} />
+      <Chip icon="pin" label={profile.home_site.name} />
+      {offline ? <OfflineButton /> : null}
+    </View>
+  );
+
+  if (wide) {
+    return (
+      <View style={[styles.header, styles.headerWide, { borderBottomColor: c.border }]}>
+        <View style={styles.vesselWide}>
+          <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>
+            {profile.vessel.name}
+          </Text>
+          <Text style={[styles.reg, { color: c.dim }]} numberOfLines={1}>
+            {profile.vessel.registration}
+          </Text>
+        </View>
+        {chips}
+        <PreferenceToggles />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.header, { borderBottomColor: c.border }]}>
@@ -31,12 +58,7 @@ export function Header({ profile }: { profile: DeviceProfile }) {
         </View>
         <PreferenceToggles />
       </View>
-      <View style={styles.chips}>
-        <Chip icon="weight" mono label={`${profile.vessel.tonnage_class} t`} />
-        <Chip icon="wave" label={t.zone} />
-        <Chip icon="pin" label={profile.home_site.name} />
-        {offline ? <OfflineButton /> : null}
-      </View>
+      {chips}
     </View>
   );
 }
@@ -99,6 +121,16 @@ function OfflineButton() {
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, zIndex: 2 },
+  headerWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    paddingTop: 8,
+    paddingHorizontal: 24,
+    paddingBottom: 14,
+  },
+  vesselWide: { gap: 3, flexShrink: 0 },
+  chipsWide: { flex: 1, marginTop: 0, flexWrap: 'wrap' },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   vessel: { flex: 1, minWidth: 0, gap: 3 },
   name: { fontSize: 24, lineHeight: 28 },

@@ -8,24 +8,32 @@ import { STATE_ORDER } from './model';
 import { stateStyle } from './stateStyle';
 
 // State filters with counts. On a phone only icon + count show; the full
-// label is the accessibility label, as in the design.
+// label is the accessibility label. On a tablet the short label shows too
+// and the row wraps, as in the design.
 export function FilterRow({
   counts,
   total,
   active,
   onChange,
+  wide = false,
 }: {
   counts: Record<StateKey, number>;
   total: number;
   active: StateKey | null;
   onChange: (f: StateKey | null) => void;
+  wide?: boolean;
 }) {
   const c = useTheme();
   const t = useStrings();
   const f = useFontSet();
   const items: (StateKey | null)[] = [null, ...STATE_ORDER];
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+    <ScrollView
+      horizontal={!wide}
+      scrollEnabled={!wide}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={[styles.row, wide && styles.rowWide]}
+    >
       {items.map((k) => {
         const on = active === k;
         const count = k ? counts[k] : total;
@@ -54,7 +62,10 @@ export function FilterRow({
                 color={st ? st.color : on ? c.text : c.dim}
               />
             </View>
-            <Text style={[styles.count, f.monoSemiBold, { color: on ? c.text : c.dim }]}>{count}</Text>
+            {wide ? (
+              <Text style={[styles.label, { color: on ? c.text : c.dim }]}>{t.fShort[k ?? 'all']}</Text>
+            ) : null}
+            <Text style={[styles.count, { color: on ? c.text : c.dim }]}>{count}</Text>
           </Pressable>
         );
       })}
@@ -64,6 +75,8 @@ export function FilterRow({
 
 const styles = StyleSheet.create({
   row: { gap: 6, paddingHorizontal: 16, paddingTop: 2 },
+  rowWide: { flexDirection: 'row', flexWrap: 'wrap' },
+  label: { fontFamily: fonts.sansMedium, fontSize: 15 },
   button: {
     height: touchTarget,
     minWidth: touchTarget,

@@ -16,9 +16,12 @@ import { stateStyle } from './stateStyle';
 export function EntryRow({
   entry,
   onPress,
+  selected = false,
 }: {
   entry: Entry;
   onPress?: (entry: Entry) => void;
+  /** Tablet: the entry shown in the detail pane. */
+  selected?: boolean;
 }) {
   const unit = useUnit();
   const c = useTheme();
@@ -36,9 +39,15 @@ export function EntryRow({
     <Pressable
       testID={`entry-${entry.id}`}
       accessibilityRole="button"
+      accessibilityState={{ selected }}
       disabled={!onPress}
       onPress={() => onPress?.(entry)}
-      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? c.raised : c.surface }]}
+      style={({ pressed }) => [
+        styles.row,
+        selected
+          ? { backgroundColor: c.raised, borderWidth: 2, borderColor: c.accent }
+          : { backgroundColor: pressed ? c.raised : c.surface, borderWidth: 1, borderColor: 'transparent' },
+      ]}
     >
       <View style={[styles.edge, { backgroundColor: s.edge }]} />
       <View style={styles.body}>

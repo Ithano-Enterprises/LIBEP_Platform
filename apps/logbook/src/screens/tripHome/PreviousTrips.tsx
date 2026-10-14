@@ -17,10 +17,12 @@ export function PreviousTrips({
   trips,
   now,
   onOpenEntry,
+  selectedId = null,
 }: {
   trips: ClosedTrip[];
   now: Date;
   onOpenEntry?: (entry: Entry) => void;
+  selectedId?: string | null;
 }) {
   const unit = useUnit();
   const c = useTheme();
@@ -51,6 +53,7 @@ export function PreviousTrips({
               unit={unit}
               expanded={openTrip === trip.start.trip_id}
               onOpenEntry={onOpenEntry}
+              selectedId={selectedId}
               onToggle={() =>
                 setOpenTrip((id) => (id === trip.start.trip_id ? null : trip.start.trip_id))
               }
@@ -68,6 +71,7 @@ function TripCard({
   expanded,
   onToggle,
   onOpenEntry,
+  selectedId,
 }: {
   trip: ClosedTrip;
   now: Date;
@@ -75,6 +79,7 @@ function TripCard({
   expanded: boolean;
   onToggle: () => void;
   onOpenEntry?: (entry: Entry) => void;
+  selectedId: string | null;
 }) {
   const c = useTheme();
   const t = useStrings();
@@ -114,7 +119,9 @@ function TripCard({
         </View>
       </Pressable>
       {expanded
-        ? trip.entries.map((e) => <PrevEntry key={e.id} entry={e} unit={unit} onPress={onOpenEntry} />)
+        ? trip.entries.map((e) => (
+            <PrevEntry key={e.id} entry={e} unit={unit} onPress={onOpenEntry} selected={e.id === selectedId} />
+          ))
         : null}
     </View>
   );
@@ -124,10 +131,12 @@ function PrevEntry({
   entry,
   unit,
   onPress,
+  selected,
 }: {
   entry: Entry;
   unit: 't' | 'kg';
   onPress?: (entry: Entry) => void;
+  selected: boolean;
 }) {
   const c = useTheme();
   const t = useStrings();
@@ -141,9 +150,15 @@ function PrevEntry({
     <Pressable
       testID={`prev-entry-${entry.id}`}
       accessibilityRole="button"
+      accessibilityState={{ selected }}
       disabled={!onPress}
       onPress={() => onPress?.(entry)}
-      style={({ pressed }) => [styles.entry, { backgroundColor: pressed ? c.raised : c.surface }]}
+      style={({ pressed }) => [
+        styles.entry,
+        selected
+          ? { backgroundColor: c.raised, borderWidth: 2, borderColor: c.accent }
+          : { backgroundColor: pressed ? c.raised : c.surface, borderWidth: 1, borderColor: 'transparent' },
+      ]}
     >
       <View style={styles.entryLine}>
         <View style={styles.what}>
