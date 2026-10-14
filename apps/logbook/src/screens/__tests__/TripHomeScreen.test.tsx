@@ -104,9 +104,14 @@ describe('TripHomeScreen', () => {
     fireEvent.press(screen.getByTestId('prev-toggle'));
     const card = screen.getByTestId(/^prev-trip-/);
     expect(screen.getByText(/· jana$/)).toBeTruthy();
-    expect(screen.getByText(`${devPreviousTripEntries.length} maingizo`)).toBeTruthy();
+    expect(screen.getByText(`${devPreviousTripEntries.length} maingizo · imepimwa`)).toBeTruthy();
     fireEvent.press(card);
     expect(screen.getAllByTestId(/^prev-entry-/)).toHaveLength(devPreviousTripEntries.length);
+    // Weighed entries: W figure, estimate and difference beside it.
+    const last = devPreviousTripEntries[devPreviousTripEntries.length - 1];
+    expect(screen.getByText(last.plant.toFixed(1))).toBeTruthy();
+    expect(screen.getByText(new RegExp(`· makadirio ${last.t.toFixed(1)} · −0\\.3$`))).toBeTruthy();
+    expect(screen.getAllByText('W')).toHaveLength(devPreviousTripEntries.length);
   });
 
   it('shows the offline button only without signal, with its explanation', async () => {

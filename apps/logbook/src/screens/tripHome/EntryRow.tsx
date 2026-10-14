@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Entry } from '../../data/types';
 import { radius } from '../../theme/tokens';
@@ -10,17 +10,36 @@ import { TierChip } from '../../ui/TierChip';
 import { stateKey } from './model';
 import { stateStyle } from './stateStyle';
 
-// One catch entry in the trip list (72dp). Opening the entry detail comes
-// with the entry detail slice.
-export function EntryRow({ entry }: { entry: Entry }) {
+// One catch entry in the trip list (72dp); tap opens the entry detail.
+// A weighed entry shows the plant weight with S and W chips and the
+// estimate beside it, never one number made of both.
+export function EntryRow({
+  entry,
+  onPress,
+}: {
+  entry: Entry;
+  onPress?: (entry: Entry) => void;
+}) {
   const unit = useUnit();
   const c = useTheme();
   const t = useStrings();
   const f = useFontSet();
   const k = stateKey[entry.sync_state];
   const s = stateStyle(k, c);
+  const weighed = entry.plant_weight_t != null;
+  const note = weighed
+    ? `· ${t.est} ${formatQuantity(entry.quantity, unit)}`
+    : entry.correction_count > 0
+      ? `· ${t.correctionOf} ${entry.short_ref}`
+      : null;
   return (
-    <View testID={`entry-${entry.id}`} style={[styles.row, { backgroundColor: c.surface }]}>
+    <Pressable
+      testID={`entry-${entry.id}`}
+      accessibilityRole="button"
+      disabled={!onPress}
+      onPress={() => onPress?.(entry)}
+      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? c.raised : c.surface }]}
+    >
       <View style={[styles.edge, { backgroundColor: s.edge }]} />
       <View style={styles.body}>
         <View style={styles.line}>
@@ -32,10 +51,13 @@ export function EntryRow({ entry }: { entry: Entry }) {
             {entry.hold_code ? <HoldBox code={entry.hold_code} /> : null}
           </View>
           <View style={styles.figure}>
-            <Text style={[styles.weight, f.monoSemiBold, { color: c.text }]}>{formatQuantity(entry.quantity, unit)}</Text>
-            <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
+            <Text style={[styles.weight, { color: c.text }]}>
+              {formatQuantity(weighed ? entry.plant_weight_t! : entry.quantity, unit)}
+            </Text>
+            <Text style={[styles.unit, { color: c.dim }]}>{unit}</Text>
             <View style={styles.tiers}>
               <TierChip tier="S" />
+              {weighed ? <TierChip tier="W" /> : null}
             </View>
           </View>
         </View>
@@ -45,9 +67,14 @@ export function EntryRow({ entry }: { entry: Entry }) {
             <Icon name={s.icon} size={14} strokeWidth={2} color={s.color} />
             <Text style={[styles.stateText, f.sansMedium, { color: s.color }]}>{t.states[k]}</Text>
           </View>
+          {note ? (
+            <Text style={[styles.time, { color: c.dim }]} numberOfLines={1}>
+              {note}
+            </Text>
+          ) : null}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

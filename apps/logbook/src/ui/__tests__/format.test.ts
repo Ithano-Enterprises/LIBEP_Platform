@@ -1,4 +1,4 @@
-import { formatDay, formatQuantity, formatTripDate, sumKg } from '../format';
+import { formatDay, formatQuantity, formatSigned, formatTripDate, sumKg } from '../format';
 
 describe('format', () => {
   it('shows stored kg as t with up to 3 decimals, or as whole kg', () => {
@@ -14,6 +14,12 @@ describe('format', () => {
     expect(sumKg([15, 2400])).toBe(2415);
     expect(sumKg([0.1, 0.2])).toBe(0.3);
     expect(sumKg([])).toBe(0);
+  });
+
+  it('signs a difference in t without float drift', () => {
+    expect(formatSigned(6.1 - 6.4)).toBe('−0.3');
+    expect(formatSigned(2.4 - 2.2)).toBe('+0.2');
+    expect(formatSigned(0)).toBe('±0.0');
   });
 
   it('names today for the start trip header', () => {

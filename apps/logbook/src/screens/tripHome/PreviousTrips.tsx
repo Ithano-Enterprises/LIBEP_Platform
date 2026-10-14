@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClosedTrip, Entry } from '../../data/types';
-import { radius, touchTarget } from '../../theme/tokens';
-import { formatQuantity, formatTime, formatTripDate, sumKg } from '../../ui/format';
+import { fonts, radius, touchTarget } from '../../theme/tokens';
+import { formatQuantity, formatSigned, formatTime, formatTripDate, sumKg } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
@@ -11,8 +11,17 @@ import { HoldBox } from '../../ui/HoldBox';
 import { tripState } from './model';
 import { stateStyle } from './stateStyle';
 
-// Collapsible list of closed trips, each expandable to its entries.
-export function PreviousTrips({ trips, now }: { trips: ClosedTrip[]; now: Date }) {
+// Collapsible list of closed trips, each expandable to its entries. Tap an
+// entry to open its detail.
+export function PreviousTrips({
+  trips,
+  now,
+  onOpenEntry,
+}: {
+  trips: ClosedTrip[];
+  now: Date;
+  onOpenEntry?: (entry: Entry) => void;
+}) {
   const unit = useUnit();
   const c = useTheme();
   const t = useStrings();
@@ -41,6 +50,7 @@ export function PreviousTrips({ trips, now }: { trips: ClosedTrip[]; now: Date }
               now={now}
               unit={unit}
               expanded={openTrip === trip.start.trip_id}
+              onOpenEntry={onOpenEntry}
               onToggle={() =>
                 setOpenTrip((id) => (id === trip.start.trip_id ? null : trip.start.trip_id))
               }
@@ -57,12 +67,14 @@ function TripCard({
   unit,
   expanded,
   onToggle,
+  onOpenEntry,
 }: {
   trip: ClosedTrip;
   now: Date;
   unit: 't' | 'kg';
   expanded: boolean;
   onToggle: () => void;
+  onOpenEntry?: (entry: Entry) => void;
 }) {
   const c = useTheme();
   const t = useStrings();
@@ -88,6 +100,7 @@ function TripCard({
           </Text>
           <Text style={[styles.meta, f.mono, { color: c.dim }]} numberOfLines={1}>
             {trip.entries.length} {t.entriesWord}
+            {trip.entries.some((e) => e.plant_weight_t != null) ? ` · ${t.weighedShort}` : ''}
           </Text>
         </View>
         <View style={styles.figure}>
@@ -100,16 +113,37 @@ function TripCard({
           <Text style={[styles.stateText, f.sansMedium, { color: s.color }]}>{t.fShort[k]}</Text>
         </View>
       </Pressable>
-      {expanded ? trip.entries.map((e) => <PrevEntry key={e.id} entry={e} unit={unit} />) : null}
+      {expanded
+        ? trip.entries.map((e) => <PrevEntry key={e.id} entry={e} unit={unit} onPress={onOpenEntry} />)
+        : null}
     </View>
   );
 }
 
-function PrevEntry({ entry, unit }: { entry: Entry; unit: 't' | 'kg' }) {
+function PrevEntry({
+  entry,
+  unit,
+  onPress,
+}: {
+  entry: Entry;
+  unit: 't' | 'kg';
+  onPress?: (entry: Entry) => void;
+}) {
   const c = useTheme();
-  const f = useFontSet();
+  const t = useStrings();
+  const w = entry.plant_weight_t;
+  const meta =
+    w != null
+      ? `${formatTime(entry.recorded_at)} · ${t.est} ${formatQuantity(entry.quantity, unit)} · ${formatSigned(w - entry.quantity)}`
+      : formatTime(entry.recorded_at);
   return (
-    <View testID={`prev-entry-${entry.id}`} style={[styles.entry, { backgroundColor: c.surface }]}>
+    <Pressable
+      testID={`prev-entry-${entry.id}`}
+      accessibilityRole="button"
+      disabled={!onPress}
+      onPress={() => onPress?.(entry)}
+      style={({ pressed }) => [styles.entry, { backgroundColor: pressed ? c.raised : c.surface }]}
+    >
       <View style={styles.entryLine}>
         <View style={styles.what}>
           <Icon name="fish" size={18} strokeWidth={1.6} color={c.dim} />
@@ -119,13 +153,16 @@ function PrevEntry({ entry, unit }: { entry: Entry; unit: 't' | 'kg' }) {
           {entry.hold_code ? <HoldBox code={entry.hold_code} /> : null}
         </View>
         <View style={styles.figure}>
-          <Text style={[styles.total, f.monoSemiBold, { color: c.text }]}>{formatQuantity(entry.quantity, unit)}</Text>
-          <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
+          <Text style={[styles.total, { color: c.text }]}>{formatQuantity(w ?? entry.quantity, unit)}</Text>
+          <Text style={[styles.unit, { color: c.dim }]}>{unit}</Text>
           <TierChip tier="S" />
+          {w != null ? <TierChip tier="W" /> : null}
         </View>
       </View>
-      <Text style={[styles.meta, f.mono, { color: c.dim }]}>{formatTime(entry.recorded_at)}</Text>
-    </View>
+      <Text style={[styles.meta, { color: c.dim }]} numberOfLines={1}>
+        {meta}
+      </Text>
+    </Pressable>
   );
 }
 
