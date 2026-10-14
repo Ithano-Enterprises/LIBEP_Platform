@@ -84,3 +84,28 @@ describe('S2.1 -> S3.3 -> S2.1', () => {
     expect(screen.getAllByTestId(/^entry-/)[0].props.testID).toBe(`entry-${entries[0].id}`);
   });
 });
+
+describe('S2.1 -> entry detail -> S2.1', () => {
+  it('tapping an entry opens its detail; back returns', async () => {
+    const ctx = await openTestRepo();
+    await seedDevFixtures(ctx.db, ctx.deps);
+    const now = ctx.deps.clock.now();
+    const open = () => Promise.resolve(ctx.repo);
+    const clock = () => now;
+    render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <LogbookProvider open={open}>
+          <PreferencesProvider>
+            <AppScreens now={clock} />
+          </PreferencesProvider>
+        </LogbookProvider>
+      </SafeAreaProvider>,
+    );
+    await screen.findByTestId('trip-total');
+    const [first] = await ctx.repo.listTripEntries((await ctx.repo.getOpenTrip())!.trip_id);
+    fireEvent.press(screen.getByTestId(`entry-${first.id}`));
+    expect(await screen.findByTestId('detail-species')).toHaveTextContent(first.species_local_name);
+    fireEvent.press(screen.getByTestId('back'));
+    await screen.findByTestId('trip-total');
+  });
+});

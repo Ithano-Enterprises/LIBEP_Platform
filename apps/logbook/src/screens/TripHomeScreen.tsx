@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { Entry } from '../data/types';
 import type { StateKey } from '../i18n/strings';
 import { radius, touchTarget } from '../theme/tokens';
 import { formatQuantity, formatTime, sumKg } from '../ui/format';
@@ -18,16 +19,18 @@ import { PreviousTrips } from './tripHome/PreviousTrips';
 import { useTripHome } from './tripHome/useTripHome';
 
 // S2.1 Trip home, phone layout. The primary button opens Start trip (S1)
-// with no trip open, or Log catch (S3.3) with one. Close trip (S4) and
-// entry detail are later slices; their buttons are shown but not wired yet.
+// with no trip open, or Log catch (S3.3) with one; an entry opens its
+// detail. Close trip (S4) is a later slice; its button is not wired yet.
 export function TripHomeScreen({
   now = () => new Date(),
   onStartTrip,
   onLogCatch,
+  onOpenEntry,
 }: {
   now?: () => Date;
   onStartTrip?: () => void;
   onLogCatch?: () => void;
+  onOpenEntry?: (entry: Entry) => void;
 }) {
   const { mode } = usePreferences();
   const c = useTheme();
@@ -103,7 +106,7 @@ export function TripHomeScreen({
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {showNotices ? <NoticesCard onDismiss={() => setNoticesOff(true)} /> : null}
         {visible.map((e) => (
-          <EntryRow key={e.id} entry={e} />
+          <EntryRow key={e.id} entry={e} onPress={onOpenEntry} />
         ))}
         {visible.length === 0 ? (
           <View testID="empty" style={styles.empty}>
@@ -112,7 +115,7 @@ export function TripHomeScreen({
             {!openTrip ? <Text style={[styles.emptyBody, f.sans, { color: c.dim }]}>{t.startToLog}</Text> : null}
           </View>
         ) : null}
-        <PreviousTrips trips={closedTrips} now={now()} />
+        <PreviousTrips trips={closedTrips} now={now()} onOpenEntry={onOpenEntry} />
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
