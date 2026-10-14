@@ -4,6 +4,7 @@ import type { Locator } from '../data/location';
 import type { Entry } from '../data/types';
 import { CloseTripScreen } from './CloseTripScreen';
 import { EntryDetailScreen } from './EntryDetailScreen';
+import { GroundsScreen } from './GroundsScreen';
 import { LogCatchScreen } from './LogCatchScreen';
 import { StartTripScreen } from './StartTripScreen';
 import { TripHomeScreen } from './TripHomeScreen';
@@ -13,6 +14,7 @@ type Route =
   | { name: 'start' }
   | { name: 'log' }
   | { name: 'close' }
+  | { name: 'grounds' }
   | { name: 'detail'; catchId: string };
 
 // Which screen is showing. A few screens so far, so plain state rather than
@@ -23,6 +25,7 @@ export function AppScreens({ now, locator }: { now?: () => Date; locator?: Locat
   const goStart = useCallback(() => setRoute({ name: 'start' }), []);
   const goLog = useCallback(() => setRoute({ name: 'log' }), []);
   const goClose = useCallback(() => setRoute({ name: 'close' }), []);
+  const goGrounds = useCallback(() => setRoute({ name: 'grounds' }), []);
   const openEntry = useCallback((e: Entry) => setRoute({ name: 'detail', catchId: e.id }), []);
   switch (route.name) {
     case 'start':
@@ -31,6 +34,8 @@ export function AppScreens({ now, locator }: { now?: () => Date; locator?: Locat
       return <LogCatchScreen onDone={goHome} now={now} locator={locator} />;
     case 'close':
       return <CloseTripScreen onDone={goHome} now={now} />;
+    case 'grounds':
+      return <GroundsScreen onDone={goHome} now={now} />;
     case 'detail':
       return <EntryDetailScreen catchId={route.catchId} onDone={goHome} />;
     default:
@@ -40,6 +45,7 @@ export function AppScreens({ now, locator }: { now?: () => Date; locator?: Locat
           onLogCatch={goLog}
           onCloseTrip={goClose}
           onOpenEntry={openEntry}
+          onOpenGrounds={goGrounds}
           now={now}
         />
       );

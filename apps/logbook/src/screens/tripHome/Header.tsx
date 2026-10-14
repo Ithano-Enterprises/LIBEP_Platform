@@ -6,13 +6,23 @@ import type { DeviceProfile } from '../../data/types';
 import { radius, touchTarget } from '../../theme/tokens';
 import { Icon, type IconName } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
+import { HeaderButton } from '../../ui/HeaderButton';
 import { PreferenceToggles } from '../../ui/PreferenceToggles';
 import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 
 // S2.1 header. Phone: vessel name and registration with the mode/language
 // toggles, then the chips row with the offline button. Tablet: one row,
 // vessel, chips, toggles.
-export function Header({ profile, wide = false }: { profile: DeviceProfile; wide?: boolean }) {
+export function Header({
+  profile,
+  wide = false,
+  onOpenGrounds,
+}: {
+  profile: DeviceProfile;
+  wide?: boolean;
+  /** My grounds (S5): a map button beside the toggles. */
+  onOpenGrounds?: () => void;
+}) {
   const c = useTheme();
   const t = useStrings();
   const net = useNetworkState();
@@ -28,6 +38,17 @@ export function Header({ profile, wide = false }: { profile: DeviceProfile; wide
     </View>
   );
 
+  const toggles = (
+    <View style={styles.toggles}>
+      {onOpenGrounds ? (
+        <HeaderButton onPress={onOpenGrounds} label={t.groundsTitle} testID="open-grounds">
+          <Icon name="map" color={c.text} />
+        </HeaderButton>
+      ) : null}
+      <PreferenceToggles />
+    </View>
+  );
+
   if (wide) {
     return (
       <View style={[styles.header, styles.headerWide, { borderBottomColor: c.border }]}>
@@ -40,7 +61,7 @@ export function Header({ profile, wide = false }: { profile: DeviceProfile; wide
           </Text>
         </View>
         {chips}
-        <PreferenceToggles />
+        {toggles}
       </View>
     );
   }
@@ -56,7 +77,7 @@ export function Header({ profile, wide = false }: { profile: DeviceProfile; wide
             {profile.vessel.registration}
           </Text>
         </View>
-        <PreferenceToggles />
+        {toggles}
       </View>
       {chips}
     </View>
@@ -121,6 +142,7 @@ function OfflineButton() {
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, zIndex: 2 },
+  toggles: { flexDirection: 'row', gap: 4 },
   headerWide: {
     flexDirection: 'row',
     alignItems: 'center',

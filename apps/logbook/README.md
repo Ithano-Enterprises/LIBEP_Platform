@@ -58,5 +58,7 @@ npm test
   builds only. Not real data. Start with `EXPO_PUBLIC_DEV_SEED=no-open-trip`
   (after clearing app data) to seed without an open trip, so S1 can be tried.
   Start with `EXPO_PUBLIC_DEV_SYNC=mock` to run the sync queue against the
-  mock transport (no network): waiting entries turn "Sent" every 30 s
-- `src/screens/`: screens (S1 Start trip, S2.1 Trip home, S3.3 Log catch, entry detail, S4 Close trip)
+  mock transport (no network): waiting entries turn "Sent" every 30 s.
+  Add `history` to `EXPO_PUBLIC_DEV_SEED` (e.g. `history` or
+  `no-open-trip,history`) for older trips, so My grounds has 3+ trips
+- `src/screens/`: screens (S1 Start trip, S2.1 Trip home, S3.3 Log catch, entry detail, S4 Close trip, S5 My grounds)

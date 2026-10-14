@@ -31,12 +31,14 @@ export function TripHomeScreen({
   onLogCatch,
   onCloseTrip,
   onOpenEntry,
+  onOpenGrounds,
 }: {
   now?: () => Date;
   onStartTrip?: () => void;
   onLogCatch?: () => void;
   onCloseTrip?: () => void;
   onOpenEntry?: (entry: Entry) => void;
+  onOpenGrounds?: () => void;
 }) {
   const { mode } = usePreferences();
   const c = useTheme();
@@ -79,7 +81,7 @@ export function TripHomeScreen({
 
   return shell(
     <>
-      <Header profile={data.profile} wide={wide} />
+      <Header profile={data.profile} wide={wide} onOpenGrounds={onOpenGrounds} />
       <View style={[styles.body, wide && styles.bodyWide]}>
         <View style={wide ? [styles.listPane, { borderRightColor: c.border }] : styles.body}>
 
