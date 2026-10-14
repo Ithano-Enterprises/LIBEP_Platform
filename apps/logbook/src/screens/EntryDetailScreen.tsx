@@ -1,14 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState, type ReactNode } from 'react';
-import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DataError } from '../data/repository';
+import { fonts } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
-import { CorrectionSheet } from './entryDetail/CorrectionSheet';
-import { EntryDetail } from './entryDetail/EntryDetail';
-import { useEntryDetail } from './entryDetail/useEntryDetail';
+import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { EntryDetailBody } from './entryDetail/EntryDetailBody';
 
 // Entry detail, phone: full screen with a back link to the trip.
 export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone: () => void }) {
@@ -16,22 +14,16 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
   const c = useTheme();
   const t = useStrings();
   const insets = useSafeAreaInsets();
-  const { data, error, correct } = useEntryDetail(catchId);
-  const [correcting, setCorrecting] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const f = useFontSet();
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (correcting) setCorrecting(false);
-      else onDone();
+      onDone();
       return true;
     });
     return () => sub.remove();
-  }, [correcting, onDone]);
+  }, [onDone]);
 
-  const shell = (children: ReactNode) => (
+  return (
     <View testID="screen" style={[styles.screen, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       <StatusBar style={mode === 'night' ? 'light' : 'dark'} />
       <View style={styles.top}>
@@ -46,64 +38,8 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
           <Text style={[styles.backText, f.sansMedium, { color: c.text }]}>{t.trip}</Text>
         </Pressable>
       </View>
-      {children}
+      <EntryDetailBody catchId={catchId} />
     </View>
-  );
-
-  if (error) return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
-  if (!data) return shell(null);
-  const { entry, history, profile, tripOpen, menu } = data;
-  if (!entry || !profile) {
-    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>{t.entryNotFound}</Text>);
-  }
-  const gloss = menu.find((m) => m.id === entry.species_id)?.english_gloss ?? null;
-
-  const onSave = async (input: { speciesId: string | null; quantity: number }) => {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await correct({
-        previousCorrectionId: entry.head_correction_id,
-        // Unchanged, or an "Other" catch left on its typed name: keep the species.
-        speciesId: input.speciesId === entry.species_id || input.speciesId === null ? undefined : input.speciesId,
-        quantity: input.quantity,
-      });
-      setCorrecting(false);
-    } catch (e) {
-      // A correction that raced another, or a weighing that just arrived:
-      // the reload shows the new state.
-      setSaveError(e instanceof DataError ? e.code : e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return shell(
-    <>
-      <ScrollView style={styles.body} contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}>
-        <EntryDetail
-          entry={entry}
-          history={history}
-          profile={profile}
-          gloss={gloss}
-          canCorrect={tripOpen}
-          onCorrect={() => {
-            setSaveError(null);
-            setCorrecting(true);
-          }}
-        />
-      </ScrollView>
-      {correcting ? (
-        <CorrectionSheet
-          entry={entry}
-          menu={menu}
-          saving={saving}
-          error={saveError}
-          onClose={() => setCorrecting(false)}
-          onSave={onSave}
-        />
-      ) : null}
-    </>,
   );
 }
 
@@ -111,8 +47,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   top: { paddingTop: 4, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
   back: { height: 56, paddingRight: 12, marginLeft: -6, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { fontSize: 17 },
-  error: { fontSize: 13, padding: 16 },
-  body: { flex: 1 },
-  content: { paddingTop: 8, paddingHorizontal: 16 },
+  backText: { fontFamily: fonts.sansMedium, fontSize: 17 },
 });
