@@ -1,4 +1,4 @@
-import { formatQuantity, formatTripDate, sumKg } from '../format';
+import { formatDay, formatQuantity, formatTripDate, sumKg } from '../format';
 
 describe('format', () => {
   it('shows stored kg as t with up to 3 decimals, or as whole kg', () => {
@@ -14,6 +14,12 @@ describe('format', () => {
     expect(sumKg([15, 2400])).toBe(2415);
     expect(sumKg([0.1, 0.2])).toBe(0.3);
     expect(sumKg([])).toBe(0);
+  });
+
+  it('names today for the start trip header', () => {
+    const sat = new Date(2026, 9, 3, 8, 0);
+    expect(formatDay(sat, 'sw')).toBe('Jumamosi 3 Okt');
+    expect(formatDay(sat, 'en')).toBe('Sat 3 Oct');
   });
 
   it('names the day, and marks yesterday', () => {
