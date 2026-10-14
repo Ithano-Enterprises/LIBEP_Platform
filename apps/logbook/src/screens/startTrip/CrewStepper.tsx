@@ -5,12 +5,21 @@ import { Icon } from '../../ui/Icon';
 import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { canStepDown, canStepUp, stepCrew } from './model';
 
-// S1 crew card: 64dp minus / plus buttons around the count, 1-24.
-export function CrewStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+// Crew card (S1 and S4): 64dp minus / plus buttons around the count, 1-24.
+export function CrewStepper({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  disabled?: boolean;
+}) {
   const c = useTheme();
   const t = useStrings();
-  const f = useFontSet();
-  const step = (delta: number, enabled: boolean, label: string, icon: 'minus' | 'plus') => (
+  const step = (delta: number, can: boolean, label: string, icon: 'minus' | 'plus') => {
+    const enabled = can && !disabled;
+    return (
     <Pressable
       testID={`crew-${icon}`}
       accessibilityRole="button"
@@ -25,7 +34,8 @@ export function CrewStepper({ value, onChange }: { value: number; onChange: (n: 
     >
       <Icon name={icon} size={26} strokeWidth={2.2} color={c.text} />
     </Pressable>
-  );
+    );
+  };
 
   return (
     <View testID="crew-stepper" style={[styles.card, { backgroundColor: c.surface }]}>
