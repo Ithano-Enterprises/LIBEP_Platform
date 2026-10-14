@@ -11,4 +11,5 @@ export {
   type Repository,
 } from './repository';
 export type * from './types';
+export { deviceLocator, type Locator } from './location';
 export { LogbookProvider, useLogbook } from './LogbookProvider';
