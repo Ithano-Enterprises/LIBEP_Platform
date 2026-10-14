@@ -4,6 +4,7 @@ import type { Transport } from './sync/transport';
 import type {
   CatchCorrection,
   CatchHistory,
+  GroundsCatch,
   PlantWeighing,
   ClosedTrip,
   CatchRecord,
@@ -432,6 +433,31 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     );
   }
 
+  /**
+   * This device's own catches for the grounds map (contract §4: computed on
+   * the device from the captain's own entries only).
+   */
+  async function listGroundsCatches(): Promise<GroundsCatch[]> {
+    return db.getAllAsync<GroundsCatch>(
+      `SELECT e.id, e.trip_id, e.species_id, e.species_local_name, e.hold_code, e.quantity,
+              e.latitude, e.longitude, e.recorded_at,
+              coalesce(s.state, 'on_device') AS sync_state,
+              c.arrival_at AS trip_closed_at,
+              CASE p.unit WHEN 'kg' THEN p.weight / 1000.0 ELSE p.weight END AS plant_weight_t
+         FROM v_catches_effective e
+         LEFT JOIN sync_state s ON s.record_id = e.id
+         LEFT JOIN trip_closes c ON c.trip_id = e.trip_id
+         LEFT JOIN plant_weighings p ON p.catch_id = e.id
+        ORDER BY e.recorded_at DESC`,
+      [],
+    );
+  }
+
+  async function countTrips(): Promise<number> {
+    const r = await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM trip_starts', []);
+    return r?.n ?? 0;
+  }
+
   async function getTripClose(tripId: string): Promise<TripClose | null> {
     const row = await db.getFirstAsync<Omit<TripClose, 'catch_ids'> & { catch_ids: string }>(
       'SELECT * FROM trip_closes WHERE trip_id = ?',
@@ -510,6 +536,8 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     listClosedTrips,
     getTripStart,
     getTripClose,
+    listGroundsCatches,
+    countTrips,
     getSyncState,
     syncQueue,
     getPreferences,

@@ -9,6 +9,7 @@ import type { CatchRecord } from '../../data/types';
 import {
   devCaptain,
   devEntryStepMinutes,
+  devGroundsTrips,
   devPlantDelayMinutes,
   devPlantStepMinutes,
   devGpsAccuracyM,
@@ -74,14 +75,16 @@ export async function seedDevReference(db: SqlDb): Promise<boolean> {
 /**
  * Reference data plus sample trips and entries, on first run only.
  * `openTrip: false` leaves no trip open, so Start trip (S1) can be tried.
+ * `history: true` adds older closed trips for My grounds (S5).
  */
 export async function seedDevFixtures(
   db: SqlDb,
   deps: RepoDeps,
-  { openTrip = true }: { openTrip?: boolean } = {},
+  { openTrip = true, history = false }: { openTrip?: boolean; history?: boolean } = {},
 ): Promise<boolean> {
   if (!(await seedDevReference(db))) return false;
   const now = deps.clock.now();
+  if (history) await seedGroundsHistory(db, deps, now);
 
   // Records go through the normal repository, with a clock set to the
   // fixture times, so they obey the same append-only rules.
@@ -126,6 +129,38 @@ export async function seedDevFixtures(
   await setState(db, [open.id], 'sent');
   await logEntries(repo, db, devOpenTripEntries, openStart, (ms) => (t = ms));
   return true;
+}
+
+// Older closed trips at the design's spots, all sent; oldest first so the
+// records are in time order.
+async function seedGroundsHistory(db: SqlDb, deps: RepoDeps, now: Date) {
+  let t = now.getTime();
+  const repo = createRepository(db, {
+    uuid: deps.uuid,
+    clock: { now: () => new Date(t), skewMs: () => null },
+  });
+  const trips = [...devGroundsTrips].sort((a, b) => b.daysAgo - a.daysAgo);
+  for (const trip of trips) {
+    const start = now.getTime() - trip.daysAgo * 24 * 60 * MIN;
+    t = start;
+    const s = await repo.startTrip({ crewCount: devOpenTrip.crewCount, departureAt: new Date(t) });
+    const ids = [s.id];
+    for (const [i, c] of trip.catches.entries()) {
+      t = start + (i + 1) * devEntryStepMinutes * MIN;
+      const gps =
+        c.lat == null || c.lon == null ? null : { latitude: c.lat, longitude: c.lon, gps_accuracy_m: devGpsAccuracyM };
+      ids.push((await repo.logCatch({ speciesId: speciesId(c.species), quantity: c.t, gps })).id);
+    }
+    t = start + devTripHours * 60 * MIN;
+    const close = await repo.closeTrip({
+      tripId: s.trip_id,
+      arrivalAt: new Date(t),
+      crewCount: devOpenTrip.crewCount,
+      landingSiteId: devLandingSite.id,
+      distanceKm: null,
+    });
+    await setState(db, [...ids, close.id], 'sent');
+  }
 }
 
 function speciesId(name: string): string {

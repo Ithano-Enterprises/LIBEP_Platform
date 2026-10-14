@@ -121,6 +121,45 @@ export const devPreviousTripEntries: (DevEntry & { plant: number })[] = [
 export const devPlantDelayMinutes = 30;
 export const devPlantStepMinutes = 4;
 
+// Extra closed trips for My grounds (S5), so the map has 3+ trips. Spots
+// and species follow the design brief's mock spots; tonnes are smaller
+// placeholders. One catch has no GPS fix, so the excluded row shows.
+// [TO CONFIRM: not real catches or positions]
+export const devGroundsTrips: {
+  daysAgo: number;
+  catches: { species: string; t: number; lat: number | null; lon: number | null }[];
+}[] = [
+  {
+    daysAgo: 3,
+    catches: [
+      { species: 'changu', t: 1.2, lat: -2.31, lon: 40.94 },
+      { species: 'tafi', t: 0.9, lat: -2.31, lon: 40.94 },
+    ],
+  },
+  {
+    daysAgo: 6,
+    catches: [
+      { species: 'kibua', t: 3.4, lat: -2.19, lon: 41.06 },
+      { species: 'nguru', t: 1.1, lat: -2.19, lon: 41.06 },
+      { species: 'tewa', t: 2.0, lat: -2.27, lon: 41.03 },
+    ],
+  },
+  {
+    daysAgo: 12,
+    catches: [
+      { species: 'changu', t: 1.5, lat: -2.17, lon: 40.98 },
+      { species: 'tafi', t: 0.4, lat: null, lon: null },
+    ],
+  },
+  {
+    daysAgo: 41,
+    catches: [
+      { species: 'nguru', t: 3.0, lat: -1.98, lon: 41.31 },
+      { species: 'kolekole', t: 1.4, lat: -1.98, lon: 41.31 },
+    ],
+  },
+];
+
 export const devGpsAccuracyM = 15;
 export const devEntryStepMinutes = 17;
 export const devTripHours = 6;

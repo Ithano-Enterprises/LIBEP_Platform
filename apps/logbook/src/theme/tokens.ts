@@ -68,6 +68,26 @@ export const tierChip = {
   w: { background: '#3FBF7F', text: '#07120C' },
 } as const;
 
+// Map colours and the 5-step heat ramp for My grounds (S5), verbatim from
+// the design (My Grounds, NIGHT / DAY / RAMP / ON). One hue, stepped by
+// lightness and opacity; `on` is the text colour that passes on each step.
+export const mapPalettes = {
+  night: {
+    sea: '#0F1C21',
+    land: '#1E2F36',
+    landLine: '#2C3F44',
+    ramp: ['rgba(232,163,61,0.18)', 'rgba(232,163,61,0.36)', 'rgba(232,163,61,0.58)', 'rgba(245,184,90,0.85)', '#FFC56B'],
+    on: ['#F2F5F3', '#F2F5F3', '#F2F5F3', '#12100A', '#12100A'],
+  },
+  day: {
+    sea: '#DCE6E8',
+    land: '#F6F3EA',
+    landLine: '#C6D0CE',
+    ramp: ['rgba(168,101,11,0.15)', 'rgba(168,101,11,0.32)', 'rgba(168,101,11,0.55)', 'rgba(143,87,10,0.9)', '#7A4606'],
+    on: ['#0B1416', '#0B1416', '#0B1416', '#FFFFFF', '#FFFFFF'],
+  },
+} as const;
+
 // Font roles used by text. Screens read the active set with useFontSet()
 // rather than importing a family name, so a font-load failure can swap the
 // whole app to system fonts.

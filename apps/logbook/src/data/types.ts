@@ -129,4 +129,21 @@ export type ClosedTrip = {
   entries: Entry[];
 };
 
+/** A catch as the grounds map needs it: effective values, trip status, plant weight. */
+export type GroundsCatch = {
+  id: string;
+  trip_id: string;
+  species_id: string;
+  species_local_name: string;
+  hold_code: HoldCode | null;
+  quantity: number;
+  latitude: number | null;
+  longitude: number | null;
+  recorded_at: string;
+  sync_state: SyncStateValue;
+  /** When the trip was closed, if it is. */
+  trip_closed_at: string | null;
+  plant_weight_t: number | null;
+};
+
 export type Preferences = { lang: 'sw' | 'en'; mode: 'night' | 'day'; unit: 't' | 'kg' };
