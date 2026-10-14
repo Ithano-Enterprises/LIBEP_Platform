@@ -20,12 +20,20 @@ export function formatTime(iso: string): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/**
+ * e.g. "Jumamosi 3 Okt" / "Sat 3 Oct". The design writes the month in
+ * full; short names are used until full ones are confirmed.
+ */
+export function formatDay(d: Date, lang: Lang): string {
+  return `${dayNames[lang][d.getDay()]} ${d.getDate()} ${monthNames[lang][d.getMonth()]}`;
+}
+
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 /** e.g. "Ijumaa 2 Okt · jana" / "Fri 2 Oct · yesterday". */
 export function formatTripDate(iso: string, lang: Lang, now: Date, yesterdayWord: string): string {
   const d = new Date(iso);
-  const label = `${dayNames[lang][d.getDay()]} ${d.getDate()} ${monthNames[lang][d.getMonth()]}`;
+  const label = formatDay(d, lang);
   const y = new Date(now);
   y.setDate(y.getDate() - 1);
   return dayKey(d) === dayKey(y) ? `${label} · ${yesterdayWord}` : label;

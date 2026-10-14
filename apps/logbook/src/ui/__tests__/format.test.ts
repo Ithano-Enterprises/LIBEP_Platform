@@ -1,4 +1,4 @@
-import { formatQuantity, formatTripDate, sumTonnes } from '../format';
+import { formatDay, formatQuantity, formatTripDate, sumTonnes } from '../format';
 
 describe('format', () => {
   it('shows tonnes with one decimal and kg as whole numbers', () => {
@@ -10,6 +10,12 @@ describe('format', () => {
   it('sums tonnes without float drift', () => {
     expect(sumTonnes([0.1, 0.2])).toBe(0.3);
     expect(sumTonnes([])).toBe(0);
+  });
+
+  it('names today for the start trip header', () => {
+    const sat = new Date(2026, 9, 3, 8, 0);
+    expect(formatDay(sat, 'sw')).toBe('Jumamosi 3 Okt');
+    expect(formatDay(sat, 'en')).toBe('Sat 3 Oct');
   });
 
   it('names the day, and marks yesterday', () => {

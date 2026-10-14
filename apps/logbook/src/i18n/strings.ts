@@ -36,6 +36,20 @@ export const sw = {
   // Not in the design: fallback until device enrolment exists.
   // [TO CONFIRM: Kiswahili wording]
   noVessel: 'Hakuna chombo kilichounganishwa na kifaa hiki.',
+  vessel: 'Chombo',
+  assigned: 'kilichopangwa',
+  crew: 'Wafanyakazi',
+  crewDown: 'Punguza wafanyakazi', // not in the design. [TO CONFIRM: Kiswahili wording]
+  crewUp: 'Ongeza wafanyakazi', // not in the design. [TO CONFIRM: Kiswahili wording]
+  departure: 'Kuondoka',
+  autoCap: 'imekamatwa yenyewe',
+  tripOpenNote: 'Safari iko wazi tayari. Imalize kwanza.',
+  goOpen: 'Rudi kwenye safari',
+  // {site} is the vessel's assigned landing site.
+  assignedTitle: 'Kituo chako ni {site}.',
+  uploadLine: 'Data yako itapakiwa kwa vyovyote vile.',
+  // Verbatim from the design. [TO CONFIRM: landing fee % and wrong-site rule]
+  feeLine: 'Kutua kituo kingine kunaruhusiwa. Ada ya takriban 10% ya thamani ya samaki inatozwa.',
   states: {
     device: 'Kwenye kifaa',
     waiting: 'Inasubiri kutumwa',
@@ -80,6 +94,18 @@ export const en: Strings = {
   view: 'View',
   trainStub: 'Training guide · stub',
   noVessel: 'No vessel linked to this device.',
+  vessel: 'Vessel',
+  assigned: 'assigned',
+  crew: 'Crew',
+  crewDown: 'Fewer crew',
+  crewUp: 'More crew',
+  departure: 'Departure',
+  autoCap: 'captured automatically',
+  tripOpenNote: 'A trip is already open. Close it first.',
+  goOpen: 'Go to open trip',
+  assignedTitle: 'Your assigned site is {site}.',
+  uploadLine: 'Your data uploads either way.',
+  feeLine: 'Landing at another site is allowed. A fee of about 10% of catch value applies.',
   states: {
     device: 'Saved on device',
     waiting: 'Waiting to send',
