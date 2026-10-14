@@ -36,6 +36,7 @@ export const sw = {
   // Not in the design: fallback until device enrolment exists.
   // [TO CONFIRM: Kiswahili wording]
   noVessel: 'Hakuna chombo kilichounganishwa na kifaa hiki.',
+  back: 'Rudi',
   vessel: 'Chombo',
   assigned: 'kilichopangwa',
   crew: 'Wafanyakazi',
@@ -94,6 +95,7 @@ export const en: Strings = {
   view: 'View',
   trainStub: 'Training guide · stub',
   noVessel: 'No vessel linked to this device.',
+  back: 'Back',
   vessel: 'Vessel',
   assigned: 'assigned',
   crew: 'Crew',

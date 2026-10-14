@@ -21,6 +21,7 @@ export const icons = {
   x: 'M6 6l12 12M18 6L6 18',
   flag: 'M5 21V4M5 4h12l-2.5 4 2.5 4H5',
   play: 'M8 5l11 7-11 7V5z',
+  back: 'M15 5l-7 7 7 7',
   chevR: 'M9 6l6 6-6 6',
   chevD: 'M6 9l6 6 6-6',
   chevU: 'M6 15l6-6 6 6',

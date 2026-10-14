@@ -93,10 +93,20 @@ describe('StartTripScreen ready', () => {
     expect(await count(db)).toBe(1);
   });
 
+  it('back returns to S2.1 without creating a trip', async () => {
+    const { db, repo, onDone } = await ready();
+    fireEvent.press(screen.getByTestId('crew-plus'));
+    fireEvent.press(screen.getByLabelText('Rudi'));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(await count(db)).toBe(0);
+    expect(await repo.getOpenTrip()).toBeNull();
+  });
+
   it('English copy and Day palette', async () => {
     await ready({ lang: 'en', mode: 'day' });
     expect(screen.getAllByText('Start trip')).toHaveLength(2);
     expect(screen.getByText('Crew')).toBeTruthy();
+    expect(screen.getByLabelText('Back')).toBeTruthy();
     expect(screen.getByText('captured automatically')).toBeTruthy();
     expect(screen.getByText('Your assigned site is Mokowe.')).toBeTruthy();
     expect(StyleSheet.flatten(screen.getByTestId('screen').props.style).backgroundColor).toBe(DAY.bg);
