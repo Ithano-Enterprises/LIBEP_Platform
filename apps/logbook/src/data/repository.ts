@@ -430,6 +430,18 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     );
   }
 
+  async function getTripClose(tripId: string): Promise<TripClose | null> {
+    const row = await db.getFirstAsync<Omit<TripClose, 'catch_ids'> & { catch_ids: string }>(
+      'SELECT * FROM trip_closes WHERE trip_id = ?',
+      [tripId],
+    );
+    return row ? { ...row, catch_ids: JSON.parse(row.catch_ids) as string[] } : null;
+  }
+
+  async function getTripStart(tripId: string): Promise<TripStart | null> {
+    return db.getFirstAsync<TripStart>('SELECT * FROM trip_starts WHERE trip_id = ?', [tripId]);
+  }
+
   async function listClosedTrips(): Promise<ClosedTrip[]> {
     const trips = await db.getAllAsync<TripStart & { arrival_at: string; landing_site_id: string }>(
       `SELECT s.*, c.arrival_at, c.landing_site_id
@@ -489,6 +501,8 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     getPlantWeighing,
     applyPlantWeighing,
     listClosedTrips,
+    getTripStart,
+    getTripClose,
     getSyncState,
     getPreferences,
     setPreference,

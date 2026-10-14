@@ -18,6 +18,7 @@ import {
   devHoldCodes,
   devLandingSite,
   devMenus,
+  devOtherLandingSite,
   devOpenTrip,
   devSpecies,
   devVessel,
@@ -30,8 +31,9 @@ export async function seedDevReference(db: SqlDb): Promise<boolean> {
   const seeded = await db.getFirstAsync<{ id: string }>('SELECT id FROM vessels LIMIT 1', []);
   if (seeded) return false;
   await db.withTransactionAsync(async () => {
-    const s = devLandingSite;
-    await db.runAsync('INSERT INTO landing_sites (id, name, bmu) VALUES (?, ?, ?)', [s.id, s.name, s.bmu]);
+    for (const s of [devLandingSite, devOtherLandingSite]) {
+      await db.runAsync('INSERT INTO landing_sites (id, name, bmu) VALUES (?, ?, ?)', [s.id, s.name, s.bmu]);
+    }
     const v = devVessel;
     await db.runAsync(
       `INSERT INTO vessels (id, name, registration, tonnage_class, home_landing_site_id, owner_name)

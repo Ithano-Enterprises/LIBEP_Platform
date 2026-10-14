@@ -17,6 +17,14 @@ export const devLandingSite = {
   bmu: null, // [TO CONFIRM: BMU]
 };
 
+// A second site, so landing elsewhere can be tried on S4. Name from the
+// design prototype. [TO CONFIRM: real landing site list and BMU names]
+export const devOtherLandingSite = {
+  id: '9d4f1c2e-7b3a-4e8f-a1d6-3c5b8e2f0a47',
+  name: 'Lamu', // design prototype
+  bmu: null, // [TO CONFIRM: BMU]
+};
+
 // [TO CONFIRM: real vessel registry]
 export const devVessel = {
   id: 'f318f9ef-6b08-4d6a-844a-fece12e880a6',
