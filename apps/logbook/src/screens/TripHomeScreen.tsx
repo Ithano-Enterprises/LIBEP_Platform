@@ -17,10 +17,16 @@ import { NoticesCard } from './tripHome/NoticesCard';
 import { PreviousTrips } from './tripHome/PreviousTrips';
 import { useTripHome } from './tripHome/useTripHome';
 
-// S2.1 Trip home, phone layout. Start trip (S1), Log catch (S3.3), Close
-// trip (S4) and entry detail are later slices; their buttons are shown
-// but not wired yet.
-export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date }) {
+// S2.1 Trip home, phone layout. With no trip open the primary button opens
+// Start trip (S1). Log catch (S3.3), Close trip (S4) and entry detail are
+// later slices; their buttons are shown but not wired yet.
+export function TripHomeScreen({
+  now = () => new Date(),
+  onStartTrip,
+}: {
+  now?: () => Date;
+  onStartTrip?: () => void;
+}) {
   const { mode } = usePreferences();
   const c = useTheme();
   const t = useStrings();
@@ -110,8 +116,13 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
         <Pressable
           testID="primary"
           accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          style={[styles.primary, { backgroundColor: c.accent }]}
+          accessibilityState={{ disabled: !!openTrip || !onStartTrip }}
+          disabled={!!openTrip || !onStartTrip}
+          onPress={onStartTrip}
+          style={({ pressed }) => [
+            styles.primary,
+            { backgroundColor: pressed && !openTrip ? c.accentPress : c.accent },
+          ]}
         >
           <Icon name={openTrip ? 'plus' : 'play'} size={22} strokeWidth={2.2} color={c.onAccent} />
           <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>
