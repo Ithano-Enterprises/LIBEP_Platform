@@ -9,7 +9,8 @@ import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useIsTablet } from '../ui/layout';
+import { usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { ConfirmCard } from './logCatch/ConfirmCard';
 import { EntrySheet } from './logCatch/EntrySheet';
 import { MenuTile } from './logCatch/MenuTile';
@@ -17,12 +18,23 @@ import { filterMenu, OTHER_ID, otherItem, parseEntry, plausibility } from './log
 import { useLogCatch } from './logCatch/useLogCatch';
 
 const systemNow = () => new Date();
+/** Tablet menu: tiles at least 148dp wide, 8dp apart (design grid). */
+const TILE_MIN = 148;
+const TILE_GAP = 8;
+const WIDE_PAD = 24;
 
-// S3.3 Log catch, phone layout. Pick a fish from the vessel's menu, type
-// the estimate in whole kg on the built-in keypad, save. "Other" lets the
-// captain type the local name when the fish is not on the menu. Time, GPS
-// and vessel are captured by the app. After saving, a confirmation card
-// offers to log another or go to the list.
+export function gridTileWidth(inner: number): number {
+  const cols = Math.max(1, Math.floor((inner + TILE_GAP) / (TILE_MIN + TILE_GAP)));
+  return Math.floor((inner - TILE_GAP * (cols - 1)) / cols);
+}
+
+// S3.3 Log catch. Pick a fish from the vessel's menu, type the estimate in
+// whole kg on the built-in keypad, save. "Other" lets the captain type the
+// local name when the fish is not on the menu. Time, GPS and vessel are
+// captured by the app.
+// After saving, a confirmation card offers to log another or go to the
+// list. Phone: the entry sheet and the card slide over the menu. Tablet
+// (600dp and up): menu left, a 480dp entry pane right.
 export function LogCatchScreen({
   onDone,
   now = systemNow,
@@ -38,6 +50,8 @@ export function LogCatchScreen({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const { data, error, save } = useLogCatch();
+  const wide = useIsTablet();
+  const [menuWidth, setMenuWidth] = useState(0);
   const [query, setQuery] = useState('');
   const f = useFontSet();
   const [pick, setPick] = useState<MenuItem | null>(null);
@@ -98,6 +112,7 @@ export function LogCatchScreen({
   const visible = filterMenu(menu, query);
   const classLabel = `${profile.vessel.tonnage_class} t`;
   const menuLabel = `${t.menu}: ${classLabel}`;
+  const tileWidth = wide && menuWidth > 0 ? gridTileWidth(menuWidth - 2 * WIDE_PAD) : undefined;
   const check = plausibility(parseEntry(value), data.tripTotal, profile.vessel.tonnage_class);
   const hint =
     check === 'entry_over_class'
@@ -147,9 +162,53 @@ export function LogCatchScreen({
     }
   };
 
+  const sheet = pick ? (
+    <>
+      <EntrySheet
+        item={pick}
+        value={value}
+        onChange={setValue}
+        otherName={otherName}
+        onOtherName={setOtherName}
+        note={note}
+        onNote={setNote}
+        time={formatTime(clock.toISOString())}
+        gps={gps}
+        locating={locating}
+        registration={profile.vessel.registration}
+        saving={saving}
+        onSave={onSave}
+        hint={hint}
+      />
+      {saveError ? <Text style={[styles.saveError, { color: c.danger }]}>{saveError}</Text> : null}
+    </>
+  ) : null;
+
+  const confirm =
+    saved && !pick ? (
+      <ConfirmCard
+        inline={wide}
+        record={saved.record}
+        gloss={saved.gloss}
+        onDismiss={() => setSaved(null)}
+        onLogAnother={() => {
+          setSaved(null);
+          setQuery('');
+        }}
+        onViewList={onDone}
+      />
+    ) : null;
+
+  const menuChip = (
+    <View style={[styles.menuChip, !wide && styles.menuChipNarrow, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <Icon name="weight" size={15} color={c.text} />
+      <Text style={[styles.menuChipText, { color: c.text }]}>{menuLabel}</Text>
+    </View>
+  );
+
   return shell(
     <>
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
+      <View style={[styles.header, wide && styles.headerWide, { borderBottomColor: c.border }]}>
         <BackButton onPress={onDone} />
         <View style={styles.headerText}>
           <Text style={[styles.title, f.sansSemiBold, { color: c.text }]} numberOfLines={1}>
@@ -158,65 +217,84 @@ export function LogCatchScreen({
           <Text style={[styles.sub, f.mono, { color: c.dim }]} numberOfLines={1}>
             {profile.vessel.name} · {profile.vessel.registration}
           </Text>
-          <View style={[styles.menuChip, { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Icon name="weight" size={15} color={c.text} />
-            <Text style={[styles.menuChipText, f.monoSemiBold, { color: c.text }]}>{menuLabel}</Text>
-          </View>
+          {wide ? null : menuChip}
         </View>
+        {wide ? menuChip : null}
       </View>
 
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {!tripOpen ? (
-          <View testID="no-trip" style={[styles.noTrip, { borderColor: c.accent }]}>
-            <Icon name="alert" size={18} strokeWidth={2} color={c.accent} />
-            <Text style={[styles.noTripText, f.sansMedium, { color: c.accent }]}>{t.startToLog}</Text>
+      <View style={[styles.body, wide && styles.bodyWide]}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={[styles.bodyContent, wide && styles.bodyContentWide]}
+          keyboardShouldPersistTaps="handled"
+          onLayout={(e) => setMenuWidth(e.nativeEvent.layout.width)}
+        >
+          {!tripOpen ? (
+            <View testID="no-trip" style={[styles.noTrip, { borderColor: c.accent }]}>
+              <Icon name="alert" size={18} strokeWidth={2} color={c.accent} />
+              <Text style={[styles.noTripText, { color: c.accent }]}>{t.startToLog}</Text>
+            </View>
+          ) : null}
+          <View style={styles.search}>
+            <View style={styles.searchIcon} pointerEvents="none">
+              <Icon name="search" size={18} color={c.dim} />
+            </View>
+            {/* Never auto-focused: the keyboard would cover the menu. */}
+            <TextInput
+              testID="search"
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t.search}
+              placeholderTextColor={c.dim}
+              autoCorrect={false}
+              autoCapitalize="none"
+              style={[styles.searchInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+            />
+          </View>
+          {/* DEV FIXTURE menus and hold codes, as the design marks them. */}
+          <Text style={[styles.placeholderLine, { color: c.dim }]}>
+            placeholder list · hold codes: placeholder · {menuLabel}
+          </Text>
+          <View style={styles.grid}>
+            {visible.map((m) => (
+              <MenuTile
+                key={m.id}
+                item={m}
+                active={pick?.id === m.id}
+                disabled={!tripOpen}
+                onPress={() => onPick(m)}
+                width={tileWidth}
+              />
+            ))}
+            <MenuTile
+              testID="fish-other"
+              item={otherItem(t.other)}
+              active={pick?.id === OTHER_ID}
+              disabled={!tripOpen}
+              onPress={() => onPick(otherItem(t.other))}
+              width={tileWidth}
+            />
+          </View>
+        </ScrollView>
+
+        {wide ? (
+          <View testID="entry-pane" style={[styles.entryPane, { backgroundColor: c.surface, borderLeftColor: c.border }]}>
+            <ScrollView
+              contentContainerStyle={[styles.entryPaneContent, { paddingBottom: 20 + insets.bottom }]}
+              keyboardShouldPersistTaps="handled"
+            >
+              {sheet ?? confirm ?? (
+                <View testID="pick-prompt" style={styles.pickPrompt}>
+                  <Icon name="fish" size={32} strokeWidth={1.4} color={c.dim} />
+                  <Text style={[styles.pickText, { color: c.dim }]}>{t.pick}</Text>
+                </View>
+              )}
+            </ScrollView>
           </View>
         ) : null}
-        <View style={styles.search}>
-          <View style={styles.searchIcon} pointerEvents="none">
-            <Icon name="search" size={18} color={c.dim} />
-          </View>
-          {/* Never auto-focused: the keyboard would cover the menu. */}
-          <TextInput
-            testID="search"
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t.search}
-            placeholderTextColor={c.dim}
-            autoCorrect={false}
-            autoCapitalize="none"
-            style={[styles.searchInput, f.sans, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
-          />
-        </View>
-        {/* DEV FIXTURE menus and hold codes, as the design marks them. */}
-        <Text style={[styles.placeholderLine, f.mono, { color: c.dim }]}>
-          placeholder list · hold codes: placeholder · {menuLabel}
-        </Text>
-        <View style={styles.grid}>
-          {visible.map((m) => (
-            <MenuTile
-              key={m.id}
-              item={m}
-              active={pick?.id === m.id}
-              disabled={!tripOpen}
-              onPress={() => onPick(m)}
-            />
-          ))}
-          <MenuTile
-            testID="fish-other"
-            item={otherItem(t.other)}
-            active={pick?.id === OTHER_ID}
-            disabled={!tripOpen}
-            onPress={() => onPick(otherItem(t.other))}
-          />
-        </View>
-      </ScrollView>
+      </View>
 
-      {pick ? (
+      {!wide && pick ? (
         <>
           <Pressable
             testID="scrim"
@@ -231,50 +309,27 @@ export function LogCatchScreen({
               { backgroundColor: c.surface, borderColor: c.border, paddingBottom: 12 + insets.bottom },
             ]}
           >
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <EntrySheet
-                item={pick}
-                value={value}
-                onChange={setValue}
-                otherName={otherName}
-                onOtherName={setOtherName}
-                note={note}
-                onNote={setNote}
-                time={formatTime(clock.toISOString())}
-                gps={gps}
-                locating={locating}
-                registration={profile.vessel.registration}
-                saving={saving}
-                onSave={onSave}
-                hint={hint}
-              />
-              {saveError ? (
-                <Text style={[styles.saveError, f.mono, { color: c.danger }]}>{saveError}</Text>
-              ) : null}
-            </ScrollView>
+            <ScrollView keyboardShouldPersistTaps="handled">{sheet}</ScrollView>
           </View>
         </>
       ) : null}
 
-      {saved && !pick ? (
-        <ConfirmCard
-          record={saved.record}
-          gloss={saved.gloss}
-          onDismiss={() => setSaved(null)}
-          onLogAnother={() => {
-            setSaved(null);
-            setQuery('');
-          }}
-          onViewList={onDone}
-        />
-      ) : null}
+      {!wide ? confirm : null}
     </>,
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  error: { fontSize: 13, padding: 16 },
+  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  headerWide: { paddingTop: 6, paddingRight: 24, paddingBottom: 12, paddingLeft: 12, gap: 14 },
+  bodyWide: { flexDirection: 'row' },
+  bodyContentWide: { paddingVertical: 20, paddingHorizontal: WIDE_PAD },
+  entryPane: { width: 480, borderLeftWidth: 1 },
+  entryPaneContent: { paddingTop: 20, paddingHorizontal: 24, gap: 12, flexGrow: 1 },
+  pickPrompt: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 48 },
+  pickText: { fontFamily: fonts.sansMedium, fontSize: 20 },
+  menuChipNarrow: { marginTop: 3 },
   header: {
     paddingTop: 4,
     paddingRight: 16,
@@ -295,7 +350,6 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 28,
     paddingHorizontal: 9,
-    marginTop: 3,
     borderRadius: 6,
     borderWidth: 1,
   },

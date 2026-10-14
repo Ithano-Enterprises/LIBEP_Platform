@@ -19,7 +19,10 @@ export function ConfirmCard({
   onDismiss,
   onLogAnother,
   onViewList,
+  inline = false,
 }: {
+  /** Tablet: shown in the entry pane instead of floating over the menu. */
+  inline?: boolean;
   record: CatchRecord;
   gloss: string | null;
   onDismiss: () => void;
@@ -52,22 +55,24 @@ export function ConfirmCard({
   return (
     <View
       testID="confirm-card"
-      style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
+      style={inline ? styles.inline : [styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
     >
       <View style={styles.titleRow}>
         <View style={styles.title}>
           <Icon name="check" size={22} strokeWidth={2.2} color={c.ok} />
           <Text style={[styles.titleText, f.sansSemiBold, { color: c.ok }]}>{t.savedTitle}</Text>
         </View>
-        <Pressable
-          testID="confirm-dismiss"
-          accessibilityRole="button"
-          accessibilityLabel={t.dismissL}
-          onPress={onDismiss}
-          style={styles.dismiss}
-        >
-          <Icon name="x" size={22} color={c.dim} />
-        </Pressable>
+        {inline ? null : (
+          <Pressable
+            testID="confirm-dismiss"
+            accessibilityRole="button"
+            accessibilityLabel={t.dismissL}
+            onPress={onDismiss}
+            style={styles.dismiss}
+          >
+            <Icon name="x" size={22} color={c.dim} />
+          </Pressable>
+        )}
       </View>
 
       <View style={[styles.summary, { backgroundColor: c.raised }]}>
@@ -157,6 +162,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: -12 },
   },
+  inline: { gap: 16 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titleText: { fontSize: 20 },

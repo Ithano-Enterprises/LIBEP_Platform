@@ -14,12 +14,15 @@ export function MenuTile({
   disabled,
   onPress,
   testID,
+  width,
 }: {
   item: MenuItem;
   testID?: string;
   active: boolean;
   disabled?: boolean;
   onPress: () => void;
+  /** Tablet grid: fixed tile width; phone tiles share two columns. */
+  width?: number;
 }) {
   const c = useTheme();
   const { lang } = usePreferences();
@@ -33,6 +36,7 @@ export function MenuTile({
       onPress={onPress}
       style={[
         styles.tile,
+        width != null && { width, flexBasis: 'auto', flexGrow: 0 },
         active
           ? { backgroundColor: c.raised, borderWidth: 2, borderColor: c.accent }
           : { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
