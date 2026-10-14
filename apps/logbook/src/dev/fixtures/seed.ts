@@ -1,6 +1,7 @@
 // DEV FIXTURE: seeds placeholder reference data, links this device to the
 // fixture captain and vessel, adds one closed trip from the previous day
-// and opens a trip with sample entries. Development builds only.
+// and (unless turned off) opens a trip with sample entries. Development
+// builds only.
 
 import { createRepository, type RepoDeps, type Repository } from '../../data/repository';
 import type { SqlDb } from '../../data/sql';
@@ -65,8 +66,15 @@ export async function seedDevReference(db: SqlDb): Promise<boolean> {
   return true;
 }
 
-/** Reference data plus sample trips and entries, on first run only. */
-export async function seedDevFixtures(db: SqlDb, deps: RepoDeps): Promise<boolean> {
+/**
+ * Reference data plus sample trips and entries, on first run only.
+ * `openTrip: false` leaves no trip open, so Start trip (S1) can be tried.
+ */
+export async function seedDevFixtures(
+  db: SqlDb,
+  deps: RepoDeps,
+  { openTrip = true }: { openTrip?: boolean } = {},
+): Promise<boolean> {
   if (!(await seedDevReference(db))) return false;
   const now = deps.clock.now();
 
@@ -91,6 +99,7 @@ export async function seedDevFixtures(db: SqlDb, deps: RepoDeps): Promise<boolea
     distanceKm: null,
   });
   await setState(db, [prev.id, prevClose.id], 'sent');
+  if (!openTrip) return true;
 
   const openStart = now.getTime() - devOpenTrip.departedMinutesAgo * MIN;
   t = openStart;

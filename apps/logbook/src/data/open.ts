@@ -20,6 +20,9 @@ export async function openLogbook(deps: RepoDeps = defaultDeps): Promise<Reposit
   await migrate(db);
   await ensureDevice(db, deps.uuid);
   const repo = createRepository(db, deps);
-  if (__DEV__) await seedDevFixtures(db, deps);
+  // EXPO_PUBLIC_DEV_SEED=no-open-trip seeds without an open trip (to try S1).
+  if (__DEV__) {
+    await seedDevFixtures(db, deps, { openTrip: process.env.EXPO_PUBLIC_DEV_SEED !== 'no-open-trip' });
+  }
   return repo;
 }
