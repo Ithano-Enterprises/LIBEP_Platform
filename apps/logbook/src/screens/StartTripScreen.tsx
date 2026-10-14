@@ -4,7 +4,7 @@ import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CREW_DEFAULT } from '../data/repository';
-import { fonts, radius } from '../theme/tokens';
+import { fonts, radius, touchTarget } from '../theme/tokens';
 import { formatDay, formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';
 import { usePreferences, useStrings, useTheme } from '../ui/preferences';
@@ -19,6 +19,7 @@ const systemNow = () => new Date();
 
 // S1 Start trip, phone layout. Ready: pick crew, departure is the time of
 // the tap. Blocked (a trip is already open): no stepper, back to S2.1.
+// The header back button returns to S2.1 without starting a trip.
 export function StartTripScreen({
   onDone,
   now = systemNow,
@@ -83,8 +84,19 @@ export function StartTripScreen({
   return shell(
     <>
       <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <Text style={[styles.title, { color: c.text }]}>{t.startTrip}</Text>
-        <Text style={[styles.date, { color: c.dim }]}>{formatDay(clock, lang)}</Text>
+        <Pressable
+          testID="back"
+          accessibilityRole="button"
+          accessibilityLabel={t.back}
+          onPress={onDone}
+          style={({ pressed }) => [styles.back, pressed && { backgroundColor: c.raised }]}
+        >
+          <Icon name="back" size={24} strokeWidth={2} color={c.text} />
+        </Pressable>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { color: c.text }]}>{t.startTrip}</Text>
+          <Text style={[styles.date, { color: c.dim }]}>{formatDay(clock, lang)}</Text>
+        </View>
       </View>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
@@ -121,7 +133,25 @@ export function StartTripScreen({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
-  header: { paddingTop: 8, paddingHorizontal: 16, paddingBottom: 12, gap: 2, borderBottomWidth: 1 },
+  // Same header layout as S3.3: back button, then the title.
+  header: {
+    paddingTop: 4,
+    paddingRight: 16,
+    paddingBottom: 10,
+    paddingLeft: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderBottomWidth: 1,
+  },
+  back: {
+    width: touchTarget,
+    height: touchTarget,
+    borderRadius: radius,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: { flex: 1, minWidth: 0, gap: 2 },
   title: { fontFamily: fonts.sansSemiBold, fontSize: 24, lineHeight: 28 },
   date: { fontFamily: fonts.sans, fontSize: 13 },
   body: { flex: 1 },
