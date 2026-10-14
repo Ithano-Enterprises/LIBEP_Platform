@@ -406,6 +406,65 @@ describe('corrections', () => {
   });
 });
 
+describe('plant weights and closed corrections', () => {
+  it('fixture: previous trip catches carry W in t, the open trip none', async () => {
+    const ctx = await openTestRepo();
+    await seedDevFixtures(ctx.db, ctx.deps);
+    const [prev] = await ctx.repo.listClosedTrips();
+    // newest first, so the fixture order reversed
+    expect(prev.entries.map((e) => e.plant_weight_t)).toEqual(
+      [...devPreviousTripEntries].reverse().map((e) => e.plant),
+    );
+    expect(prev.entries.every((e) => e.plant_weighed_at! > e.recorded_at)).toBe(true);
+    const open = (await ctx.repo.getOpenTrip())!;
+    const entries = await ctx.repo.listTripEntries(open.trip_id);
+    expect(entries.every((e) => e.plant_weight_t === null)).toBe(true);
+  });
+
+  it('a weighed catch cannot be corrected; a kg weight shows in t', async () => {
+    const { repo } = await seeded();
+    const trip = (await repo.getOpenTrip())!;
+    const c = await repo.logCatch({ speciesId: speciesId('tewa'), quantity: 2.4, gps: null });
+    const w = {
+      id: 'w1',
+      trip_id: trip.trip_id,
+      species_id: c.species_id,
+      catch_id: c.id,
+      weight: 2300,
+      unit: 'kg' as const,
+      weighed_at: '2026-01-01T10:00:00.000Z',
+    };
+    await repo.applyPlantWeighing(w);
+    await repo.applyPlantWeighing(w); // repeated feed report is ignored
+    expect((await repo.getEntry(c.id))?.plant_weight_t).toBe(2.3);
+    await expectCode(
+      repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 2.5 }),
+      'corrections_closed',
+    );
+  });
+});
+
+describe('catch history', () => {
+  it('returns the original and its corrections in chain order', async () => {
+    const { repo, deps } = await seeded();
+    const c = await repo.logCatch({ speciesId: speciesId('tewa'), quantity: 2.4, gps: null });
+    deps.tick(60_000);
+    const a = await repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 2.6 });
+    deps.tick(60_000);
+    const b = await repo.correctCatch({
+      catchId: c.id,
+      previousCorrectionId: a.id,
+      speciesId: speciesId('kibua'),
+    });
+    const h = (await repo.getCatchHistory(c.id))!;
+    expect(h.original).toEqual(c);
+    expect(h.corrections.map((x) => x.id)).toEqual([a.id, b.id]);
+    const e = (await repo.getEntry(c.id))!;
+    expect(e).toMatchObject({ quantity: 2.6, species_local_name: 'kibua', correction_count: 2, head_correction_id: b.id });
+    expect(await repo.getCatchHistory('nope')).toBeNull();
+  });
+});
+
 describe('writes are atomic', () => {
   it('a failed write leaves neither the record nor its sync row', async () => {
     const { db, repo } = await seeded();

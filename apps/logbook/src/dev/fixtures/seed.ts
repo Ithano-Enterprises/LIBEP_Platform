@@ -5,9 +5,12 @@
 
 import { createRepository, type RepoDeps, type Repository } from '../../data/repository';
 import type { SqlDb } from '../../data/sql';
+import type { CatchRecord } from '../../data/types';
 import {
   devCaptain,
   devEntryStepMinutes,
+  devPlantDelayMinutes,
+  devPlantStepMinutes,
   devGpsAccuracyM,
   devOpenTripEntries,
   devPreviousTripEntries,
@@ -89,7 +92,7 @@ export async function seedDevFixtures(
   const prevStart = now.getTime() - 24 * 60 * MIN - devOpenTrip.departedMinutesAgo * MIN;
   t = prevStart;
   const prev = await repo.startTrip({ crewDeparted: devOpenTrip.crewDeparted, departureAt: new Date(t) });
-  await logEntries(repo, db, devPreviousTripEntries, prevStart, (ms) => (t = ms));
+  const prevCatches = await logEntries(repo, db, devPreviousTripEntries, prevStart, (ms) => (t = ms));
   t = prevStart + devTripHours * 60 * MIN;
   const prevClose = await repo.closeTrip({
     tripId: prev.trip_id,
@@ -99,6 +102,20 @@ export async function seedDevFixtures(
     distanceKm: null,
   });
   await setState(db, [prev.id, prevClose.id], 'sent');
+  // Plant weights arrive through the device feed; the fixture applies them
+  // the same way.
+  for (const [i, e] of devPreviousTripEntries.entries()) {
+    const c = prevCatches[i];
+    await repo.applyPlantWeighing({
+      id: deps.uuid(),
+      trip_id: prev.trip_id,
+      species_id: c.species_id,
+      catch_id: c.id,
+      weight: e.plant,
+      unit: 'kg',
+      weighed_at: new Date(t + (devPlantDelayMinutes + i * devPlantStepMinutes) * MIN).toISOString(),
+    });
+  }
   if (!openTrip) return true;
 
   const openStart = now.getTime() - devOpenTrip.departedMinutesAgo * MIN;
@@ -121,7 +138,8 @@ async function logEntries(
   entries: typeof devOpenTripEntries,
   start: number,
   setTime: (ms: number) => void,
-) {
+): Promise<CatchRecord[]> {
+  const out: CatchRecord[] = [];
   for (const [i, e] of entries.entries()) {
     setTime(start + (i + 1) * devEntryStepMinutes * MIN);
     const c = await repo.logCatch({
@@ -130,7 +148,9 @@ async function logEntries(
       gps: { latitude: e.lat, longitude: e.lon, gps_accuracy_m: devGpsAccuracyM },
     });
     await setState(db, [c.id], e.state);
+    out.push(c);
   }
+  return out;
 }
 
 // sync_state is device-only and mutable; the fixture sets it directly to

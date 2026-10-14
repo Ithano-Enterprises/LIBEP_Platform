@@ -194,6 +194,23 @@ LEFT JOIN catch_corrections h
   ON h.catch_id = c.id
  AND NOT EXISTS (SELECT 1 FROM catch_corrections n WHERE n.previous_correction_id = h.id);
 `,
+
+  // 2: plant weights from the device feed (contract §3). Device only: a
+  // cache of what the server reports, never sent back. Stored in the unit
+  // the plant measured. [TO CONFIRM: per catch or per species per trip]
+  `
+CREATE TABLE plant_weighings (
+  id         TEXT PRIMARY KEY NOT NULL,
+  trip_id    TEXT NOT NULL REFERENCES trip_starts (trip_id),
+  species_id TEXT NOT NULL REFERENCES species (id),
+  catch_id   TEXT REFERENCES catches (id),
+  weight     REAL NOT NULL CHECK (weight > 0),
+  unit       TEXT NOT NULL REFERENCES measurement_units (code),
+  weighed_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX plant_weighings_catch ON plant_weighings (catch_id) WHERE catch_id IS NOT NULL;
+CREATE INDEX plant_weighings_trip ON plant_weighings (trip_id);
+`,
 ];
 
 export async function migrate(db: SqlDb): Promise<void> {

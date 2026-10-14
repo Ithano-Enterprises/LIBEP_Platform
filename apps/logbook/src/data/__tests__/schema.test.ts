@@ -1,5 +1,5 @@
 import { migrate, MIGRATIONS } from '../schema';
-import { openTestRepo } from '../../test/sqlite';
+import { openTestDb, openTestRepo } from '../../test/sqlite';
 import { seedDevReference } from '../../dev/fixtures/seed';
 import { devSpecies } from '../../dev/fixtures/reference';
 
@@ -19,6 +19,19 @@ describe('schema', () => {
     await migrate(db);
     const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version', []);
     expect(v?.user_version).toBe(MIGRATIONS.length);
+  });
+
+  it('migration 2 applies on top of a store already at version 1, keeping its data', async () => {
+    const db = openTestDb();
+    await db.execAsync(MIGRATIONS[0]);
+    await db.execAsync('PRAGMA user_version = 1');
+    await db.runAsync("INSERT INTO landing_sites (id, name) VALUES ('s1', 'X')", []);
+    await migrate(db);
+    const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version', []);
+    expect(v?.user_version).toBe(2);
+    expect(await db.getAllAsync('SELECT id FROM landing_sites', [])).toEqual([{ id: 's1' }]);
+    const t = await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM plant_weighings', []);
+    expect(t?.n).toBe(0);
   });
 
   it.each(['trip_starts', 'catches', 'catch_corrections', 'trip_closes'])(

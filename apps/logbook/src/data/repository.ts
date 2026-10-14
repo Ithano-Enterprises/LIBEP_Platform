@@ -1,6 +1,8 @@
 import type { SqlDb, SqlValue } from './sql';
 import type {
   CatchCorrection,
+  CatchHistory,
+  PlantWeighing,
   ClosedTrip,
   CatchRecord,
   DeviceProfile,
@@ -43,7 +45,8 @@ export class DataError extends Error {
       | 'unknown_species'
       | 'invalid_species_name'
       | 'unknown_catch'
-      | 'stale_correction',
+      | 'stale_correction'
+      | 'corrections_closed',
     message?: string,
   ) {
     super(message ?? code);
@@ -272,8 +275,8 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
   /**
    * Adds a correction as a new record linked to the catch. The caller passes
    * the head it saw (previousCorrectionId); if another correction landed
-   * since, it is rejected, like a stale correction on the server.
-   * [TO CONFIRM: block once the plant has weighed the catch, needs the device feed]
+   * since, it is rejected, like a stale correction on the server. Once the
+   * plant has weighed the catch, corrections are closed (contract §2).
    */
   async function correctCatch(input: {
     catchId: string;
@@ -298,6 +301,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
       [input.catchId],
     );
     if (!current) throw new DataError('unknown_catch');
+    if (await getPlantWeighing(input.catchId)) throw new DataError('corrections_closed');
     if (current.head_correction_id !== input.previousCorrectionId) {
       throw new DataError('stale_correction');
     }
@@ -369,14 +373,59 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     return record;
   }
 
+  // Effective catch + sync state + plant weight (converted to t for display).
+  const ENTRY_SELECT = `
+    SELECT e.*, coalesce(s.state, 'on_device') AS sync_state,
+           CASE p.unit WHEN 'kg' THEN p.weight / 1000.0 ELSE p.weight END AS plant_weight_t,
+           p.weighed_at AS plant_weighed_at
+      FROM v_catches_effective e
+      LEFT JOIN sync_state s ON s.record_id = e.id
+      LEFT JOIN plant_weighings p ON p.catch_id = e.id`;
+
   async function listTripEntries(tripId: string): Promise<Entry[]> {
-    return db.getAllAsync<Entry>(
-      `SELECT e.*, coalesce(s.state, 'on_device') AS sync_state
-         FROM v_catches_effective e
-         LEFT JOIN sync_state s ON s.record_id = e.id
-        WHERE e.trip_id = ?
-        ORDER BY e.recorded_at DESC`,
-      [tripId],
+    return db.getAllAsync<Entry>(`${ENTRY_SELECT} WHERE e.trip_id = ? ORDER BY e.recorded_at DESC`, [
+      tripId,
+    ]);
+  }
+
+  async function getEntry(catchId: string): Promise<Entry | null> {
+    return db.getFirstAsync<Entry>(`${ENTRY_SELECT} WHERE e.id = ?`, [catchId]);
+  }
+
+  /** The original record and its corrections, oldest first (one linear chain). */
+  async function getCatchHistory(catchId: string): Promise<CatchHistory | null> {
+    const original = await db.getFirstAsync<CatchRecord>('SELECT * FROM catches WHERE id = ?', [catchId]);
+    if (!original) return null;
+    const rows = await db.getAllAsync<CatchCorrection>(
+      'SELECT * FROM catch_corrections WHERE catch_id = ?',
+      [catchId],
+    );
+    const corrections: CatchCorrection[] = [];
+    let prev: string | null = null;
+    for (;;) {
+      const next = rows.find((r) => r.previous_correction_id === prev);
+      if (!next) break;
+      corrections.push(next);
+      prev = next.id;
+    }
+    return { original, corrections };
+  }
+
+  async function getPlantWeighing(catchId: string): Promise<PlantWeighing | null> {
+    return db.getFirstAsync<PlantWeighing>('SELECT * FROM plant_weighings WHERE catch_id = ?', [
+      catchId,
+    ]);
+  }
+
+  /**
+   * Stores a plant weighing reported by the device feed. Device-only cache,
+   * not a record the app creates; a repeated report is ignored.
+   */
+  async function applyPlantWeighing(w: PlantWeighing): Promise<void> {
+    await db.runAsync(
+      `INSERT INTO plant_weighings (id, trip_id, species_id, catch_id, weight, unit, weighed_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+      [w.id, w.trip_id, w.species_id, w.catch_id, w.weight, w.unit, w.weighed_at],
     );
   }
 
@@ -434,6 +483,10 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     correctCatch,
     closeTrip,
     listTripEntries,
+    getEntry,
+    getCatchHistory,
+    getPlantWeighing,
+    applyPlantWeighing,
     listClosedTrips,
     getSyncState,
     getPreferences,

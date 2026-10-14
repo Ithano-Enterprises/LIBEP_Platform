@@ -102,7 +102,24 @@ export type Entry = CatchRecord & {
   head_correction_id: string | null;
   correction_count: number;
   sync_state: SyncStateValue;
+  /** Plant weight (W) in t when the plant weighed this catch. Never mixed with S. */
+  plant_weight_t: number | null;
+  plant_weighed_at: string | null;
 };
+
+/** A plant weighing as the device feed reports it (contract §3). */
+export type PlantWeighing = {
+  id: string;
+  trip_id: string;
+  species_id: string;
+  catch_id: string | null;
+  weight: number;
+  unit: 't' | 'kg';
+  weighed_at: string;
+};
+
+/** A catch as first saved, then its corrections in chain order. */
+export type CatchHistory = { original: CatchRecord; corrections: CatchCorrection[] };
 
 /** A closed trip with its entries, for the previous trips list. */
 export type ClosedTrip = {

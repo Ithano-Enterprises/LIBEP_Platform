@@ -97,14 +97,21 @@ export const devOpenTripEntries: DevEntry[] = [
   { species: 'tewa', kg: 2400, lat: -2.27, lon: 40.93, state: 'on_device' },
 ];
 
-// One closed trip from the previous day, all sent.
-export const devPreviousTripEntries: DevEntry[] = [
-  { species: 'changu', kg: 900, lat: -2.24, lon: 41.05, state: 'sent' },
-  { species: 'tewa', kg: 1600, lat: -2.25, lon: 41.03, state: 'sent' },
-  { species: 'kibua', kg: 4800, lat: -2.27, lon: 41.0, state: 'sent' },
-  { species: 'nguru', kg: 2200, lat: -2.3, lon: 40.98, state: 'sent' },
-  { species: 'kibua', kg: 6400, lat: -2.29, lon: 40.96, state: 'sent' },
+// One closed trip from the previous day, all sent, each weighed at the
+// plant (W, `plant` in kg), as in the design prototype's previous trip.
+// [TO CONFIRM: not real weights; plant weighing granularity]
+export const devPreviousTripEntries: (DevEntry & { plant: number })[] = [
+  { species: 'changu', kg: 900, lat: -2.24, lon: 41.05, state: 'sent', plant: 800 },
+  { species: 'tewa', kg: 1600, lat: -2.25, lon: 41.03, state: 'sent', plant: 1500 },
+  { species: 'kibua', kg: 4800, lat: -2.27, lon: 41.0, state: 'sent', plant: 4500 },
+  { species: 'nguru', kg: 2200, lat: -2.3, lon: 40.98, state: 'sent', plant: 2400 },
+  { species: 'kibua', kg: 6400, lat: -2.29, lon: 40.96, state: 'sent', plant: 6100 },
 ];
+
+// Plant weighing starts this long after the trip closes, one catch every
+// few minutes. [TO CONFIRM: not real timings]
+export const devPlantDelayMinutes = 30;
+export const devPlantStepMinutes = 4;
 
 export const devGpsAccuracyM = 15;
 export const devEntryStepMinutes = 17;
