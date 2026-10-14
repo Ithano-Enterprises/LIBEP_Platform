@@ -19,17 +19,19 @@ import { PreviousTrips } from './tripHome/PreviousTrips';
 import { useTripHome } from './tripHome/useTripHome';
 
 // S2.1 Trip home, phone layout. The primary button opens Start trip (S1)
-// with no trip open, or Log catch (S3.3) with one; an entry opens its
-// detail. Close trip (S4) is a later slice; its button is not wired yet.
+// with no trip open, or Log catch (S3.3) with one; "Maliza safari" opens
+// Close trip (S4); an entry opens its detail.
 export function TripHomeScreen({
   now = () => new Date(),
   onStartTrip,
   onLogCatch,
+  onCloseTrip,
   onOpenEntry,
 }: {
   now?: () => Date;
   onStartTrip?: () => void;
   onLogCatch?: () => void;
+  onCloseTrip?: () => void;
   onOpenEntry?: (entry: Entry) => void;
 }) {
   const { mode } = usePreferences();
@@ -88,8 +90,13 @@ export function TripHomeScreen({
           <Pressable
             testID="close-trip"
             accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            style={[styles.closeButton, { borderColor: c.border }]}
+            accessibilityState={{ disabled: !onCloseTrip }}
+            disabled={!onCloseTrip}
+            onPress={onCloseTrip}
+            style={({ pressed }) => [
+              styles.closeButton,
+              { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' },
+            ]}
           >
             <Icon name="flag" size={18} strokeWidth={2} color={c.text} />
             <Text style={[styles.closeText, f.sansMedium, { color: c.text }]}>{t.closeTrip}</Text>

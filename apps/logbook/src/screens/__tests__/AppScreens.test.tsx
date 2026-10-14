@@ -109,3 +109,29 @@ describe('S2.1 -> entry detail -> S2.1', () => {
     await screen.findByTestId('trip-total');
   });
 });
+
+describe('S2.1 -> S4 -> S2.1', () => {
+  it('Maliza safari closes the trip; trip home then offers a new trip and lists it', async () => {
+    const ctx = await openTestRepo();
+    await seedDevFixtures(ctx.db, ctx.deps);
+    const now = ctx.deps.clock.now();
+    const open = () => Promise.resolve(ctx.repo);
+    const clock = () => now;
+    render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <LogbookProvider open={open}>
+          <PreferencesProvider>
+            <AppScreens now={clock} />
+          </PreferencesProvider>
+        </LogbookProvider>
+      </SafeAreaProvider>,
+    );
+    fireEvent.press(await screen.findByTestId('close-trip'));
+    fireEvent.press(await screen.findByTestId('submit'));
+    await screen.findByTestId('read-only');
+    fireEvent.press(screen.getByTestId('back'));
+    await screen.findByText('Anza safari ili kurekodi samaki.');
+    fireEvent.press(screen.getByTestId('prev-toggle'));
+    expect(screen.getAllByTestId(/^prev-trip-/)).toHaveLength(2);
+  });
+});

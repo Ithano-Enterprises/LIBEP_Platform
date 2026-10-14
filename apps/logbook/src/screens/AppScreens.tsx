@@ -2,12 +2,18 @@ import { useCallback, useState } from 'react';
 
 import type { Locator } from '../data/location';
 import type { Entry } from '../data/types';
+import { CloseTripScreen } from './CloseTripScreen';
 import { EntryDetailScreen } from './EntryDetailScreen';
 import { LogCatchScreen } from './LogCatchScreen';
 import { StartTripScreen } from './StartTripScreen';
 import { TripHomeScreen } from './TripHomeScreen';
 
-type Route = { name: 'home' } | { name: 'start' } | { name: 'log' } | { name: 'detail'; catchId: string };
+type Route =
+  | { name: 'home' }
+  | { name: 'start' }
+  | { name: 'log' }
+  | { name: 'close' }
+  | { name: 'detail'; catchId: string };
 
 // Which screen is showing. A few screens so far, so plain state rather than
 // a navigation library.
@@ -16,15 +22,26 @@ export function AppScreens({ now, locator }: { now?: () => Date; locator?: Locat
   const goHome = useCallback(() => setRoute({ name: 'home' }), []);
   const goStart = useCallback(() => setRoute({ name: 'start' }), []);
   const goLog = useCallback(() => setRoute({ name: 'log' }), []);
+  const goClose = useCallback(() => setRoute({ name: 'close' }), []);
   const openEntry = useCallback((e: Entry) => setRoute({ name: 'detail', catchId: e.id }), []);
   switch (route.name) {
     case 'start':
       return <StartTripScreen onDone={goHome} now={now} />;
     case 'log':
       return <LogCatchScreen onDone={goHome} now={now} locator={locator} />;
+    case 'close':
+      return <CloseTripScreen onDone={goHome} now={now} />;
     case 'detail':
       return <EntryDetailScreen catchId={route.catchId} onDone={goHome} />;
     default:
-      return <TripHomeScreen onStartTrip={goStart} onLogCatch={goLog} onOpenEntry={openEntry} now={now} />;
+      return (
+        <TripHomeScreen
+          onStartTrip={goStart}
+          onLogCatch={goLog}
+          onCloseTrip={goClose}
+          onOpenEntry={openEntry}
+          now={now}
+        />
+      );
   }
 }

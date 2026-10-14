@@ -55,4 +55,4 @@ npm test
 - `src/dev/fixtures/`: DEV FIXTURE placeholder data, seeded in development
   builds only. Not real data. Start with `EXPO_PUBLIC_DEV_SEED=no-open-trip`
   (after clearing app data) to seed without an open trip, so S1 can be tried
-- `src/screens/`: screens (S1 Start trip, S2.1 Trip home, S3.3 Log catch)
+- `src/screens/`: screens (S1 Start trip, S2.1 Trip home, S3.3 Log catch, entry detail, S4 Close trip)
