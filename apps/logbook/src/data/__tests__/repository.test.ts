@@ -1,4 +1,4 @@
-import { DataError, isValidQuantity, makeShortRef } from '../repository';
+import { createRepository, DataError, isValidCrew, isValidQuantity, makeShortRef } from '../repository';
 import { openTestRepo } from '../../test/sqlite';
 import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
 import {
@@ -66,6 +66,13 @@ describe('dev fixtures', () => {
     expect(closed).toHaveLength(1);
     expect(closed[0].entries).toHaveLength(devPreviousTripEntries.length);
     expect(closed[0].start.departure_at < open.departure_at).toBe(true);
+  });
+
+  it('can seed without an open trip', async () => {
+    const ctx = await openTestRepo();
+    expect(await seedDevFixtures(ctx.db, ctx.deps, { openTrip: false })).toBe(true);
+    expect(await ctx.repo.getOpenTrip()).toBeNull();
+    expect(await ctx.repo.listClosedTrips()).toHaveLength(1);
   });
 
   it('menus come back in the fixture order with hold codes', async () => {
@@ -166,6 +173,63 @@ describe('trips', () => {
       repo.logCatch({ speciesId: speciesId('tewa'), quantity: 1, gps: null }),
       'no_open_trip',
     );
+  });
+});
+
+describe('trip_start record', () => {
+  it('has the contract shape, ADR 0001 fields and an on_device sync row', async () => {
+    const ctx = await openTestRepo();
+    await seedDevReference(ctx.db);
+    // A measured skew is stored as is, never applied to the times.
+    const repo = createRepository(ctx.db, {
+      uuid: ctx.deps.uuid,
+      clock: { now: ctx.deps.clock.now, skewMs: () => -1500 },
+    });
+    const departure = new Date('2026-01-01T02:59:00Z');
+    const rec = await repo.startTrip({ crewCount: 7, departureAt: departure });
+
+    expect(Object.keys(rec).sort()).toEqual(
+      [
+        'id', 'device_id', 'recorded_at', 'device_clock_skew_ms',
+        'trip_id', 'vessel_id', 'captain_id', 'crew_count', 'departure_at',
+      ].sort(),
+    );
+    expect(rec.id).toMatch(UUID_V4);
+    expect(rec.trip_id).toMatch(UUID_V4);
+    expect(rec.trip_id).not.toBe(rec.id);
+    expect(rec.recorded_at).toBe('2026-01-01T03:00:00.000Z');
+    expect(rec.device_clock_skew_ms).toBe(-1500);
+    expect(rec.departure_at).toBe(departure.toISOString());
+    expect(rec.crew_count).toBe(7);
+    const profile = (await repo.getDeviceProfile())!;
+    expect(rec.device_id).toBe(profile.device_id);
+    expect(rec.vessel_id).toBe(profile.vessel.id);
+    expect(rec.captain_id).toBe(profile.captain.id);
+
+    expect(await repo.getOpenTrip()).toEqual(rec);
+    expect(
+      await ctx.db.getFirstAsync('SELECT kind, state FROM sync_state WHERE record_id = ?', [rec.id]),
+    ).toEqual({ kind: 'trip_start', state: 'on_device' });
+  });
+
+  it('is append-only', async () => {
+    const { db, repo } = await seeded();
+    const open = (await repo.getOpenTrip())!;
+    await expect(
+      db.runAsync('UPDATE trip_starts SET crew_count = 5 WHERE id = ?', [open.id]),
+    ).rejects.toThrow(/append-only/);
+    await expect(db.runAsync('DELETE FROM trip_starts WHERE id = ?', [open.id])).rejects.toThrow(
+      /append-only/,
+    );
+  });
+
+  it('crew must be a whole number from 1 to 24', () => {
+    expect(isValidCrew(1)).toBe(true);
+    expect(isValidCrew(24)).toBe(true);
+    expect(isValidCrew(0)).toBe(false);
+    expect(isValidCrew(25)).toBe(false);
+    expect(isValidCrew(2.5)).toBe(false);
+    expect(isValidCrew(Number.NaN)).toBe(false);
   });
 });
 

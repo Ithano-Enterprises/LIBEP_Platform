@@ -62,6 +62,18 @@ export function isValidQuantity(q: number): boolean {
 /** Species for a catch: from the menu, or "Other" with the local name as typed. */
 export type SpeciesChoice = { speciesId: string } | { speciesId: null; speciesLocalName: string };
 
+export const CREW_MIN = 1;
+export const CREW_RETURNED_MIN = 0;
+/** [TO CONFIRM: crew limit 24] */
+export const CREW_MAX = 24;
+/** Design prototype default. [TO CONFIRM: typical crew size] */
+export const CREW_DEFAULT = 4;
+
+/** Crew headcount: whole number, min-24 (contract §2). Departed min 1, returned min 0. */
+export function isValidCrew(n: number, min: number = CREW_MIN): boolean {
+  return Number.isInteger(n) && n >= min && n <= CREW_MAX;
+}
+
 /** Display reference, e.g. 3F2A-008. [TO CONFIRM: short_ref format] */
 export function makeShortRef(id: string, seq: number): string {
   return `${id.replace(/-/g, '').slice(0, 4).toUpperCase()}-${String(seq).padStart(3, '0')}`;
@@ -171,10 +183,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
   }
 
   async function startTrip(input: { crewDeparted: number; departureAt: Date }): Promise<TripStart> {
-    // [TO CONFIRM: crew limit 24]
-    if (!Number.isInteger(input.crewDeparted) || input.crewDeparted < 1 || input.crewDeparted > 24) {
-      throw new DataError('invalid_crew');
-    }
+    if (!isValidCrew(input.crewDeparted)) throw new DataError('invalid_crew');
     const profile = await requireProfile();
     if (await getOpenTrip()) throw new DataError('trip_already_open');
     const b = await base();
@@ -329,10 +338,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     landingSiteId: string;
     distanceKm: number | null;
   }): Promise<TripClose> {
-    // [TO CONFIRM: crew limit 24]
-    if (!Number.isInteger(input.crewReturned) || input.crewReturned < 0 || input.crewReturned > 24) {
-      throw new DataError('invalid_crew');
-    }
+    if (!isValidCrew(input.crewReturned, CREW_RETURNED_MIN)) throw new DataError('invalid_crew');
     const trip = await getOpenTrip();
     if (!trip || trip.trip_id !== input.tripId) throw new DataError('no_open_trip');
     const entries = await db.getAllAsync<{ id: string; quantity: number }>(
