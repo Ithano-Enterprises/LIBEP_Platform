@@ -51,8 +51,12 @@ npm test
 - `src/i18n/strings.ts`: Kiswahili (default) and English UI strings. Fish names are never translated
 - `src/ui/`: shared UI pieces and the preferences context (mode, language)
 - `src/data/`: the only data access layer. Local SQLite schema (append-only
-  triggers), repository functions, and the provider screens read through
+  triggers), repository functions, and the provider screens read through.
+  `src/data/sync/`: outbound queue for `/sync-batch` (state machine, payload
+  builder, response handling) with a mock transport only
 - `src/dev/fixtures/`: DEV FIXTURE placeholder data, seeded in development
   builds only. Not real data. Start with `EXPO_PUBLIC_DEV_SEED=no-open-trip`
-  (after clearing app data) to seed without an open trip, so S1 can be tried
+  (after clearing app data) to seed without an open trip, so S1 can be tried.
+  Start with `EXPO_PUBLIC_DEV_SYNC=mock` to run the sync queue against the
+  mock transport (no network): waiting entries turn "Sent" every 30 s
 - `src/screens/`: screens (S1 Start trip, S2.1 Trip home, S3.3 Log catch, entry detail, S4 Close trip)
