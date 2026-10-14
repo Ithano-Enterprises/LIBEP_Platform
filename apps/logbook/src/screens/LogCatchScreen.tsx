@@ -4,29 +4,31 @@ import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deviceLocator, type Locator } from '../data/location';
-import type { Gps, MenuItem } from '../data/types';
-import { radius } from '../theme/tokens';
+import type { CatchRecord, Gps, MenuItem } from '../data/types';
+import { fonts, radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { ConfirmCard } from './logCatch/ConfirmCard';
 import { EntrySheet } from './logCatch/EntrySheet';
 import { MenuTile } from './logCatch/MenuTile';
-import { filterMenu, OTHER_ID, otherItem, parseEntry } from './logCatch/model';
+import { filterMenu, OTHER_ID, otherItem, parseEntry, plausibility } from './logCatch/model';
 import { useLogCatch } from './logCatch/useLogCatch';
 
 const systemNow = () => new Date();
 
 // S3.3 Log catch, phone layout. Pick a fish from the vessel's menu, type
 // the estimate in whole kg on the built-in keypad, save. "Other" lets the
-// captain type the local name when the fish is not on the menu. Time, GPS and vessel are
-// captured by the app. Saving returns to the trip home.
+// captain type the local name when the fish is not on the menu. Time, GPS
+// and vessel are captured by the app. After saving, a confirmation card
+// offers to log another or go to the list.
 export function LogCatchScreen({
   onDone,
   now = systemNow,
   locator = deviceLocator,
 }: {
-  /** Back to S2.1, after saving or from the back button. */
+  /** Back to S2.1, from "Tazama orodha" or the back button. */
   onDone: () => void;
   now?: () => Date;
   locator?: Locator;
@@ -46,6 +48,7 @@ export function LogCatchScreen({
   const [locating, setLocating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<{ record: CatchRecord; gloss: string | null } | null>(null);
   const [clock, setClock] = useState(now);
   const fix = useRef<Promise<Gps | null> | null>(null);
 
@@ -63,15 +66,16 @@ export function LogCatchScreen({
     setSaveError(null);
   }, []);
 
-  // Android back closes the sheet first, then leaves the screen.
+  // Android back closes the sheet or the card first, then leaves the screen.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (pick) closeSheet();
+      else if (saved) setSaved(null);
       else onDone();
       return true;
     });
     return () => sub.remove();
-  }, [pick, closeSheet, onDone]);
+  }, [pick, saved, closeSheet, onDone]);
 
   const shell = (children: ReactNode) => (
     <View testID="screen" style={[styles.screen, { backgroundColor: c.bg, paddingTop: insets.top }]}>
@@ -92,10 +96,19 @@ export function LogCatchScreen({
   const { profile, openTrip, menu } = data;
   const tripOpen = !!openTrip;
   const visible = filterMenu(menu, query);
-  const menuLabel = `${t.menu}: ${profile.vessel.tonnage_class} t`;
+  const classLabel = `${profile.vessel.tonnage_class} t`;
+  const menuLabel = `${t.menu}: ${classLabel}`;
+  const check = plausibility(parseEntry(value), data.tripTotal, profile.vessel.tonnage_class);
+  const hint =
+    check === 'entry_over_class'
+      ? t.capHint.replace('{c}', classLabel)
+      : check === 'trip_would_pass'
+        ? t.tripCapHint.replace('{c}', classLabel)
+        : null;
 
   const onPick = (item: MenuItem) => {
     if (!tripOpen || pick?.id === item.id) return;
+    setSaved(null);
     setPick(item);
     setValue('');
     setOtherName('');
@@ -124,9 +137,9 @@ export function LogCatchScreen({
       const species = other
         ? { speciesId: null, speciesLocalName: otherName } // as typed (contract §2)
         : { speciesId: pick.id };
-      await save({ ...species, quantity, gps: position, note });
+      const record = await save({ ...species, quantity, gps: position, note });
       closeSheet();
-      onDone();
+      setSaved({ record, gloss: pick.english_gloss });
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -233,6 +246,7 @@ export function LogCatchScreen({
                 registration={profile.vessel.registration}
                 saving={saving}
                 onSave={onSave}
+                hint={hint}
               />
               {saveError ? (
                 <Text style={[styles.saveError, f.mono, { color: c.danger }]}>{saveError}</Text>
@@ -240,6 +254,19 @@ export function LogCatchScreen({
             </ScrollView>
           </View>
         </>
+      ) : null}
+
+      {saved && !pick ? (
+        <ConfirmCard
+          record={saved.record}
+          gloss={saved.gloss}
+          onDismiss={() => setSaved(null)}
+          onLogAnother={() => {
+            setSaved(null);
+            setQuery('');
+          }}
+          onViewList={onDone}
+        />
       ) : null}
     </>,
   );

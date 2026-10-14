@@ -99,13 +99,14 @@ describe('LogCatchScreen entry sheet', () => {
     expect(screen.getByTestId('save')).not.toBeDisabled();
   });
 
-  it('Hifadhi saves one tier-S catch of 15 kg with GPS and returns', async () => {
+  it('Hifadhi saves one tier-S catch of 15 kg with GPS and shows the confirmation', async () => {
     const { repo, onDone, locator } = await withTrip();
     fireEvent.press(screen.getByTestId('fish-tewa'));
     fireEvent.press(screen.getByTestId('key-1'));
     fireEvent.press(screen.getByTestId('key-5'));
     fireEvent.press(screen.getByTestId('save'));
-    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    await screen.findByTestId('confirm-card');
+    expect(onDone).not.toHaveBeenCalled();
     expect(locator.getFix).toHaveBeenCalledTimes(1);
     const trip = (await repo.getOpenTrip())!;
     const [e] = await repo.listTripEntries(trip.trip_id);
@@ -162,7 +163,9 @@ describe('LogCatchScreen entry sheet', () => {
     fireEvent.press(screen.getByTestId('add-note'));
     fireEvent.changeText(screen.getByTestId('note'), ' karibu na mwamba ');
     fireEvent.press(screen.getByTestId('save'));
-    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    await screen.findByTestId('confirm-card');
+    fireEvent.press(screen.getByTestId('view-list'));
+    expect(onDone).toHaveBeenCalledTimes(1);
     const [e] = await repo.listTripEntries((await repo.getOpenTrip())!.trip_id);
     expect(e).toMatchObject({ latitude: null, longitude: null, gps_accuracy_m: null, note: 'karibu na mwamba' });
   });
@@ -216,6 +219,67 @@ describe('LogCatchScreen in Kiswahili', () => {
     const ctx = await openTestRepo();
     renderLog(ctx.repo, ctx.deps.clock.now(), { getFix: jest.fn(async () => null) });
     expect(await screen.findByText(sw.noVessel)).toBeTruthy();
+  });
+});
+
+describe('LogCatchScreen confirmation', () => {
+  it('shows what was saved: species, t with S, ID and state', async () => {
+    const { repo } = await withTrip();
+    fireEvent.press(screen.getByTestId('fish-kibua'));
+    for (const k of ['3', '.', '1'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
+    fireEvent.press(screen.getByTestId('save'));
+    await screen.findByTestId('confirm-card');
+    const [e] = await repo.listTripEntries((await repo.getOpenTrip())!.trip_id);
+    expect(screen.getByText('Imehifadhiwa')).toBeTruthy();
+    expect(screen.getByTestId('confirm-weight')).toHaveTextContent('3.1');
+    expect(screen.getByTestId('confirm-ref')).toHaveTextContent(e.short_ref);
+    expect(screen.getByText('Kwenye kifaa')).toBeTruthy();
+    expect(screen.getByText('2.27S 40.93E')).toBeTruthy();
+  });
+
+  it('Rekodi samaki mwingine goes back to the menu; X dismisses', async () => {
+    const { onDone } = await withTrip();
+    fireEvent.changeText(screen.getByTestId('search'), 'tew');
+    fireEvent.press(screen.getByTestId('fish-tewa'));
+    fireEvent.press(screen.getByTestId('key-1'));
+    fireEvent.press(screen.getByTestId('save'));
+    fireEvent.press(await screen.findByTestId('log-another'));
+    expect(screen.queryByTestId('confirm-card')).toBeNull();
+    expect(screen.getByTestId('search').props.value).toBe('');
+    expect(screen.getAllByTestId(/^fish-/)).toHaveLength(devMenus[20].length);
+
+    fireEvent.press(screen.getByTestId('fish-tafi'));
+    fireEvent.press(screen.getByTestId('key-1'));
+    fireEvent.press(screen.getByTestId('save'));
+    fireEvent.press(await screen.findByTestId('confirm-dismiss'));
+    expect(screen.queryByTestId('confirm-card')).toBeNull();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+});
+
+describe('LogCatchScreen soft warnings', () => {
+  it('warns above the class and when the trip total would pass it, but still saves', async () => {
+    const { repo } = await withTrip();
+    fireEvent.press(screen.getByTestId('fish-kibua'));
+    for (const k of ['1', '9'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
+    expect(screen.queryByTestId('cap-hint')).toBeNull();
+    fireEvent.press(screen.getByTestId('quick-1'));
+    fireEvent.press(screen.getByTestId('quick-1'));
+    expect(screen.getByTestId('cap-hint')).toHaveTextContent('Juu ya daraja la chombo hiki (20 t). Hakiki namba.');
+    expect(screen.getByTestId('save')).not.toBeDisabled();
+    fireEvent.press(screen.getByTestId('save'));
+    await screen.findByTestId('confirm-card');
+
+    // Trip is now 21 t: any further entry passes the class.
+    fireEvent.press(screen.getByTestId('fish-tafi'));
+    await waitFor(() => expect(screen.queryByTestId('confirm-card')).toBeNull());
+    fireEvent.press(screen.getByTestId('key-1'));
+    expect(screen.getByTestId('cap-hint')).toHaveTextContent(
+      'Jumla ya safari itazidi 20 t kwa chombo hiki. Hakiki namba.',
+    );
+    fireEvent.press(screen.getByTestId('save'));
+    await screen.findByTestId('confirm-card');
+    expect(await repo.listTripEntries((await repo.getOpenTrip())!.trip_id)).toHaveLength(2);
   });
 });
 

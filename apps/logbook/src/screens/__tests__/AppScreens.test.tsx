@@ -74,6 +74,7 @@ describe('S2.1 -> S3.3 -> S2.1', () => {
     fireEvent.press(screen.getByTestId('key-1'));
     fireEvent.press(screen.getByTestId('key-5'));
     fireEvent.press(screen.getByTestId('save'));
+    fireEvent.press(await screen.findByTestId('view-list'));
 
     await screen.findByTestId('trip-total');
     // A 15 kg catch is not lost to rounding (default unit kg).
