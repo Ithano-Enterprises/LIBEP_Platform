@@ -53,5 +53,6 @@ npm test
 - `src/data/`: the only data access layer. Local SQLite schema (append-only
   triggers), repository functions, and the provider screens read through
 - `src/dev/fixtures/`: DEV FIXTURE placeholder data, seeded in development
-  builds only. Not real data
-- `src/screens/`: screens (S2.1 Trip home so far)
+  builds only. Not real data. Start with `EXPO_PUBLIC_DEV_SEED=no-open-trip`
+  (after clearing app data) to seed without an open trip, so S1 can be tried
+- `src/screens/`: screens (S1 Start trip, S2.1 Trip home)
