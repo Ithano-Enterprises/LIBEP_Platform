@@ -1,3 +1,5 @@
+import { Platform, type TextStyle } from 'react-native';
+
 // Design tokens copied verbatim from the design reference
 // (Catch Log v2, NIGHT / DAY). Night is the default mode.
 
@@ -47,15 +49,37 @@ export const DAY: Palette = {
 
 export const palettes: Record<Mode, Palette> = { night: NIGHT, day: DAY };
 
-// Font family names as registered by useFonts() in App.tsx.
-export const fonts = {
-  sans: 'IBMPlexSans_400Regular',
-  sansMedium: 'IBMPlexSans_500Medium',
-  sansSemiBold: 'IBMPlexSans_600SemiBold',
-  mono: 'IBMPlexMono_400Regular',
-  monoMedium: 'IBMPlexMono_500Medium',
-  monoSemiBold: 'IBMPlexMono_600SemiBold',
-} as const;
+// Font roles used by text. Screens read the active set with useFontSet()
+// rather than importing a family name, so a font-load failure can swap the
+// whole app to system fonts.
+export type FontRole = 'sans' | 'sansMedium' | 'sansSemiBold' | 'mono' | 'monoMedium' | 'monoSemiBold';
+export type FontSet = Record<FontRole, Pick<TextStyle, 'fontFamily' | 'fontWeight'>>;
+
+// IBM Plex, as registered by useFonts() in App.tsx. The weight is part of
+// the family name, so no fontWeight is set.
+export const plexFonts: FontSet = {
+  sans: { fontFamily: 'IBMPlexSans_400Regular' },
+  sansMedium: { fontFamily: 'IBMPlexSans_500Medium' },
+  sansSemiBold: { fontFamily: 'IBMPlexSans_600SemiBold' },
+  mono: { fontFamily: 'IBMPlexMono_400Regular' },
+  monoMedium: { fontFamily: 'IBMPlexMono_500Medium' },
+  monoSemiBold: { fontFamily: 'IBMPlexMono_600SemiBold' },
+};
+
+// Fallback when the Plex fonts fail to load: platform fonts with explicit
+// weights so the hierarchy survives.
+const systemSans = Platform.select({ android: 'sans-serif', default: 'System' });
+const systemSansMedium = Platform.select({ android: 'sans-serif-medium', default: 'System' });
+const systemMono = Platform.select({ ios: 'Menlo', default: 'monospace' });
+
+export const systemFonts: FontSet = {
+  sans: { fontFamily: systemSans, fontWeight: '400' },
+  sansMedium: { fontFamily: systemSansMedium, fontWeight: '500' },
+  sansSemiBold: { fontFamily: systemSansMedium, fontWeight: '600' },
+  mono: { fontFamily: systemMono, fontWeight: '400' },
+  monoMedium: { fontFamily: systemMono, fontWeight: '500' },
+  monoSemiBold: { fontFamily: systemMono, fontWeight: '600' },
+};
 
 // Minimum tap target used by the design for header buttons.
 export const touchTarget = 56;

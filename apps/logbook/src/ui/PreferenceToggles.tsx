@@ -1,15 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { langCode } from '../i18n/strings';
-import { fonts } from '../theme/tokens';
 import { HeaderButton } from './HeaderButton';
 import { Icon } from './Icon';
-import { usePreferences, useStrings, useTheme } from './preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from './preferences';
 
 // Night/Day and SW/EN toggles from the design's trip home header.
 export function PreferenceToggles() {
   const { mode, lang, toggleMode, toggleLang } = usePreferences();
   const c = useTheme();
+  const f = useFontSet();
   const t = useStrings();
   return (
     <View style={styles.row}>
@@ -18,7 +18,7 @@ export function PreferenceToggles() {
       </HeaderButton>
       <HeaderButton onPress={toggleLang} label={t.langName} testID="toggle-lang">
         <Icon name="globe" size={15} strokeWidth={2} color={c.text} />
-        <Text style={[styles.code, { color: c.text }]}>{langCode[lang]}</Text>
+        <Text style={[styles.code, f.monoSemiBold, { color: c.text }]}>{langCode[lang]}</Text>
       </HeaderButton>
     </View>
   );
@@ -26,5 +26,5 @@ export function PreferenceToggles() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
-  code: { fontFamily: fonts.monoSemiBold, fontSize: 14 },
+  code: { fontSize: 14 },
 });

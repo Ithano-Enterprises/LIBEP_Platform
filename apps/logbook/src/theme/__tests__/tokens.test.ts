@@ -1,4 +1,4 @@
-import { DAY, NIGHT } from '../tokens';
+import { DAY, NIGHT, plexFonts, systemFonts } from '../tokens';
 
 describe('design tokens', () => {
   it('night and day define the same tokens', () => {
@@ -14,5 +14,13 @@ describe('design tokens', () => {
   it('matches the design background colours', () => {
     expect(NIGHT.bg).toBe('#0B1416');
     expect(DAY.bg).toBe('#EFF2F1');
+  });
+
+  it('system fallback fonts cover every role and never name IBM Plex', () => {
+    expect(Object.keys(systemFonts).sort()).toEqual(Object.keys(plexFonts).sort());
+    for (const style of Object.values(systemFonts)) {
+      expect(style.fontFamily).toBeTruthy();
+      expect(style.fontFamily).not.toMatch(/IBMPlex/);
+    }
   });
 });
