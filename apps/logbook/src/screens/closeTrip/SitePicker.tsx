@@ -7,15 +7,18 @@ import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
 import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 
-// Landing site row (phone): shows the chosen site, opens to pick another.
-// Landing elsewhere is allowed; the fee note is a placeholder in the design.
+// Landing site. Phone: a row showing the chosen site that opens to pick
+// another. Tablet: a card with the options always shown. Landing
+// elsewhere is allowed; the fee note is a placeholder in the design.
 export function SitePicker({
   sites,
   homeId,
   value,
   onChange,
   disabled,
+  wide = false,
 }: {
+  wide?: boolean;
   sites: LandingSite[];
   homeId: string;
   value: string;
@@ -31,23 +34,28 @@ export function SitePicker({
   const chosen = sites.find((s) => s.id === value);
   const label = chosen ? (chosen.id === homeId ? `${chosen.name} (${t.assigned})` : chosen.name) : '--';
 
+  const showOptions = wide || (open && !disabled);
+
   return (
-    <View style={styles.wrap}>
-      <Pressable
-        testID="site-row"
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open, disabled }}
-        disabled={disabled}
-        onPress={() => setOpen((o) => !o)}
-        style={({ pressed }) => [styles.row, { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' }]}
-      >
-        <Icon name="pin" size={20} color={c.dim} />
-        <Text style={[styles.rowText, f.sansMedium, { color: c.text }]} numberOfLines={1}>
-          {t.siteRow}: {label}
-        </Text>
-        <Icon name={open ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
-      </Pressable>
-      {open && !disabled ? (
+    <View style={[styles.wrap, wide && [styles.card, { backgroundColor: c.surface }]]}>
+      {wide ? <Text style={[styles.label, { color: c.dim }]}>{t.site}</Text> : null}
+      {wide ? null : (
+        <Pressable
+          testID="site-row"
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open, disabled }}
+          disabled={disabled}
+          onPress={() => setOpen((o) => !o)}
+          style={({ pressed }) => [styles.row, { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' }]}
+        >
+          <Icon name="pin" size={20} color={c.dim} />
+          <Text style={[styles.rowText, { color: c.text }]} numberOfLines={1}>
+            {t.siteRow}: {label}
+          </Text>
+          <Icon name={open ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
+        </Pressable>
+      )}
+      {showOptions ? (
         <View style={styles.grid}>
           {ordered.map((s) => {
             const active = s.id === value;
@@ -56,7 +64,8 @@ export function SitePicker({
                 key={s.id}
                 testID={`site-${s.name}`}
                 accessibilityRole="button"
-                accessibilityState={{ selected: active }}
+                accessibilityState={{ selected: active, disabled }}
+                disabled={disabled}
                 onPress={() => {
                   onChange(s.id);
                   setOpen(false);
@@ -94,6 +103,8 @@ export function SitePicker({
 
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
+  card: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: radius, gap: 10 },
+  label: { fontFamily: fonts.sansMedium, fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
   row: {
     minHeight: 56,
     flexDirection: 'row',

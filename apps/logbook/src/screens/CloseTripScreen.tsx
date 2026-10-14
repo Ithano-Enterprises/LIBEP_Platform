@@ -9,7 +9,8 @@ import { CREW_RETURNED_MIN } from '../data/repository';
 import { formatDay, formatQuantity, formatTime, sumKg } from '../ui/format';
 import { HoldBox } from '../ui/HoldBox';
 import { Icon } from '../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
+import { useIsTablet } from '../ui/layout';
+import { usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { byType, cleanDistance, crewMismatch, parseDistance } from './closeTrip/model';
 import { SitePicker } from './closeTrip/SitePicker';
@@ -22,10 +23,12 @@ const systemNow = () => new Date();
 /** By-type rows shown before "Zaidi", as the design. */
 const TOP_TYPES = 3;
 
-// S4 Close trip, phone layout. Arrival is the time of Tuma. Crew returned
-// starts from crew departed, the site from the vessel's assigned site. If
-// the headcounts differ, Tuma asks the captain to confirm, with an optional
+// S4 Close trip. Arrival is the time of Tuma. Crew returned starts from
+// crew departed, the site from the vessel's assigned site. If the
+// headcounts differ, Tuma asks the captain to confirm, with an optional
 // reason; it never blocks the close. After Tuma the trip is read-only.
+// Tablet (600dp and up): two columns, the site options always shown, Tuma
+// at the bottom right.
 export function CloseTripScreen({
   onDone,
   now = systemNow,
@@ -38,7 +41,7 @@ export function CloseTripScreen({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const { data, error, submit } = useCloseTrip(null);
-  const f = useFontSet();
+  const wide = useIsTablet();
   const unit = useUnit();
   const [crew, setCrew] = useState<number | null>(null);
   const [confirmCrew, setConfirmCrew] = useState(false);
@@ -129,124 +132,258 @@ export function CloseTripScreen({
 
   return shell(
     <>
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
-        <View style={[styles.arrival, { borderColor: c.border }]}>
-          <View style={styles.arrivalText}>
-            <View style={styles.inline}>
-              <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
-              <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.arrival}</Text>
-            </View>
-            <Text style={[styles.date, f.sans, { color: c.text }]}>
-              {formatDay(close ? new Date(close.arrival_at) : clock, lang)}
-            </Text>
-          </View>
-          <Text testID="arrival-time" style={[styles.arrivalTime, f.monoSemiBold, { color: c.text }]}>
-            {arrival}
-          </Text>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: c.surface }]}>
-          <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.totalCatch}</Text>
-          <View style={styles.totalRow}>
-            <View style={styles.totalFig}>
-              <Text testID="close-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
-                {formatQuantity(total, unit)}
-              </Text>
-              <Text style={[styles.totalUnit, f.mono, { color: c.dim }]}>{unit}</Text>
-            </View>
-            <View style={styles.inline}>
-              <Text style={[styles.estimate, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
-              <TierChip tier="S" size={22} />
-            </View>
-          </View>
-        </View>
-
-        {total > profile.vessel.tonnage_class * 1000 ? (
-          <View testID="over-hint" style={styles.inline}>
-            <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
-            <Text style={[styles.hint, f.sansMedium, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
-          </View>
-        ) : null}
-
-        <SitePicker sites={sites} homeId={homeId} value={siteValue} onChange={setSiteId} disabled={closed} />
-
-        <View>
-          <Text style={[styles.label, f.sansMedium, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
-          {shown.map((g) => (
-            <View key={g.key} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
-              <Icon name="fish" size={20} color={c.dim} />
-              <Text style={[styles.typeName, f.sans, { color: c.text }]}>{g.name}</Text>
-              {g.hold ? <HoldBox code={g.hold} /> : null}
-              <View style={styles.spacer} />
-              <Text style={[styles.count, f.mono, { color: c.dim }]}>×{g.n}</Text>
-              <View style={styles.typeFig}>
-                <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
-                <Text style={[styles.count, f.mono, { color: c.dim }]}>{unit}</Text>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={wide ? styles.bodyWide : styles.bodyContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {wide ? (
+          <View style={styles.columns}>
+            <View style={styles.column}>
+              <View style={[styles.arrival, { borderColor: c.border }]}>
+                <View style={styles.arrivalText}>
+                  <View style={styles.inline}>
+                    <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
+                    <Text style={[styles.small, { color: c.dim }]}>{t.arrival}</Text>
+                  </View>
+                  <Text style={[styles.date, { color: c.text }]}>
+                    {formatDay(close ? new Date(close.arrival_at) : clock, lang)}
+                  </Text>
+                </View>
+                <Text testID="arrival-time" style={[styles.arrivalTime, { color: c.text }]}>
+                  {arrival}
+                </Text>
               </View>
-              <TierChip tier="S" />
+
+              <View style={[styles.card, { backgroundColor: c.surface }]}>
+                <Text style={[styles.label, { color: c.dim }]}>{t.totalCatch}</Text>
+                <View style={styles.totalRow}>
+                  <View style={styles.totalFig}>
+                    <Text testID="close-total" style={[styles.total, { color: c.text }]}>
+                      {formatQuantity(total, unit)}
+                    </Text>
+                    <Text style={[styles.totalUnit, { color: c.dim }]}>{unit}</Text>
+                  </View>
+                  <View style={styles.inline}>
+                    <Text style={[styles.estimate, { color: c.dim }]}>{t.estimate}</Text>
+                    <TierChip tier="S" size={22} />
+                  </View>
+                </View>
+              </View>
+
+              {total > profile.vessel.tonnage_class * 1000 ? (
+                <View testID="over-hint" style={styles.inline}>
+                  <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
+                  <Text style={[styles.hint, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
+                </View>
+              ) : null}
+
+              <View>
+                <Text style={[styles.label, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
+                {shown.map((g) => (
+                  <View key={g.key} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
+                    <Icon name="fish" size={20} color={c.dim} />
+                    <Text style={[styles.typeName, { color: c.text }]}>{g.name}</Text>
+                    {g.hold ? <HoldBox code={g.hold} /> : null}
+                    <View style={styles.spacer} />
+                    <Text style={[styles.count, { color: c.dim }]}>×{g.n}</Text>
+                    <View style={styles.typeFig}>
+                      <Text style={[styles.typeValue, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
+                      <Text style={[styles.count, { color: c.dim }]}>{unit}</Text>
+                    </View>
+                    <TierChip tier="S" />
+                  </View>
+                ))}
+                {types.length > TOP_TYPES ? (
+                  <Pressable
+                    testID="types-toggle"
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: typesOpen }}
+                    onPress={() => setTypesOpen((o) => !o)}
+                    style={[styles.typesToggle, { borderTopColor: c.border }]}
+                  >
+                    <Icon name={typesOpen ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
+                    <Text style={[styles.typesToggleText, { color: c.text }]}>
+                      {typesOpen ? t.less : `${t.more} (+${types.length - TOP_TYPES})`}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
             </View>
-          ))}
-          {types.length > TOP_TYPES ? (
-            <Pressable
-              testID="types-toggle"
-              accessibilityRole="button"
-              accessibilityState={{ expanded: typesOpen }}
-              onPress={() => setTypesOpen((o) => !o)}
-              style={[styles.typesToggle, { borderTopColor: c.border }]}
-            >
-              <Icon name={typesOpen ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
-              <Text style={[styles.typesToggleText, f.sansMedium, { color: c.text }]}>
-                {typesOpen ? t.less : `${t.more} (+${types.length - TOP_TYPES})`}
+            <View style={styles.column}>
+              <CrewStepper
+                value={crewValue}
+                onChange={(n) => {
+                  setCrew(n);
+                  setConfirmCrew(false);
+                }}
+                disabled={closed}
+                min={CREW_RETURNED_MIN}
+              />
+              {closed && close.crew_change_reason ? (
+                <Text testID="crew-reason-shown" style={[styles.small, f.sans, { color: c.dim }]}>
+                  {close.crew_change_reason}
+                </Text>
+              ) : null}
+
+              <SitePicker sites={sites} homeId={homeId} value={siteValue} onChange={setSiteId} disabled={closed} wide={wide} />
+
+              <View style={styles.inline}>
+                <Icon name="link" size={18} color={c.dim} />
+                <Text style={[styles.linked, { color: c.text }]}>
+                  {t.linkedTo.replace('{n}', String(entries.length))} · {profile.vessel.registration}
+                </Text>
+              </View>
+
+              <View style={[styles.distanceRow, { borderTopColor: c.border }]}>
+                <View style={styles.distanceText}>
+                  <Text style={[styles.distanceLabel, { color: c.dim }]}>{t.distance}</Text>
+                  <Text style={[styles.small, { color: c.dim }]}>{t.optional}</Text>
+                </View>
+                <View style={styles.inline}>
+                  <TextInput
+                    testID="distance"
+                    value={distanceText}
+                    onChangeText={(v) => setDistance(cleanDistance(v))}
+                    editable={!closed}
+                    keyboardType="decimal-pad"
+                    placeholder="—"
+                    placeholderTextColor={c.dim}
+                    style={[styles.distanceInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+                  />
+                  <Text style={[styles.km, { color: c.dim }]}>km</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <>
+            <View style={[styles.arrival, { borderColor: c.border }]}>
+              <View style={styles.arrivalText}>
+                <View style={styles.inline}>
+                  <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
+                  <Text style={[styles.small, { color: c.dim }]}>{t.arrival}</Text>
+                </View>
+                <Text style={[styles.date, { color: c.text }]}>
+                  {formatDay(close ? new Date(close.arrival_at) : clock, lang)}
+                </Text>
+              </View>
+              <Text testID="arrival-time" style={[styles.arrivalTime, { color: c.text }]}>
+                {arrival}
               </Text>
-            </Pressable>
-          ) : null}
-        </View>
+            </View>
 
-        <CrewStepper
-          value={crewValue}
-          onChange={(n) => {
-            setCrew(n);
-            setConfirmCrew(false);
-          }}
-          disabled={closed}
-          min={CREW_RETURNED_MIN}
-        />
-        {closed && close.crew_change_reason ? (
-          <Text testID="crew-reason-shown" style={[styles.small, f.sans, { color: c.dim }]}>
-            {close.crew_change_reason}
-          </Text>
-        ) : null}
+            <View style={[styles.card, { backgroundColor: c.surface }]}>
+              <Text style={[styles.label, { color: c.dim }]}>{t.totalCatch}</Text>
+              <View style={styles.totalRow}>
+                <View style={styles.totalFig}>
+                  <Text testID="close-total" style={[styles.total, { color: c.text }]}>
+                    {formatQuantity(total, unit)}
+                  </Text>
+                  <Text style={[styles.totalUnit, { color: c.dim }]}>{unit}</Text>
+                </View>
+                <View style={styles.inline}>
+                  <Text style={[styles.estimate, { color: c.dim }]}>{t.estimate}</Text>
+                  <TierChip tier="S" size={22} />
+                </View>
+              </View>
+            </View>
 
-        <View style={styles.inline}>
-          <Icon name="link" size={18} color={c.dim} />
-          <Text style={[styles.linked, f.sans, { color: c.text }]}>
-            {t.linkedTo.replace('{n}', String(entries.length))} · {profile.vessel.registration}
-          </Text>
-        </View>
+            {total > profile.vessel.tonnage_class * 1000 ? (
+              <View testID="over-hint" style={styles.inline}>
+                <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
+                <Text style={[styles.hint, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
+              </View>
+            ) : null}
 
-        <View style={[styles.distanceRow, { borderTopColor: c.border }]}>
-          <View style={styles.distanceText}>
-            <Text style={[styles.distanceLabel, f.sans, { color: c.dim }]}>{t.distance}</Text>
-            <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.optional}</Text>
-          </View>
-          <View style={styles.inline}>
-            <TextInput
-              testID="distance"
-              value={distanceText}
-              onChangeText={(v) => setDistance(cleanDistance(v))}
-              editable={!closed}
-              keyboardType="decimal-pad"
-              placeholder="—"
-              placeholderTextColor={c.dim}
-              style={[styles.distanceInput, f.monoSemiBold, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+            <SitePicker sites={sites} homeId={homeId} value={siteValue} onChange={setSiteId} disabled={closed} />
+
+            <View>
+              <Text style={[styles.label, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
+              {shown.map((g) => (
+                <View key={g.key} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
+                  <Icon name="fish" size={20} color={c.dim} />
+                  <Text style={[styles.typeName, { color: c.text }]}>{g.name}</Text>
+                  {g.hold ? <HoldBox code={g.hold} /> : null}
+                  <View style={styles.spacer} />
+                  <Text style={[styles.count, { color: c.dim }]}>×{g.n}</Text>
+                  <View style={styles.typeFig}>
+                    <Text style={[styles.typeValue, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
+                    <Text style={[styles.count, { color: c.dim }]}>{unit}</Text>
+                  </View>
+                  <TierChip tier="S" />
+                </View>
+              ))}
+              {types.length > TOP_TYPES ? (
+                <Pressable
+                  testID="types-toggle"
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: typesOpen }}
+                  onPress={() => setTypesOpen((o) => !o)}
+                  style={[styles.typesToggle, { borderTopColor: c.border }]}
+                >
+                  <Icon name={typesOpen ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
+                  <Text style={[styles.typesToggleText, { color: c.text }]}>
+                    {typesOpen ? t.less : `${t.more} (+${types.length - TOP_TYPES})`}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            <CrewStepper
+              value={crewValue}
+              onChange={(n) => {
+                setCrew(n);
+                setConfirmCrew(false);
+              }}
+              disabled={closed}
+              min={CREW_RETURNED_MIN}
             />
-            <Text style={[styles.km, f.mono, { color: c.dim }]}>km</Text>
-          </View>
-        </View>
-        {saveError ? <Text style={[styles.error, f.mono, { color: c.danger }]}>{saveError}</Text> : null}
+            {closed && close.crew_change_reason ? (
+              <Text testID="crew-reason-shown" style={[styles.small, f.sans, { color: c.dim }]}>
+                {close.crew_change_reason}
+              </Text>
+            ) : null}
+
+            <View style={styles.inline}>
+              <Icon name="link" size={18} color={c.dim} />
+              <Text style={[styles.linked, { color: c.text }]}>
+                {t.linkedTo.replace('{n}', String(entries.length))} · {profile.vessel.registration}
+              </Text>
+            </View>
+
+            <View style={[styles.distanceRow, { borderTopColor: c.border }]}>
+              <View style={styles.distanceText}>
+                <Text style={[styles.distanceLabel, { color: c.dim }]}>{t.distance}</Text>
+                <Text style={[styles.small, { color: c.dim }]}>{t.optional}</Text>
+              </View>
+              <View style={styles.inline}>
+                <TextInput
+                  testID="distance"
+                  value={distanceText}
+                  onChangeText={(v) => setDistance(cleanDistance(v))}
+                  editable={!closed}
+                  keyboardType="decimal-pad"
+                  placeholder="—"
+                  placeholderTextColor={c.dim}
+                  style={[styles.distanceInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+                />
+                <Text style={[styles.km, { color: c.dim }]}>km</Text>
+              </View>
+            </View>
+          </>
+        )}
+        {saveError ? <Text style={[styles.error, { color: c.danger }]}>{saveError}</Text> : null}
       </ScrollView>
 
-      <View style={[styles.footer, { borderTopColor: c.border, paddingBottom: 16 + insets.bottom }]}>
+      <View
+        style={[
+          styles.footer,
+          wide && styles.footerWide,
+          { borderTopColor: c.border, paddingBottom: (wide ? 24 : 16) + insets.bottom },
+        ]}
+      >
         {!closed && confirmCrew && mismatch ? (
           <View testID="crew-mismatch" style={[styles.mismatch, { borderColor: c.accent, backgroundColor: c.surface }]}>
             <View style={styles.inline}>
@@ -331,8 +468,12 @@ const styles = StyleSheet.create({
   error: { fontSize: 13, padding: 16 },
   body: { flex: 1 },
   bodyContent: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 20, gap: 12 },
+  bodyWide: { paddingVertical: 24, paddingHorizontal: 32, maxWidth: 1100, width: '100%', alignSelf: 'center' },
+  columns: { flexDirection: 'row', gap: 24, alignItems: 'flex-start' },
+  column: { flex: 1, minWidth: 0, gap: 12 },
+  footerWide: { alignItems: 'flex-end', paddingTop: 12, paddingHorizontal: 32 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  mismatch: { borderWidth: 1, borderRadius: radius, padding: 12, gap: 10, marginBottom: 10 },
+  mismatch: { alignSelf: 'stretch', borderWidth: 1, borderRadius: radius, padding: 12, gap: 10, marginBottom: 10 },
   reasonInput: { height: 56, borderRadius: radius, borderWidth: 1, paddingHorizontal: 14, fontSize: 15 },
   mismatchActions: { flexDirection: 'row', gap: 8 },
   secondary: {
