@@ -1,0 +1,110 @@
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { LogbookProvider } from '../../data/LogbookProvider';
+import { devOtherLandingSite } from '../../dev/fixtures/reference';
+import { seedDevFixtures } from '../../dev/fixtures/seed';
+import { openTestRepo } from '../../test/sqlite';
+import { setWindow, TABLET } from '../../test/window';
+import { PreferencesProvider } from '../../ui/preferences';
+import { AppScreens } from '../AppScreens';
+import { gridTileWidth } from '../LogCatchScreen';
+
+jest.mock('expo-network', () => ({
+  useNetworkState: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
+}));
+
+const metrics = {
+  frame: { x: 0, y: 0, width: TABLET.width, height: TABLET.height },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+
+async function tablet() {
+  setWindow(TABLET);
+  const ctx = await openTestRepo();
+  await seedDevFixtures(ctx.db, ctx.deps);
+  const now = ctx.deps.clock.now();
+  const open = () => Promise.resolve(ctx.repo);
+  const clock = () => now;
+  const locator = { getFix: jest.fn(async () => null) };
+  render(
+    <SafeAreaProvider initialMetrics={metrics}>
+      <LogbookProvider open={open}>
+        <PreferencesProvider>
+          <AppScreens now={clock} locator={locator} />
+        </PreferencesProvider>
+      </LogbookProvider>
+    </SafeAreaProvider>,
+  );
+  await screen.findByTestId('trip-total');
+  const trip = (await ctx.repo.getOpenTrip())!;
+  const entries = await ctx.repo.listTripEntries(trip.trip_id);
+  return { ...ctx, trip, entries };
+}
+
+describe('tablet (1280×800)', () => {
+  it('S2.1: list and detail side by side; the newest entry is selected; tapping selects', async () => {
+    const { entries } = await tablet();
+    const pane = await screen.findByTestId('detail-pane');
+    await waitFor(() =>
+      expect(within(pane).getByTestId('detail-species')).toHaveTextContent(entries[0].species_local_name),
+    );
+    expect(screen.getByTestId(`entry-${entries[0].id}`).props.accessibilityState.selected).toBe(true);
+    // Filter labels show on tablet.
+    expect(screen.getByText('Zote')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId(`entry-${entries[2].id}`));
+    await waitFor(() =>
+      expect(within(pane).getByTestId('detail-species')).toHaveTextContent(entries[2].species_local_name),
+    );
+    // Still on trip home: no full-screen detail.
+    expect(screen.getByTestId('trip-total')).toBeTruthy();
+  });
+
+  it('S2.1: corrections work inside the pane', async () => {
+    const { repo, entries } = await tablet();
+    await screen.findByTestId('detail-pane');
+    fireEvent.press(await screen.findByTestId('correct'));
+    fireEvent.press(screen.getByTestId('quick-1'));
+    fireEvent.press(screen.getByTestId('correct-save'));
+    await waitFor(async () => expect((await repo.getEntry(entries[0].id))!.correction_count).toBe(1));
+  });
+
+  it('S3.3: menu and entry pane side by side; confirmation stays in the pane', async () => {
+    const { repo, trip } = await tablet();
+    fireEvent.press(screen.getByTestId('primary'));
+    expect(await screen.findByTestId('pick-prompt')).toBeTruthy();
+    expect(screen.getByText('Chagua aina ya samaki')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('fish-nguru'));
+    expect(screen.queryByTestId('scrim')).toBeNull();
+    expect(within(screen.getByTestId('entry-pane')).getByTestId('entry-sheet')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('key-2'));
+    fireEvent.press(screen.getByTestId('save'));
+    const card = await within(screen.getByTestId('entry-pane')).findByTestId('confirm-card');
+    expect(within(card).queryByTestId('confirm-dismiss')).toBeNull();
+    const [newest] = await repo.listTripEntries(trip.trip_id);
+    expect(newest).toMatchObject({ species_local_name: 'nguru', quantity: 2 });
+  });
+
+  it('S4: two columns with site options shown; Tuma closes the trip', async () => {
+    const { repo, trip } = await tablet();
+    fireEvent.press(screen.getByTestId('close-trip'));
+    await screen.findByTestId('close-total');
+    expect(screen.queryByTestId('site-row')).toBeNull();
+    expect(screen.getByText('Kituo cha kutua')).toBeTruthy();
+    fireEvent.press(screen.getByTestId(`site-${devOtherLandingSite.name}`));
+    expect(screen.getByTestId('fee-note')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('submit'));
+    await screen.findByTestId('read-only');
+    expect((await repo.getTripClose(trip.trip_id))!.landing_site_id).toBe(devOtherLandingSite.id);
+  });
+});
+
+describe('tablet menu grid', () => {
+  it('fits as many 148dp tiles as the pane allows', () => {
+    // 1280 − 480 entry pane − 48 padding = 752 → 4 columns of 182
+    expect(gridTileWidth(752)).toBe(182);
+    expect(gridTileWidth(148)).toBe(148);
+    expect(gridTileWidth(100)).toBe(100);
+  });
+});
