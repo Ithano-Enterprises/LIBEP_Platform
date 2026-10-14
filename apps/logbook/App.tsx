@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LogbookProvider, openLogbook } from './src/data';
-import { TripHomeScreen } from './src/screens/TripHomeScreen';
+import { AppScreens } from './src/screens/AppScreens';
 import { NIGHT, plexFontAssets, plexFonts, systemFonts } from './src/theme/tokens';
 import { PreferencesProvider } from './src/ui/preferences';
 
@@ -29,7 +29,7 @@ export default function App() {
     <SafeAreaProvider>
       <LogbookProvider open={openStore}>
         <PreferencesProvider fonts={fontError ? systemFonts : plexFonts}>
-          <TripHomeScreen />
+          <AppScreens />
         </PreferencesProvider>
       </LogbookProvider>
     </SafeAreaProvider>
