@@ -4,6 +4,7 @@ import type { Entry } from '../../data/types';
 import { radius } from '../../theme/tokens';
 import { formatQuantity, formatTime } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
+import { HoldBox } from '../../ui/HoldBox';
 import { useFontSet, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { stateKey } from './model';
@@ -50,16 +51,6 @@ export function EntryRow({ entry }: { entry: Entry }) {
   );
 }
 
-export function HoldBox({ code }: { code: string }) {
-  const c = useTheme();
-  const f = useFontSet();
-  return (
-    <View style={[styles.hold, { borderColor: c.text }]}>
-      <Text style={[styles.holdText, f.monoSemiBold, { color: c.text }]}>{code}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', height: 72, borderRadius: radius, overflow: 'hidden' },
   edge: { width: 3 },
@@ -75,13 +66,4 @@ const styles = StyleSheet.create({
   time: { fontSize: 13 },
   state: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   stateText: { fontSize: 13 },
-  hold: {
-    width: 18,
-    height: 18,
-    borderWidth: 1.5,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  holdText: { fontSize: 12, includeFontPadding: false },
 });

@@ -7,7 +7,7 @@ import { formatQuantity, formatTime, formatTripDate, sumKg } from '../../ui/form
 import { Icon } from '../../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
-import { HoldBox } from './EntryRow';
+import { HoldBox } from '../../ui/HoldBox';
 import { tripState } from './model';
 import { stateStyle } from './stateStyle';
 

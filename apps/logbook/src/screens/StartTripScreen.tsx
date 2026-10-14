@@ -4,7 +4,8 @@ import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CREW_DEFAULT } from '../data/repository';
-import { radius, touchTarget } from '../theme/tokens';
+import { radius } from '../theme/tokens';
+import { BackButton } from '../ui/BackButton';
 import { formatDay, formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
@@ -93,15 +94,7 @@ export function StartTripScreen({
   return shell(
     <>
       <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <Pressable
-          testID="back"
-          accessibilityRole="button"
-          accessibilityLabel={t.back}
-          onPress={onDone}
-          style={({ pressed }) => [styles.back, pressed && { backgroundColor: c.raised }]}
-        >
-          <Icon name="back" size={24} strokeWidth={2} color={c.text} />
-        </Pressable>
+        <BackButton onPress={onDone} />
         <View style={styles.headerText}>
           <Text style={[styles.title, f.sansSemiBold, { color: c.text }]}>{t.startTrip}</Text>
           <Text style={[styles.date, f.sans, { color: c.dim }]}>{formatDay(clock, lang)}</Text>
@@ -152,13 +145,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderBottomWidth: 1,
-  },
-  back: {
-    width: touchTarget,
-    height: touchTarget,
-    borderRadius: radius,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
   title: { fontSize: 24, lineHeight: 28 },
