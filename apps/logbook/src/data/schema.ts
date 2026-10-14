@@ -217,6 +217,14 @@ BEGIN SELECT RAISE(ABORT, 'append-only: plant_weighings rows cannot be updated')
 CREATE TRIGGER plant_weighings_no_delete BEFORE DELETE ON plant_weighings
 BEGIN SELECT RAISE(ABORT, 'append-only: plant_weighings rows cannot be deleted'); END;
 `,
+
+  // 3: sync bookkeeping on the device-only sync_state rows: how many sends
+  // were tried, and the last refusal the server gave (kept for the captain
+  // or support to see; the record itself is never changed).
+  `
+ALTER TABLE sync_state ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE sync_state ADD COLUMN last_error TEXT;
+`,
 ];
 
 export async function migrate(db: SqlDb): Promise<void> {

@@ -1,4 +1,6 @@
 import type { SqlDb, SqlValue } from './sql';
+import { createSyncQueue, type SyncQueue } from './sync/queue';
+import type { Transport } from './sync/transport';
 import type {
   CatchCorrection,
   CatchHistory,
@@ -465,6 +467,11 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     return row?.state ?? null;
   }
 
+  /** The outbound queue over this store, sending through the given transport. */
+  function syncQueue(transport: Transport, maxBatch?: number): SyncQueue {
+    return createSyncQueue(db, { clock: deps.clock, applyPlantWeighing }, transport, maxBatch);
+  }
+
   async function getPreferences(): Promise<Preferences> {
     const rows = await db.getAllAsync<{ key: keyof Preferences; value: string }>(
       'SELECT key, value FROM preferences',
@@ -504,6 +511,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     getTripStart,
     getTripClose,
     getSyncState,
+    syncQueue,
     getPreferences,
     setPreference,
   };
