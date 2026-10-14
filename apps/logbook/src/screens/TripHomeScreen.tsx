@@ -32,6 +32,7 @@ export function TripHomeScreen({
   onCloseTrip,
   onOpenEntry,
   onOpenGrounds,
+  onShowOnMap,
 }: {
   now?: () => Date;
   onStartTrip?: () => void;
@@ -39,6 +40,8 @@ export function TripHomeScreen({
   onCloseTrip?: () => void;
   onOpenEntry?: (entry: Entry) => void;
   onOpenGrounds?: () => void;
+  /** Tablet detail pane: open My grounds at this catch's spot. */
+  onShowOnMap?: (catchId: string) => void;
 }) {
   const { mode } = usePreferences();
   const c = useTheme();
@@ -167,7 +170,7 @@ export function TripHomeScreen({
         {wide ? (
           <View testID="detail-pane" style={styles.detailPane}>
             {selected ? (
-              <EntryDetailBody key={selected.id} catchId={selected.id} wide />
+              <EntryDetailBody key={selected.id} catchId={selected.id} wide onShowOnMap={onShowOnMap} />
             ) : (
               <View style={styles.empty}>
                 <Icon name="fish" size={32} strokeWidth={1.4} color={c.dim} />

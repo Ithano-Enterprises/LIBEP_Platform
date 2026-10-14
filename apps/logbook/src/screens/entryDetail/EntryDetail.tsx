@@ -22,7 +22,10 @@ export function EntryDetail({
   gloss,
   canCorrect,
   onCorrect,
+  onShowOnMap,
 }: {
+  /** Tablet: open My grounds at this entry's spot. */
+  onShowOnMap?: () => void;
   entry: Entry;
   history: CatchHistory | null;
   profile: DeviceProfile;
@@ -206,26 +209,42 @@ export function EntryDetail({
         </View>
       </View>
 
-      {canCorrect && w == null ? (
-        <Pressable
-          testID="correct"
-          accessibilityRole="button"
-          onPress={onCorrect}
-          style={({ pressed }) => [
-            styles.correct,
-            { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' },
-          ]}
-        >
-          <Icon name="pencil" size={20} color={c.text} />
-          <Text style={[styles.correctText, f.sansMedium, { color: c.text }]}>{t.correct}</Text>
-        </Pressable>
-      ) : null}
-      {w != null ? (
-        <View testID="corr-closed" style={styles.line}>
-          <Icon name="lock" size={18} color={c.dim} />
-          <Text style={[styles.lineText, f.sans, { color: c.dim }]}>{t.corrClosed}</Text>
-        </View>
-      ) : null}
+      <View style={styles.actions}>
+        {canCorrect && w == null ? (
+          <Pressable
+            testID="correct"
+            accessibilityRole="button"
+            onPress={onCorrect}
+            style={({ pressed }) => [
+              styles.correct,
+              { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' },
+            ]}
+          >
+            <Icon name="pencil" size={20} color={c.text} />
+            <Text style={[styles.correctText, { color: c.text }]}>{t.correct}</Text>
+          </Pressable>
+        ) : null}
+        {w != null ? (
+          <View testID="corr-closed" style={styles.line}>
+            <Icon name="lock" size={18} color={c.dim} />
+            <Text style={[styles.lineText, { color: c.dim }]}>{t.corrClosed}</Text>
+          </View>
+        ) : null}
+        {onShowOnMap && gps ? (
+          <Pressable
+            testID="show-on-map"
+            accessibilityRole="button"
+            onPress={onShowOnMap}
+            style={({ pressed }) => [
+              styles.mapButton,
+              { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' },
+            ]}
+          >
+            <Icon name="map" size={20} color={c.text} />
+            <Text style={[styles.correctText, { color: c.text }]}>{t.showOnMap}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -285,7 +304,8 @@ const styles = StyleSheet.create({
   correct: {
     height: 56,
     maxWidth: 360,
-    width: '100%',
+    flexGrow: 1,
+    flexBasis: 200,
     borderRadius: radius,
     borderWidth: 1,
     flexDirection: 'row',
@@ -293,5 +313,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  correctText: { fontSize: 17 },
+  correctText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
+  mapButton: {
+    height: 56,
+    paddingHorizontal: 16,
+    borderRadius: radius,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
 });

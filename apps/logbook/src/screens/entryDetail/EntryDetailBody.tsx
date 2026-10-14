@@ -10,7 +10,15 @@ import { useEntryDetail } from './useEntryDetail';
 
 // Loads one entry and shows its detail, with the correction sheet over it.
 // Phone: the whole screen under a back link. Tablet: the right pane.
-export function EntryDetailBody({ catchId, wide = false }: { catchId: string; wide?: boolean }) {
+export function EntryDetailBody({
+  catchId,
+  wide = false,
+  onShowOnMap,
+}: {
+  catchId: string;
+  wide?: boolean;
+  onShowOnMap?: (catchId: string) => void;
+}) {
   const c = useTheme();
   const t = useStrings();
   const insets = useSafeAreaInsets();
@@ -73,6 +81,7 @@ export function EntryDetailBody({ catchId, wide = false }: { catchId: string; wi
           profile={profile}
           gloss={gloss}
           canCorrect={tripOpen}
+          onShowOnMap={onShowOnMap ? () => onShowOnMap(entry.id) : undefined}
           onCorrect={() => {
             setSaveError(null);
             setCorrecting(true);
