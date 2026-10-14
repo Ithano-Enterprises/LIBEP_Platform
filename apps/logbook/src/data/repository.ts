@@ -57,6 +57,16 @@ export function isValidQuantity(q: number): boolean {
   return Number.isFinite(q) && q > 0 && Math.abs(q * 10 - Math.round(q * 10)) < 1e-9;
 }
 
+export const CREW_MIN = 1;
+export const CREW_MAX = 24;
+/** Design prototype default. [TO CONFIRM: typical crew size] */
+export const CREW_DEFAULT = 4;
+
+/** Crew count: whole number, 1-24 (contract §trip_start). */
+export function isValidCrew(n: number): boolean {
+  return Number.isInteger(n) && n >= CREW_MIN && n <= CREW_MAX;
+}
+
 /** Display reference, e.g. 3F2A-008. [TO CONFIRM: short_ref format] */
 export function makeShortRef(id: string, seq: number): string {
   return `${id.replace(/-/g, '').slice(0, 4).toUpperCase()}-${String(seq).padStart(3, '0')}`;
@@ -166,9 +176,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
   }
 
   async function startTrip(input: { crewCount: number; departureAt: Date }): Promise<TripStart> {
-    if (!Number.isInteger(input.crewCount) || input.crewCount < 1 || input.crewCount > 24) {
-      throw new DataError('invalid_crew');
-    }
+    if (!isValidCrew(input.crewCount)) throw new DataError('invalid_crew');
     const profile = await requireProfile();
     if (await getOpenTrip()) throw new DataError('trip_already_open');
     const b = await base();
@@ -295,9 +303,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     landingSiteId: string;
     distanceKm: number | null;
   }): Promise<TripClose> {
-    if (!Number.isInteger(input.crewCount) || input.crewCount < 1 || input.crewCount > 24) {
-      throw new DataError('invalid_crew');
-    }
+    if (!isValidCrew(input.crewCount)) throw new DataError('invalid_crew');
     const trip = await getOpenTrip();
     if (!trip || trip.trip_id !== input.tripId) throw new DataError('no_open_trip');
     const entries = await db.getAllAsync<{ id: string; quantity: number }>(
