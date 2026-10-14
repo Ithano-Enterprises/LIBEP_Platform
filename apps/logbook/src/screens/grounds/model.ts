@@ -12,7 +12,31 @@ export const MIN_TRIPS = 3;
 export const DAY_MS = 86_400_000;
 
 export type Metric = 'trips' | 'tonnes';
-export type Range = '30' | '90' | 'all';
+export type Range = '30' | '90' | 'season' | 'all';
+export type Season = 'all' | 'kaskazi' | 'kusi';
+
+/**
+ * Monsoon months (0 = Jan), from the design's placeholder line "Kaskazi
+ * Nov–Mac · Kusi Apr–Okt". [TO CONFIRM: season months with the client]
+ */
+export const SEASON_MONTHS: Record<Exclude<Season, 'all'>, number[]> = {
+  kaskazi: [10, 11, 0, 1, 2],
+  kusi: [3, 4, 5, 6, 7, 8, 9],
+};
+
+export const seasonOf = (d: Date): Exclude<Season, 'all'> =>
+  SEASON_MONTHS.kaskazi.includes(d.getMonth()) ? 'kaskazi' : 'kusi';
+
+/** Start of the current monsoon season (local time). */
+export function seasonStart(now: Date): Date {
+  const d = new Date(now.getFullYear(), now.getMonth(), 1);
+  const s = seasonOf(now);
+  while (seasonOf(new Date(d.getFullYear(), d.getMonth() - 1, 1)) === s) d.setMonth(d.getMonth() - 1);
+  return d;
+}
+
+export type Filters = { range: Range; season: Season; species: string[] };
+export const DEFAULT_FILTERS: Filters = { range: '90', season: 'all', species: [] };
 
 export type Spot = {
   /** Stable cell key, e.g. "-227:4103" (cell index in 0.01° steps). */
@@ -31,6 +55,10 @@ export type Spot = {
   plantKg: number | null;
   plantTrips: number;
   catchIds: string[];
+  /** Two-hour window with the most catch (kg), start hour (local). */
+  bestHour: number;
+  /** Month (0 = Jan) with the most catch (kg). */
+  bestMonth: number;
 };
 
 export type Excluded = { catch: GroundsCatch; reason: 'no_gps' | 'after_close' };
@@ -50,13 +78,32 @@ export function exclusion(c: GroundsCatch): Excluded['reason'] | null {
   return null;
 }
 
+function sinceOf(range: Range, now: Date): number | null {
+  if (range === 'all') return null;
+  if (range === 'season') return seasonStart(now).getTime();
+  return now.getTime() - Number(range) * DAY_MS;
+}
+
+/** The value with the largest weight. */
+function argmax(weights: Map<number, number>): number {
+  let best = -1;
+  let w = -1;
+  for (const [k, v] of weights) if (v > w || (v === w && k < best)) [best, w] = [k, v];
+  return best;
+}
+
 export function buildGrounds(
   catches: GroundsCatch[],
   /** species: species keys to keep (species id, or "other:<name>"); empty keeps all. */
-  opts: { now: Date; range: Range; species: string[] },
+  opts: { now: Date; range: Range; species: string[]; season?: Season },
 ): Grounds {
-  const since = opts.range === 'all' ? null : opts.now.getTime() - Number(opts.range) * DAY_MS;
-  const inRange = catches.filter((c) => since == null || new Date(c.recorded_at).getTime() >= since);
+  const since = sinceOf(opts.range, opts.now);
+  const season = opts.season ?? 'all';
+  const inRange = catches.filter(
+    (c) =>
+      (since == null || new Date(c.recorded_at).getTime() >= since) &&
+      (season === 'all' || seasonOf(new Date(c.recorded_at)) === season),
+  );
   const excluded: Excluded[] = [];
   const cells = new Map<string, GroundsCatch[]>();
   for (const c of inRange) {
@@ -82,6 +129,14 @@ export function buildGrounds(
       species.set(k, s);
     }
     const weighed = cs.filter((c) => c.trip_closed_at && c.plant_weight_kg != null);
+    // Two-hour windows starting on each hour, weighted by kg.
+    const windows = new Map<number, number>();
+    const months = new Map<number, number>();
+    for (const c of cs) {
+      const d = new Date(c.recorded_at);
+      for (const h of [d.getHours(), (d.getHours() + 23) % 24]) windows.set(h, (windows.get(h) ?? 0) + c.quantity);
+      months.set(d.getMonth(), (months.get(d.getMonth()) ?? 0) + c.quantity);
+    }
     return {
       key,
       lat: la * CELL_DEG,
@@ -94,6 +149,8 @@ export function buildGrounds(
       plantKg: weighed.length ? sumKg(weighed.map((c) => c.plant_weight_kg!)) : null,
       plantTrips: new Set(weighed.map((c) => c.trip_id)).size,
       catchIds: cs.map((c) => c.id),
+      bestHour: argmax(windows),
+      bestMonth: argmax(months),
     };
   });
 
@@ -104,6 +161,19 @@ export function buildGrounds(
     totalKg: sumKg(spots.map((s) => s.kg)),
   };
 }
+
+/** Catches in one spot, newest first. */
+export function spotEntries(catches: GroundsCatch[], spot: Spot): GroundsCatch[] {
+  const ids = new Set(spot.catchIds);
+  return catches.filter((c) => ids.has(c.id)).sort((a, b) => b.recorded_at.localeCompare(a.recorded_at));
+}
+
+/** The spot a catch falls in, if it is on the map. */
+export const spotOfCatch = (spots: Spot[], catchId: string) => spots.find((s) => s.catchIds.includes(catchId)) ?? null;
+
+/** e.g. "04:00–06:00". */
+export const formatWindow = (h: number) =>
+  `${String(h).padStart(2, '0')}:00–${String((h + 2) % 24).padStart(2, '0')}:00`;
 
 export const metricValue = (s: Spot, m: Metric) => (m === 'trips' ? s.trips : s.kg);
 

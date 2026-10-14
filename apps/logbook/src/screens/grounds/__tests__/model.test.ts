@@ -1,6 +1,18 @@
 import type { GroundsCatch } from '../../../data/types';
 import { project } from '../basemap';
-import { buildGrounds, daysAgo, exclusion, formatCoord, heatStep, rankSpots } from '../model';
+import {
+  buildGrounds,
+  daysAgo,
+  exclusion,
+  formatCoord,
+  formatWindow,
+  heatStep,
+  rankSpots,
+  seasonOf,
+  seasonStart,
+  spotEntries,
+  spotOfCatch,
+} from '../model';
 
 const NOW = new Date('2026-10-14T06:00:00Z');
 const day = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
@@ -121,5 +133,45 @@ describe('grounds model', () => {
     const p = project(-2.27, 41.03);
     expect(Math.abs(p.x - 208)).toBeLessThan(40);
     expect(Math.abs(p.y - 254)).toBeLessThan(50);
+  });
+});
+
+describe('grounds model: detail and filters', () => {
+  it('best two-hour window and month by tonnes', () => {
+    const at = (h: number, m = 9) => new Date(2026, m, 10, h, 30).toISOString();
+    const g = buildGrounds(
+      [c({ recorded_at: at(4), quantity: 2 }), c({ recorded_at: at(5), quantity: 2 }), c({ recorded_at: at(9), quantity: 3 })],
+      { now: new Date(2026, 9, 14), range: 'all', species: [] },
+    );
+    expect(g.spots[0].bestHour).toBe(4);
+    expect(formatWindow(g.spots[0].bestHour)).toBe('04:00–06:00');
+    expect(g.spots[0].bestMonth).toBe(9);
+    expect(formatWindow(23)).toBe('23:00–01:00');
+  });
+
+  it('season filter and this-season range (placeholder months)', () => {
+    const now = new Date(2026, 11, 20); // December: Kaskazi (Nov–Mar)
+    expect(seasonOf(now)).toBe('kaskazi');
+    expect(seasonOf(new Date(2026, 5, 1))).toBe('kusi');
+    expect(seasonStart(now)).toEqual(new Date(2026, 10, 1));
+    expect(seasonStart(new Date(2027, 1, 3))).toEqual(new Date(2026, 10, 1));
+    const all = [
+      c({ recorded_at: new Date(2026, 11, 2).toISOString(), quantity: 1 }),
+      c({ recorded_at: new Date(2026, 6, 2).toISOString(), quantity: 2 }),
+      c({ recorded_at: new Date(2026, 9, 2).toISOString(), quantity: 4 }),
+    ];
+    expect(buildGrounds(all, { now, range: 'all', species: [], season: 'kaskazi' }).totalT).toBe(1);
+    expect(buildGrounds(all, { now, range: 'all', species: [], season: 'kusi' }).totalT).toBe(6);
+    expect(buildGrounds(all, { now, range: 'season', species: [] }).totalT).toBe(1);
+  });
+
+  it('entries of a spot, newest first, and the spot of a catch', () => {
+    const a = c({ recorded_at: day(3) });
+    const b = c({ recorded_at: day(1) });
+    const far = c({ latitude: -1.98, longitude: 41.31 });
+    const g = buildGrounds([a, b, far], { now: NOW, range: '90', species: [] });
+    const s = spotOfCatch(g.spots, a.id)!;
+    expect(spotEntries([a, b, far], s).map((x) => x.id)).toEqual([b.id, a.id]);
+    expect(spotOfCatch(g.spots, 'nope')).toBeNull();
   });
 });
