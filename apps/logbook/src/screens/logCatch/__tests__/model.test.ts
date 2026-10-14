@@ -1,5 +1,5 @@
 import type { MenuItem } from '../../../data/types';
-import { filterMenu, formatGps, MAX_DIGITS, OTHER_ID, otherItem, parseEntry, pressKey, QUICK_STEPS_KG, quickAdd, type Key } from '../model';
+import { filterMenu, formatGps, MAX_DIGITS, OTHER_ID, otherItem, parseEntry, plausibility, pressKey, QUICK_STEPS_KG, quickAdd, type Key } from '../model';
 
 const type = (keys: Key[]) => keys.reduce(pressKey, '');
 
@@ -71,6 +71,24 @@ describe('menu search', () => {
     expect(filterMenu(menu, ' Kib ').map((m) => m.local_name)).toEqual(['kibua']);
     expect(filterMenu(menu, 'tuna').map((m) => m.local_name)).toEqual(['kibua']);
     expect(filterMenu(menu, 'zzz')).toEqual([]);
+  });
+});
+
+describe('plausibility (soft, never blocks)', () => {
+  it('flags an entry above the class first, then a trip total that would pass it', () => {
+    expect(plausibility(null, 0, 20)).toBeNull();
+    expect(plausibility(2.4, 10, 20)).toBeNull();
+    expect(plausibility(20, 0, 20)).toBeNull();
+    expect(plausibility(20.1, 0, 20)).toBe('entry_over_class');
+    expect(plausibility(25, 18, 20)).toBe('entry_over_class');
+    expect(plausibility(2.2, 17.9, 20)).toBe('trip_would_pass');
+    expect(plausibility(2.2, 17.9, 50)).toBeNull();
+  });
+
+  it('a trip total exactly at the class does not warn (no float drift)', () => {
+    expect(plausibility(2.1, 17.9, 20)).toBeNull();
+    expect(plausibility(0.3, 19.7, 20)).toBeNull();
+    expect(plausibility(0.1, 19.9, 20)).toBeNull();
   });
 });
 

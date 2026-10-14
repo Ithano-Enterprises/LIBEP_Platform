@@ -3,10 +3,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLogbook } from '../../data/LogbookProvider';
 import type { SpeciesChoice } from '../../data/repository';
 import type { CatchRecord, DeviceProfile, Gps, MenuItem, TripStart } from '../../data/types';
+import { sumTonnes } from '../../ui/format';
 
 export type CatchInput = SpeciesChoice & { quantity: number; gps: Gps | null; note: string };
 
-export type LogCatchData = { profile: DeviceProfile | null; openTrip: TripStart | null; menu: MenuItem[] };
+export type LogCatchData = {
+  profile: DeviceProfile | null;
+  openTrip: TripStart | null;
+  menu: MenuItem[];
+  /** Effective trip total in t (latest corrections applied), for the soft check. */
+  tripTotal: number;
+};
 
 /** Loads what S3.3 shows and saves a catch, through the data layer only. */
 export function useLogCatch() {
@@ -20,7 +27,9 @@ export function useLogCatch() {
     (async () => {
       const [profile, openTrip] = await Promise.all([repo.getDeviceProfile(), repo.getOpenTrip()]);
       const menu = profile ? await repo.getSpeciesMenu(profile.vessel.tonnage_class) : [];
-      if (alive) setData({ profile, openTrip, menu });
+      const entries = openTrip ? await repo.listTripEntries(openTrip.trip_id) : [];
+      const tripTotal = sumTonnes(entries.map((e) => e.quantity));
+      if (alive) setData({ profile, openTrip, menu, tripTotal });
     })().catch((e: unknown) => alive && setError(e instanceof Error ? e : new Error(String(e))));
     return () => {
       alive = false;

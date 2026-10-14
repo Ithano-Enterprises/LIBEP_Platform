@@ -55,6 +55,22 @@ export function filterMenu(menu: MenuItem[], query: string): MenuItem[] {
   );
 }
 
+/**
+ * Soft plausibility check, never blocking (design rule): a single entry
+ * above the vessel's tonnage class, or a trip total that would pass it.
+ * [TO CONFIRM: plausibility thresholds; the class as a cap is the design's]
+ */
+export function plausibility(
+  quantity: number | null,
+  tripTotal: number,
+  tonnageClass: number,
+): 'entry_over_class' | 'trip_would_pass' | null {
+  if (quantity == null || quantity <= 0) return null;
+  if (quantity > tonnageClass) return 'entry_over_class';
+  if (Math.round((tripTotal + quantity) * 10) > tonnageClass * 10) return 'trip_would_pass';
+  return null;
+}
+
 /** e.g. "2.27S 40.93E ±15 m", as the design shows positions. */
 export function formatGps(gps: Gps | null): string {
   if (!gps) return '--';
