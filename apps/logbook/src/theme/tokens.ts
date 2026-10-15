@@ -1,3 +1,11 @@
+// Per-weight subpaths export only the font file. The package index also
+// pulls in expo-font, which tokens.ts does not need.
+import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono/400Regular';
+import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium';
+import { IBMPlexMono_600SemiBold } from '@expo-google-fonts/ibm-plex-mono/600SemiBold';
+import { IBMPlexSans_400Regular } from '@expo-google-fonts/ibm-plex-sans/400Regular';
+import { IBMPlexSans_500Medium } from '@expo-google-fonts/ibm-plex-sans/500Medium';
+import { IBMPlexSans_600SemiBold } from '@expo-google-fonts/ibm-plex-sans/600SemiBold';
 import { Platform, type TextStyle } from 'react-native';
 
 // Design tokens copied verbatim from the design reference
@@ -55,8 +63,19 @@ export const palettes: Record<Mode, Palette> = { night: NIGHT, day: DAY };
 export type FontRole = 'sans' | 'sansMedium' | 'sansSemiBold' | 'mono' | 'monoMedium' | 'monoSemiBold';
 export type FontSet = Record<FontRole, Pick<TextStyle, 'fontFamily' | 'fontWeight'>>;
 
-// IBM Plex, as registered by useFonts() in App.tsx. The weight is part of
-// the family name, so no fontWeight is set.
+// IBM Plex font files, keyed by family name. App.tsx passes this map to
+// useFonts(), so every family in plexFonts must be a key here.
+export const plexFontAssets = {
+  IBMPlexSans_400Regular,
+  IBMPlexSans_500Medium,
+  IBMPlexSans_600SemiBold,
+  IBMPlexMono_400Regular,
+  IBMPlexMono_500Medium,
+  IBMPlexMono_600SemiBold,
+};
+
+// IBM Plex, as registered from plexFontAssets. The weight is part of the
+// family name, so no fontWeight is set.
 export const plexFonts: FontSet = {
   sans: { fontFamily: 'IBMPlexSans_400Regular' },
   sansMedium: { fontFamily: 'IBMPlexSans_500Medium' },

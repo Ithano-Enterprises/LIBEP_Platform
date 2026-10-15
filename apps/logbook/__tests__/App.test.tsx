@@ -4,7 +4,7 @@ import { StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
 import mockSafeAreaContext from 'react-native-safe-area-context/jest/mock';
 
 import App from '../App';
-import { NIGHT } from '../src/theme/tokens';
+import { NIGHT, plexFonts } from '../src/theme/tokens';
 
 // App mounts the real SafeAreaProvider, which needs native metrics.
 jest.mock('react-native-safe-area-context', () => mockSafeAreaContext);
@@ -44,9 +44,20 @@ describe('App font loading', () => {
 
     expect(screen.queryByTestId('font-splash')).toBeNull();
     expect(StyleSheet.flatten(screen.getByText('Safari ya leo').props.style).fontFamily).toBe(
-      'IBMPlexSans_600SemiBold',
+      plexFonts.sansSemiBold.fontFamily,
     );
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('loads every font family the theme uses', () => {
+    mockUseFonts.mockReturnValue([false, null]);
+    render(<App />);
+
+    // The map App.tsx actually passes to useFonts, not a copy of it.
+    const loaded = Object.keys(mockUseFonts.mock.calls[0][0] as Record<string, unknown>);
+    for (const { fontFamily } of Object.values(plexFonts)) {
+      expect(loaded).toContain(fontFamily);
+    }
   });
 
   it('falls back to system fonts and stays usable when fonts fail to load', () => {
