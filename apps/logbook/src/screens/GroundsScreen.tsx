@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, type ReactNode } from 'react';
-import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { DeviceProfile } from '../data/types';
@@ -33,6 +33,14 @@ import { useGrounds, type GroundsData } from './grounds/useGrounds';
 
 const systemNow = () => new Date();
 /** Phone panel heights, as the design's peek and half sheets. */
+/** Tablet side panel minimum (top spots, spot detail). Not in the design, which is drawn at 1280dp. */
+const PANEL_MIN = 320;
+
+/** Tablet map pane: 768dp as the design, narrower on 600-1080dp windows so the panel keeps PANEL_MIN. */
+export function mapPaneWidth(windowWidth: number): number {
+  return Math.min(768, windowWidth - PANEL_MIN);
+}
+
 const PEEK = 232;
 const HALF = 344;
 
@@ -140,6 +148,7 @@ function GroundsView({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const wide = useIsTablet();
+  const { width: windowWidth } = useWindowDimensions();
   const f = useFontSet();
   const [focus] = useState(() => initialFocus(data, now(), focusCatchId));
   const [metric, setMetric] = useState<Metric>('trips');
@@ -410,7 +419,7 @@ function GroundsView({
       {controls}
       <View style={[styles.body, wide && styles.bodyWide]}>
         {wide ? (
-          <View style={styles.mapWide}>{map}</View>
+          <View style={{ width: mapPaneWidth(windowWidth) }}>{map}</View>
         ) : full || mode === 'entries' ? null : (
           map
         )}
@@ -471,7 +480,6 @@ const styles = StyleSheet.create({
   segText: { fontSize: 17, flexShrink: 1 },
   body: { flex: 1 },
   bodyWide: { flexDirection: 'row' },
-  mapWide: { width: 768 },
   panel: {
     borderTopWidth: 1,
     borderTopLeftRadius: 16,

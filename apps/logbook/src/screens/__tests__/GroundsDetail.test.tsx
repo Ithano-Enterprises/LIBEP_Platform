@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LogbookProvider } from '../../data/LogbookProvider';
@@ -11,7 +12,7 @@ import { formatQuantity } from '../../ui/format';
 import { PreferencesProvider } from '../../ui/preferences';
 import { AppScreens } from '../AppScreens';
 import { buildGrounds, DEFAULT_FILTERS, formatCoord, rankSpots, spotOfCatch, type Spot } from '../grounds/model';
-import { GroundsScreen } from '../GroundsScreen';
+import { GroundsScreen, mapPaneWidth } from '../GroundsScreen';
 
 jest.mock('expo-network', () => ({
   useNetworkState: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
@@ -150,6 +151,29 @@ describe('S5 tablet and "Ona kwenye ramani"', () => {
     fireEvent.press(screen.getByTestId(`cell-${top.key}`));
     expect(await screen.findByTestId('spot-detail')).toBeTruthy();
     expect(screen.getByTestId('grounds-map')).toBeTruthy(); // map stays
+  });
+
+  it('map pane: 768dp on a wide tablet, narrower on small ones so the panel keeps 320dp', () => {
+    expect(mapPaneWidth(1280)).toBe(768);
+    expect(mapPaneWidth(800)).toBe(480);
+    expect(mapPaneWidth(600)).toBe(280);
+  });
+
+  it('tablet at 600dp: the map pane fits beside the panel', async () => {
+    setWindow({ width: 600, height: 960 });
+    const { repo, now } = await setup();
+    renderGrounds(repo, now);
+    expect(await screen.findByTestId('tap-hint')).toBeTruthy();
+    let w: unknown;
+    const map = screen.getByTestId('grounds-map');
+    for (let el: typeof map | null = map; el; el = el.parent) {
+      const st = StyleSheet.flatten(el.props.style);
+      if (st && typeof st.width === 'number') {
+        w = st.width;
+        break;
+      }
+    }
+    expect(w).toBe(280);
   });
 
   it('tablet entry detail → Ona kwenye ramani opens S5 at that spot', async () => {
