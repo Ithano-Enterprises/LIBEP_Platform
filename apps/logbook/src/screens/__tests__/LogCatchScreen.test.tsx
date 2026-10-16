@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -8,7 +8,7 @@ import type { Repository } from '../../data/repository';
 import type { Gps } from '../../data/types';
 import { devHoldCodes, devMenus } from '../../dev/fixtures/reference';
 import { seedDevReference } from '../../dev/fixtures/seed';
-import type { Lang } from '../../i18n/strings';
+import { en, sw, type Lang } from '../../i18n/strings';
 import { openTestRepo } from '../../test/sqlite';
 import { DAY, type Mode } from '../../theme/tokens';
 import { PreferencesProvider } from '../../ui/preferences';
@@ -164,6 +164,22 @@ describe('LogCatchScreen entry sheet', () => {
     expect(screen.getByText('Soon')).toBeTruthy();
     expect(screen.getByText('Captured automatically')).toBeTruthy();
     expect(StyleSheet.flatten(screen.getByTestId('screen').props.style).backgroundColor).toBe(DAY.bg);
+  });
+});
+
+describe('LogCatchScreen in Kiswahili', () => {
+  it('labels the ⌫ key in Kiswahili for screen readers', async () => {
+    await withTrip();
+    fireEvent.press(screen.getByTestId('fish-tewa'));
+    await act(async () => {}); // let the GPS read settle
+    expect(screen.getByTestId('key-back').props.accessibilityLabel).toBe(sw.backspace);
+    expect(screen.queryByLabelText(en.backspace)).toBeNull();
+  });
+
+  it('says no vessel is linked, in Kiswahili', async () => {
+    const ctx = await openTestRepo();
+    renderLog(ctx.repo, ctx.deps.clock.now(), { getFix: jest.fn(async () => null) });
+    expect(await screen.findByText(sw.noVessel)).toBeTruthy();
   });
 });
 

@@ -17,7 +17,7 @@ export function Keypad({ value, onChange }: { value: string; onChange: (v: strin
       key={k}
       testID={`key-${k}`}
       accessibilityRole="button"
-      accessibilityLabel={k === 'back' ? 'Backspace' : label}
+      accessibilityLabel={k === 'back' ? t.backspace : label}
       onPress={() => onChange(pressKey(value, k))}
       style={({ pressed }) => [styles.key, { backgroundColor: pressed ? c.border : c.raised }]}
     >

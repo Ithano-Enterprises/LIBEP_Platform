@@ -36,6 +36,9 @@ export const sw = {
   // Not in the design: fallback until device enrolment exists.
   // [TO CONFIRM: Kiswahili wording]
   noVessel: 'Hakuna chombo kilichounganishwa na kifaa hiki.',
+  // Screen-reader label of the keypad's ⌫ key. Not in the design.
+  // [TO CONFIRM: Kiswahili wording]
+  backspace: 'Futa',
   search: 'Tafuta',
   estimate: 'Makadirio',
   addNote: 'Ongeza maelezo',
@@ -110,6 +113,7 @@ export const en: Strings = {
   view: 'View',
   trainStub: 'Training guide · stub',
   noVessel: 'No vessel linked to this device.',
+  backspace: 'Backspace',
   search: 'Search',
   estimate: 'Estimate',
   addNote: 'Add note',
