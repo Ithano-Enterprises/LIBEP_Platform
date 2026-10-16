@@ -477,6 +477,35 @@ describe('plant weights stay put', () => {
   });
 });
 
+describe('my grounds privacy', () => {
+  it('lists only catches and trips of the captain linked to the device', async () => {
+    const { repo, db, deps } = await seeded();
+    await repo.logCatch({ speciesId: speciesId('tewa'), quantity: 1, gps: null });
+    const trip = (await repo.getOpenTrip())!;
+    await repo.closeTrip({
+      tripId: trip.trip_id,
+      arrivalAt: deps.clock.now(),
+      crewCount: 4,
+      landingSiteId: (await repo.getLandingSites())[0].id,
+      distanceKm: null,
+    });
+    const mine = (await db.getFirstAsync<{ captain_id: string }>('SELECT captain_id FROM device_profile', []))!
+      .captain_id;
+    // The device is handed to another captain for one trip.
+    const other = '9a9a9a9a-0000-4000-8000-000000000001';
+    await db.runAsync("INSERT INTO captains (id, display_name) VALUES (?, 'Other')", [other]);
+    await db.runAsync('UPDATE device_profile SET captain_id = ?', [other]);
+    await repo.startTrip({ crewCount: 4, departureAt: deps.clock.now() });
+    await repo.logCatch({ speciesId: speciesId('kibua'), quantity: 9, gps: null });
+    expect((await repo.listGroundsCatches()).map((c) => c.species_local_name)).toEqual(['kibua']);
+    expect(await repo.countTrips()).toBe(1);
+
+    await db.runAsync('UPDATE device_profile SET captain_id = ?', [mine]);
+    expect((await repo.listGroundsCatches()).map((c) => c.species_local_name)).toEqual(['tewa']);
+    expect(await repo.countTrips()).toBe(1);
+  });
+});
+
 describe('catch history', () => {
   it('returns the original and its corrections in chain order', async () => {
     const { repo, deps } = await seeded();

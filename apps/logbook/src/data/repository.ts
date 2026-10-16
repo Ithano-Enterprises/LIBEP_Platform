@@ -437,6 +437,10 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
    * This device's own catches for the grounds map (contract §4: computed on
    * the device from the captain's own entries only).
    */
+  // My grounds is private to the captain linked to this device: catches
+  // other captains logged on it are not shown ("Ni wewe tu unayeona ramani hii").
+  const LINKED_CAPTAIN = 'SELECT captain_id FROM device_profile WHERE id = 1';
+
   async function listGroundsCatches(): Promise<GroundsCatch[]> {
     return db.getAllAsync<GroundsCatch>(
       `SELECT e.id, e.trip_id, e.species_id, e.species_local_name, e.hold_code, e.quantity,
@@ -448,13 +452,17 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
          LEFT JOIN sync_state s ON s.record_id = e.id
          LEFT JOIN trip_closes c ON c.trip_id = e.trip_id
          LEFT JOIN plant_weighings p ON p.catch_id = e.id
+        WHERE e.captain_id = (${LINKED_CAPTAIN})
         ORDER BY e.recorded_at DESC`,
       [],
     );
   }
 
   async function countTrips(): Promise<number> {
-    const r = await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM trip_starts', []);
+    const r = await db.getFirstAsync<{ n: number }>(
+      `SELECT count(*) AS n FROM trip_starts WHERE captain_id = (${LINKED_CAPTAIN})`,
+      [],
+    );
     return r?.n ?? 0;
   }
 
