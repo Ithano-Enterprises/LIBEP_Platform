@@ -144,11 +144,11 @@ async function history(trips: { daysAgo: number; catches: [string, number, { lat
 const spotOrder = () => screen.getAllByTestId(/^spot-(?!value)/).map((e) => e.props.testID as string);
 
 describe('My grounds screen', () => {
-  // BUG-10: My grounds reads every catch on the device. listGroundsCatches
-  // (and countTrips) do not filter by the linked captain, so if a device is
-  // handed to another captain, their spots show on "my" map ("Ni wewe tu
-  // unayeona ramani hii"). [TO CONFIRM: can a device change captain in Phase 1]
-  it.failing('own data only: catches logged on this device by another captain are not on my map', async () => {
+  // BUG-10 (fixed): listGroundsCatches and countTrips now filter by the
+  // captain linked to the device, so another captain's spots never show on
+  // "my" map ("Ni wewe tu unayeona ramani hii").
+  // [TO CONFIRM: can a device change captain in Phase 1]
+  it('own data only: catches logged on this device by another captain are not on my map', async () => {
     const ctx = await history([{ daysAgo: 3, catches: [['tewa', 1, A]] }]);
     // The device is handed to another captain for one trip.
     const other = '9a9a9a9a-0000-4000-8000-000000000001';

@@ -51,17 +51,13 @@ const PAIRS: Pair[] = [
 
 const need = (px: number) => (px >= 24 ? 3 : 4.5);
 
-// BUG-15: three token pairs in use fall under 4.5:1 in Day mode (the mode for
-// reading in sunlight): accent on bg (4.11), accent on raised (3.77) and ok on
-// raised (4.33); danger on raised is under in both modes (night 4.22, day 4.18).
-const KNOWN_LOW = new Set(['day accent/bg', 'day accent/raised', 'day ok/raised', 'night danger/raised', 'day danger/raised']);
+// BUG-15 (fixed): Day accent, ok and danger and Night danger were under
+// 4.5:1 on raised rows; the tokens were moved a few steps to clear it.
 
 describe.each(['night', 'day'] as Mode[])('%s mode', (mode) => {
   const c = palettes[mode];
   for (const [fg, bg, px, where] of PAIRS) {
-    const key = `${mode} ${fg}/${bg}`;
-    const t = KNOWN_LOW.has(key) ? it.failing : it;
-    t(`${fg} on ${bg} (${px}px, ${where}) ≥ ${need(px)}:1`, () => {
+    it(`${fg} on ${bg} (${px}px, ${where}) ≥ ${need(px)}:1`, () => {
       expect(contrast(c[fg], c[bg])).toBeGreaterThanOrEqual(need(px));
     });
   }
@@ -73,8 +69,8 @@ describe('fixed chip colours', () => {
     expect(contrast(tierChip.sNight.text, palettes.night.bg)).toBeGreaterThanOrEqual(4.5);
   });
 
-  // BUG-15 (same): the outlined night S chip on a selected (raised) row is 4.47:1.
-  it.failing('S chip (night, outlined) on a selected row (raised) ≥ 4.5:1', () => {
+  // BUG-15 (fixed): the outlined night S chip on a selected (raised) row was 4.47:1.
+  it('S chip (night, outlined) on a selected row (raised) ≥ 4.5:1', () => {
     expect(contrast(tierChip.sNight.text, palettes.night.raised)).toBeGreaterThanOrEqual(4.5);
   });
 

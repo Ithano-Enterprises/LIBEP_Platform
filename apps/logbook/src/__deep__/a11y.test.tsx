@@ -72,10 +72,9 @@ describe.each([
     expect(get().found.length).toBeGreaterThan(100);
   });
 
-  // BUG-14: the sheet scrims (scrim, correct-scrim, flt-scrim, ex-scrim)
-  // are Pressables with a label but no accessibilityRole, so a screen
-  // reader announces an unnamed element covering the whole screen.
-  it.failing('every Pressable has an accessibilityRole (scrims included)', () => {
+  // BUG-14 (fixed): the sheet scrims (scrim, correct-scrim, flt-scrim, ex-scrim)
+  // had a label but no role; they are buttons now.
+  it('every Pressable has an accessibilityRole (scrims included)', () => {
     expect(describeAll(get().found.filter((p) => !p.node.props.accessibilityRole))).toEqual([]);
   });
 

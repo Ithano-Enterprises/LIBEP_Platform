@@ -81,9 +81,9 @@ describe('keypad model', () => {
     expect(v).toBe('30.1');
   });
 
-  // BUG-7: the quick keys ignore the keypad's 5-digit limit: 99999 + 1 gives
-  // "100000" and 9999.9 + 0.5 gives "10000.4", figures the keys alone refuse.
-  it.failing.each([
+  // BUG-7 (fixed): the quick keys ignored the keypad's 5-digit limit (99999 + 1
+  // gave "100000"); past the limit they now leave the figure unchanged.
+  it.each([
     ['99999', 1],
     ['9999.9', 0.5],
     ['99999', 0.5],

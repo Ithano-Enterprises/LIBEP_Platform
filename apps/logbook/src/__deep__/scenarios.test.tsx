@@ -180,12 +180,10 @@ describe('1c double taps', () => {
     expect(await count(ctx.db, 'trip_starts', "trip_id NOT IN (SELECT trip_id FROM trip_closes)")).toBe(1);
   });
 
-  // BUG-1: a double tap on "Anza safari" within one frame runs startTrip
-  // twice. The one-open-trip check sits outside the write transaction, so
-  // the second call either throws a raw SQLite error (seen here, unhandled
-  // in the screen) or, with other timing, opens a second trip
-  // (dataRules: "two concurrent startTrip calls").
-  it.failing('start trip double tap in one frame: exactly one open trip', async () => {
+  // BUG-1 (fixed): a double tap on "Anza safari" within one frame ran
+  // startTrip twice. S1 now ignores taps while saving (a ref) and the
+  // repository checks for an open trip inside the write transaction.
+  it('start trip double tap in one frame: exactly one open trip', async () => {
     const ctx = await seeded();
     mountApp(ctx);
     await screen.findByText(sw.startToLog);
@@ -317,11 +315,10 @@ describe('1d app killed mid-trip', () => {
     expect(await count(ctx.db, 'sync_state')).toBe(await count(ctx.db, 'trip_starts') + (await count(ctx.db, 'catches')) + 1 + (await count(ctx.db, 'trip_closes')));
   });
 
-  // BUG-3: language and Night/Day are held in memory only; after the app is
-  // killed they fall back to Kiswahili/Night. The repository has
-  // get/setPreference and the contract (§4) lists them as stored on the
-  // device, but PreferencesProvider never uses them.
-  it.failing('language and mode chosen by the captain survive a restart', async () => {
+  // BUG-3 (fixed): language and Night/Day were held in memory only and fell
+  // back to Kiswahili/Night after a restart. PreferencesProvider now reads
+  // and writes them through repo.get/setPreference (contract §4).
+  it('language and mode chosen by the captain survive a restart', async () => {
     const ctx = await seeded();
     let r = mountApp(ctx);
     await screen.findByText(sw.startToLog);

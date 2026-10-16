@@ -102,11 +102,10 @@ function foreign(lang: Lang) {
 }
 
 describe('no text from the other language on any screen', () => {
-  // BUG-13: hard-coded English in Kiswahili mode: "No vessel linked to this
-  // device." (S2.1 here; S1, S3.3 and S5 have the same line) and the keypad's
-  // "Backspace" label read by TalkBack/VoiceOver. EntryDetailBody also has a
-  // hard-coded "Entry not found." that no normal flow reaches.
-  it.failing('Kiswahili mode: no English on any screen or label', async () => {
+  // BUG-13 (fixed): the no-vessel line (S2.1, S1, S3.3, S5), the keypad's
+  // "Backspace" label and entry detail's "Entry not found." were hard-coded
+  // English; they come from the strings table now.
+  it('Kiswahili mode: no English on any screen or label', async () => {
     const bad: Record<string, string[]> = {};
     const isForeign = foreign('sw');
     await tour((name, tree) => {
@@ -120,7 +119,6 @@ describe('no text from the other language on any screen', () => {
     const bad: Record<string, string[]> = {};
     const isForeign = foreign('sw');
     await tour((name, tree) => {
-      if (name === 'S2.1 no vessel linked') return; // covered by BUG-13 above
       const texts: string[] = [];
       walk(tree, (n) => n.type === 'Text' && texts.push(textOf(n).trim()));
       const hits = texts.filter(Boolean).filter(isForeign);

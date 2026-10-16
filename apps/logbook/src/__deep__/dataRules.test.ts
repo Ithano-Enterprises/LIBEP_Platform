@@ -123,11 +123,10 @@ describe('append-only ledger', () => {
     expect(await ctx.db.getAllAsync(`SELECT * FROM ${table} ORDER BY id`, [])).toEqual(before);
   });
 
-  // BUG-4: INSERT OR REPLACE silently overwrites a ledger row. REPLACE
-  // deletes the old row without firing the BEFORE DELETE trigger (SQLite
-  // only fires delete triggers on REPLACE with recursive_triggers on), so
-  // the append-only rule can be bypassed by one statement.
-  it.failing.each(LEDGER_TABLES)('%s: INSERT OR REPLACE cannot overwrite a saved row', async (table) => {
+  // BUG-4 (fixed): INSERT OR REPLACE used to overwrite a ledger row, because
+  // SQLite fires delete triggers on REPLACE only with recursive_triggers on.
+  // migrate() now turns it on for every connection.
+  it.each(LEDGER_TABLES)('%s: INSERT OR REPLACE cannot overwrite a saved row', async (table) => {
     const ctx = await seeded();
     await fullTrip(ctx.repo, ctx.deps.tick);
     const row = (await ctx.db.getFirstAsync<Record<string, unknown>>(`SELECT * FROM ${table} ORDER BY id`, []))!;
@@ -154,11 +153,11 @@ describe('append-only ledger', () => {
     await expect(ctx.db.runAsync("UPDATE sync_state SET attempts = attempts + 1, last_error = 'x'", [])).resolves.toBeDefined();
   });
 
-  // BUG-5: plant_weighings (migration 2) has no append-only triggers. Deleting
-  // or editing the cached weight silently re-opens corrections on a catch the
-  // plant has weighed (contract §2: corrections close once W exists).
+  // BUG-5 (fixed): plant_weighings (migration 2) now has append-only
+  // triggers, so a cached weight cannot be deleted or edited to re-open
+  // corrections (contract §2: corrections close once W exists).
   // [TO CONFIRM: whether the device cache of plant weights is part of the ledger]
-  it.failing('plant_weighings (migration 2): a cached weight cannot be deleted or edited', async () => {
+  it('plant_weighings (migration 2): a cached weight cannot be deleted or edited', async () => {
     const ctx = await seeded();
     const { trip, b } = await fullTrip(ctx.repo, ctx.deps.tick);
     await ctx.repo.applyPlantWeighing({ id: '11111111-1111-4111-8111-111111111111', trip_id: trip.trip_id, species_id: sid('nguru'), catch_id: b.id, weight: 1.0, unit: 't', weighed_at: ctx.deps.clock.now().toISOString() });
@@ -255,11 +254,11 @@ describe('trips', () => {
     expect(await count(ctx.db, 'trip_starts', 'trip_id NOT IN (SELECT trip_id FROM trip_closes)')).toBe(1);
   });
 
-  // BUG-1 (data layer): two startTrip calls that overlap both pass the
-  // "no open trip" check before either inserts, so two trips are open. The
-  // check runs outside the write transaction. Here transactions are queued
-  // one after the other, as a real SQLite connection would run them.
-  it.failing('two concurrent startTrip calls: exactly one succeeds, one open trip', async () => {
+  // BUG-1 (fixed): the one-open-trip check now runs inside the write
+  // transaction, so two overlapping startTrip calls cannot both pass it.
+  // Here transactions are queued one after the other, as a real SQLite
+  // connection would run them.
+  it('two concurrent startTrip calls: exactly one succeeds, one open trip', async () => {
     const raw = openTestDb();
     let chain: Promise<void> = Promise.resolve();
     const db: SqlDb = {
@@ -362,12 +361,10 @@ describe('quantity edge values', () => {
     expect(parseEntry(s)).toBeNull();
   });
 
-  // BUG-6 (latent): parseEntry accepts malformed figures ("1.2.3" → 1.2,
+  // BUG-6 (fixed): parseEntry accepted malformed figures ("1.2.3" → 1.2,
   // "2abc" → 2) and two-decimal figures the store refuses ("0.05", "1.25").
-  // The built-in keypad cannot produce them today (see the next test), but
-  // any other input path would enable Save for a value logCatch rejects with
-  // a raw "invalid_quantity" message.
-  it.failing.each(['1.2.3', '2abc', '0.05', '1.25'])('parseEntry(%p) is null (not a valid quantity)', (s) => {
+  // It now accepts only what the keypad can type.
+  it.each(['1.2.3', '2abc', '0.05', '1.25'])('parseEntry(%p) is null (not a valid quantity)', (s) => {
     expect(parseEntry(s)).toBeNull();
   });
 

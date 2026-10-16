@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react-native';
 import { useFonts } from 'expo-font';
 
 import App from '../../App';
-import { fonts, NIGHT } from '../theme/tokens';
+import { NIGHT, plexFonts, systemFonts } from '../theme/tokens';
 import { seeded, textOf, walk, type Node } from './helpers';
 
 // Area 12: font fallback. The IBM Plex fonts ship in the bundle, but if
@@ -19,7 +19,7 @@ const mockOpen = jest.fn();
 jest.mock('../data/open', () => ({ openLogbook: () => mockOpen() }));
 
 const useFontsMock = useFonts as unknown as jest.Mock;
-const PLEX = new Set<string>(Object.values(fonts));
+const PLEX = new Set<string>(Object.values(plexFonts).map((f) => f.fontFamily as string));
 
 async function store() {
   const ctx = await seeded({ openTrip: true });
@@ -54,15 +54,18 @@ describe('fonts', () => {
     expect(textOf(root)).toBe('');
   });
 
-  // BUG-16: when the fonts fail to load, useFonts returns [false, error] and
-  // App keeps showing the blank loading view for good: the error is never
-  // read, so the captain is locked out of the logbook. There is also no
-  // system-font switch to fall back to: every style names an IBM Plex
-  // family directly (theme/tokens `fonts`).
-  it.failing('failed: the app still opens on trip home', async () => {
+  // BUG-16 (fixed by PR #29): when the fonts failed to load, App kept the
+  // blank loading view for good. It now opens with the system font set.
+  it('failed: the app still opens on trip home', async () => {
     await store();
     useFontsMock.mockReturnValue([false, new Error('font load failed')]);
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     render(<App />);
     await screen.findByTestId('trip-total', {}, { timeout: 3000 });
+    const system = new Set(Object.values(systemFonts).map((f) => f.fontFamily as string));
+    const used = [...fontFamilies()];
+    expect(used.length).toBeGreaterThan(0);
+    expect(used.every((f) => system.has(f) && !PLEX.has(f))).toBe(true);
+    warn.mockRestore();
   });
 });

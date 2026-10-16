@@ -158,10 +158,10 @@ describe('turning the device', () => {
 });
 
 describe('fixed pane widths at the 600dp breakpoint', () => {
-  // BUG-11: My grounds puts the map in a fixed 768dp pane on any window from
-  // 600dp. A 600–800dp tablet in portrait gets a map wider than the screen
-  // and the panel (top spots, spot detail) squeezed to nothing.
-  it.failing('My grounds at 600dp: the map pane fits in the window with room for the panel', async () => {
+  // BUG-11 (fixed): My grounds put the map in a fixed 768dp pane on any
+  // window from 600dp. The pane is now min(768, window − 320), so the
+  // panel (top spots, spot detail) keeps room on a 600–800dp tablet.
+  it('My grounds at 600dp: the map pane fits in the window with room for the panel', async () => {
     await app(600, { history: true });
     press('open-grounds');
     await screen.findByTestId('grounds-panel');
@@ -179,10 +179,10 @@ describe('fixed pane widths at the 600dp breakpoint', () => {
     expect(w as number).toBeLessThanOrEqual(600 - 280);
   });
 
-  // BUG-12: S3.3 at 600dp keeps the 480dp entry pane, leaving 120dp for the
-  // menu, so fish tiles are 72dp wide, under the 148dp minimum the screen
-  // itself sets (TILE_MIN).
-  it.failing('S3.3 at 600dp: menu tiles are at least 148dp wide', async () => {
+  // BUG-12 (fixed): S3.3 at 600dp kept the 480dp entry pane and shrank fish
+  // tiles to 72dp. The pane now narrows and tiles never go under 148dp
+  // (TILE_MIN); a narrow menu gets fewer columns.
+  it('S3.3 at 600dp: menu tiles are at least 148dp wide', async () => {
     await app(600);
     press('primary');
     await screen.findByTestId('fish-tewa');

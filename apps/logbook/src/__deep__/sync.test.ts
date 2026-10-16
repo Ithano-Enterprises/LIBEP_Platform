@@ -242,9 +242,9 @@ describe('server answers', () => {
     expect(await q.pending()).toHaveLength(ctx.ids.length - 1);
   });
 
-  // BUG-8: a record held after a 409 stays listed as held even after the
-  // device feed acknowledges it (state "sent"); last_error is never cleared.
-  it.failing('a held record that the feed later acknowledges is no longer listed as held', async () => {
+  // BUG-8 (fixed): a record held after a 409 stayed listed as held after the
+  // device feed acknowledged it; an ack now clears last_error.
+  it('a held record that the feed later acknowledges is no longer listed as held', async () => {
     const ctx = await store();
     const mock = createMockTransport();
     mock.stored.set(ctx.catches[1].id, '{"other":true}');
@@ -276,11 +276,11 @@ describe('batch contents and order', () => {
     expect(close.data.total_quantity).toMatch(/^\d+\.\d$/);
   });
 
-  // BUG-9: corrections in a batch are ordered by recorded_at, not by their
-  // chain. When the device clock goes back between two corrections (ADR 0001:
-  // clocks are wrong and never corrected), the later correction is sent
-  // before the one it points to, so the server sees an unknown predecessor.
-  it.failing('a correction is always sent after the correction it follows, even if the clock went back', async () => {
+  // BUG-9 (fixed): corrections in a batch were ordered by recorded_at only.
+  // When the device clock went back (ADR 0001: clocks are wrong and never
+  // corrected), the later correction went before the one it points to. They
+  // now follow their previous_correction_id chain.
+  it('a correction is always sent after the correction it follows, even if the clock went back', async () => {
     const ctx = await seeded();
     await ctx.db.runAsync("UPDATE sync_state SET state = 'sent'", []);
     await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
