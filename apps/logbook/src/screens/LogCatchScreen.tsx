@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deviceLocator, type Locator } from '../data/location';
 import type { CatchRecord, Gps, MenuItem } from '../data/types';
-import { fonts, radius } from '../theme/tokens';
+import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';

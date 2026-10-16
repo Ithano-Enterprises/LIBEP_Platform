@@ -1,12 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { CatchRecord } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { formatQuantity, formatTime } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { stateStyle } from '../tripHome/stateStyle';
 import { formatGps } from './model';
@@ -29,6 +29,7 @@ export function ConfirmCard({
   const c = useTheme();
   const t = useStrings();
   const { lang } = usePreferences();
+  const f = useFontSet();
   const s = stateStyle('device', c);
   const gps =
     record.latitude == null || record.longitude == null
@@ -37,12 +38,12 @@ export function ConfirmCard({
 
   const field = (label: string, value: React.ReactNode) => (
     <View style={styles.field}>
-      <Text style={[styles.fieldLabel, { color: c.dim }]}>{label}</Text>
+      <Text style={[styles.fieldLabel, f.sans, { color: c.dim }]}>{label}</Text>
       {value}
     </View>
   );
   const mono = (v: string, id?: string) => (
-    <Text testID={id} style={[styles.fieldValue, { color: c.text }]}>
+    <Text testID={id} style={[styles.fieldValue, f.monoSemiBold, { color: c.text }]}>
       {v}
     </Text>
   );
@@ -55,7 +56,7 @@ export function ConfirmCard({
       <View style={styles.titleRow}>
         <View style={styles.title}>
           <Icon name="check" size={22} strokeWidth={2.2} color={c.ok} />
-          <Text style={[styles.titleText, { color: c.ok }]}>{t.savedTitle}</Text>
+          <Text style={[styles.titleText, f.sansSemiBold, { color: c.ok }]}>{t.savedTitle}</Text>
         </View>
         <Pressable
           testID="confirm-dismiss"
@@ -72,20 +73,20 @@ export function ConfirmCard({
         <View style={styles.what}>
           <Icon name="fish" size={22} color={c.dim} />
           <View style={styles.names}>
-            <Text style={[styles.species, { color: c.text }]}>{record.species_local_name}</Text>
-            {lang === 'en' && gloss ? <Text style={[styles.gloss, { color: c.dim }]}>{gloss}</Text> : null}
+            <Text style={[styles.species, f.sansSemiBold, { color: c.text }]}>{record.species_local_name}</Text>
+            {lang === 'en' && gloss ? <Text style={[styles.gloss, f.sans, { color: c.dim }]}>{gloss}</Text> : null}
           </View>
           {record.hold_code ? <HoldBox code={record.hold_code} size={24} /> : null}
         </View>
         <View style={styles.figureCol}>
           <View style={styles.figure}>
-            <Text testID="confirm-weight" style={[styles.weight, { color: c.text }]}>
+            <Text testID="confirm-weight" style={[styles.weight, f.monoSemiBold, { color: c.text }]}>
               {formatQuantity(record.quantity)}
             </Text>
-            <Text style={[styles.unit, { color: c.dim }]}>t</Text>
+            <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
           </View>
           <View style={styles.estimate}>
-            <Text style={[styles.estimateText, { color: c.dim }]}>{t.estimate}</Text>
+            <Text style={[styles.estimateText, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
             <TierChip tier="S" size={22} />
           </View>
         </View>
@@ -99,13 +100,13 @@ export function ConfirmCard({
           t.stateL,
           <View style={styles.state}>
             <Icon name={s.icon} size={16} strokeWidth={2} color={s.color} />
-            <Text style={[styles.stateText, { color: s.color }]}>{t.states.device}</Text>
+            <Text style={[styles.stateText, f.sansSemiBold, { color: s.color }]}>{t.states.device}</Text>
           </View>,
         )}
       </View>
 
       <View style={styles.reason}>
-        <Text style={[styles.reasonText, { color: c.dim }]}>{t.reason}</Text>
+        <Text style={[styles.reasonText, f.sans, { color: c.dim }]}>{t.reason}</Text>
         <PlaceholderTag />
       </View>
 
@@ -117,7 +118,7 @@ export function ConfirmCard({
           style={({ pressed }) => [styles.primary, { backgroundColor: pressed ? c.accentPress : c.accent }]}
         >
           <Icon name="plus" size={22} strokeWidth={2.2} color={c.onAccent} />
-          <Text style={[styles.primaryText, { color: c.onAccent }]}>{t.logAnother}</Text>
+          <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>{t.logAnother}</Text>
         </Pressable>
         <Pressable
           testID="view-list"
@@ -129,7 +130,7 @@ export function ConfirmCard({
           ]}
         >
           <Icon name="list" size={20} color={c.text} />
-          <Text style={[styles.secondaryText, { color: c.text }]}>{t.viewList}</Text>
+          <Text style={[styles.secondaryText, f.sansMedium, { color: c.text }]}>{t.viewList}</Text>
         </Pressable>
       </View>
     </View>
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  titleText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  titleText: { fontSize: 20 },
   dismiss: { width: 56, height: 56, marginVertical: -12, marginRight: -14, alignItems: 'center', justifyContent: 'center' },
   summary: {
     flexDirection: 'row',
@@ -169,22 +170,22 @@ const styles = StyleSheet.create({
   },
   what: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
   names: { gap: 1, flexShrink: 1 },
-  species: { fontFamily: fonts.sansSemiBold, fontSize: 20, lineHeight: 23 },
-  gloss: { fontFamily: fonts.sans, fontSize: 13 },
+  species: { fontSize: 20, lineHeight: 23 },
+  gloss: { fontSize: 13 },
   figureCol: { alignItems: 'flex-end', gap: 6 },
   figure: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
-  weight: { fontFamily: fonts.monoSemiBold, fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
-  unit: { fontFamily: fonts.mono, fontSize: 17 },
+  weight: { fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
+  unit: { fontSize: 17 },
   estimate: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  estimateText: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  estimateText: { fontSize: 15 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, columnGap: 12, paddingHorizontal: 2 },
   field: { flexBasis: '46%', flexGrow: 1, gap: 2 },
-  fieldLabel: { fontFamily: fonts.sans, fontSize: 13 },
-  fieldValue: { fontFamily: fonts.monoSemiBold, fontSize: 15 },
+  fieldLabel: { fontSize: 13 },
+  fieldValue: { fontSize: 15 },
   state: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  stateText: { fontFamily: fonts.sansSemiBold, fontSize: 15 },
+  stateText: { fontSize: 15 },
   reason: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  reasonText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 18, flexShrink: 1 },
+  reasonText: { fontSize: 13, lineHeight: 18, flexShrink: 1 },
   actions: { gap: 8 },
   primary: {
     height: 64,
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  primaryText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  primaryText: { fontSize: 20 },
   secondary: {
     height: 56,
     borderRadius: radius,
@@ -204,5 +205,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  secondaryText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  secondaryText: { fontSize: 17 },
 });

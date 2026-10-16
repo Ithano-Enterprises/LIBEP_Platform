@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Gps, MenuItem } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { AutoStrip } from './AutoStrip';
 import { Keypad } from './Keypad';
@@ -85,13 +85,13 @@ export function EntrySheet({
         </View>
         <View style={styles.figureCol}>
           <View style={styles.figure}>
-            <Text testID="entry-value" style={[styles.value, { color: c.text }]}>
+            <Text testID="entry-value" style={[styles.value, f.monoSemiBold, { color: c.text }]}>
               {value || '0'}
             </Text>
             <Text style={[styles.unit, f.mono, { color: c.dim }]}>kg</Text>
           </View>
           <View style={styles.estimate}>
-            <Text style={[styles.estimateText, { color: c.dim }]}>{t.estimate}</Text>
+            <Text style={[styles.estimateText, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
             <TierChip tier="S" size={22} />
           </View>
         </View>
@@ -100,7 +100,7 @@ export function EntrySheet({
       {hint ? (
         <View testID="cap-hint" style={styles.hint}>
           <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
-          <Text style={[styles.hintText, { color: c.accent }]}>{hint}</Text>
+          <Text style={[styles.hintText, f.sansMedium, { color: c.accent }]}>{hint}</Text>
         </View>
       ) : null}
 
@@ -114,7 +114,7 @@ export function EntrySheet({
           placeholder={t.notePh}
           placeholderTextColor={c.dim}
           maxLength={NOTE_MAX}
-          style={[styles.note, { backgroundColor: c.bg, borderColor: c.border, color: c.text }]}
+          style={[styles.note, f.sans, { backgroundColor: c.bg, borderColor: c.border, color: c.text }]}
         />
       ) : (
         <Pressable
@@ -124,7 +124,7 @@ export function EntrySheet({
           style={styles.addNote}
         >
           <Icon name="pencil" size={18} color={c.dim} />
-          <Text style={[styles.addNoteText, { color: c.dim }]}>{t.addNote}</Text>
+          <Text style={[styles.addNoteText, f.sansMedium, { color: c.dim }]}>{t.addNote}</Text>
         </Pressable>
       )}
 
@@ -142,7 +142,7 @@ export function EntrySheet({
         ]}
       >
         <Icon name="check" size={22} strokeWidth={2.2} color={valid ? c.onAccent : c.dim} />
-        <Text style={[styles.saveText, { color: valid ? c.onAccent : c.dim }]}>{t.save}</Text>
+        <Text style={[styles.saveText, f.sansSemiBold, { color: valid ? c.onAccent : c.dim }]}>{t.save}</Text>
       </Pressable>
     </View>
   );
@@ -166,20 +166,19 @@ const styles = StyleSheet.create({
   },
   figureCol: { alignItems: 'flex-end', gap: 6 },
   figure: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
-  value: { fontFamily: fonts.monoSemiBold, fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
-  unit: { fontFamily: fonts.mono, fontSize: 17 },
+  value: { fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
+  unit: { fontSize: 17 },
   estimate: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  estimateText: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  estimateText: { fontSize: 15 },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  hintText: { fontFamily: fonts.sansMedium, fontSize: 13, flexShrink: 1 },
+  hintText: { fontSize: 13, flexShrink: 1 },
   addNote: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
-  addNoteText: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  addNoteText: { fontSize: 15 },
   note: {
     height: 56,
     borderRadius: radius,
     borderWidth: 1,
     paddingHorizontal: 14,
-    fontFamily: fonts.sans,
     fontSize: 15,
   },
   save: {
@@ -190,5 +189,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  saveText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  saveText: { fontSize: 20 },
 });
