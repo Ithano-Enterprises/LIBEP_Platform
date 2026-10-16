@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { DeviceProfile } from '../../data/types';
-import { fonts, radius, touchTarget } from '../../theme/tokens';
+import { radius, touchTarget } from '../../theme/tokens';
 import { Icon, type IconName } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
 import { PreferenceToggles } from '../../ui/PreferenceToggles';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 
 // S2.1 header (phone): vessel name and registration, the mode/language
 // toggles, then the chips row with the offline button.
@@ -15,16 +15,17 @@ export function Header({ profile }: { profile: DeviceProfile }) {
   const c = useTheme();
   const t = useStrings();
   const net = useNetworkState();
+  const f = useFontSet();
   const offline = net.isConnected === false || net.isInternetReachable === false;
 
   return (
     <View style={[styles.header, { borderBottomColor: c.border }]}>
       <View style={styles.top}>
         <View style={styles.vessel}>
-          <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>
+          <Text style={[styles.name, f.sansSemiBold, { color: c.text }]} numberOfLines={1}>
             {profile.vessel.name}
           </Text>
-          <Text style={[styles.reg, { color: c.dim }]} numberOfLines={1}>
+          <Text style={[styles.reg, f.mono, { color: c.dim }]} numberOfLines={1}>
             {profile.vessel.registration}
           </Text>
         </View>
@@ -42,12 +43,13 @@ export function Header({ profile }: { profile: DeviceProfile }) {
 
 function Chip({ icon, label, mono }: { icon: IconName; label: string; mono?: boolean }) {
   const c = useTheme();
+  const f = useFontSet();
   return (
     <View style={[styles.chip, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Icon name={icon} size={15} color={c.text} />
       <Text
         style={[
-          mono ? styles.chipMono : styles.chipText,
+          mono ? [styles.chipMono, f.monoSemiBold] : [styles.chipText, f.sansMedium],
           { color: c.text },
         ]}
         numberOfLines={1}
@@ -62,6 +64,7 @@ function OfflineButton() {
   const c = useTheme();
   const t = useStrings();
   const [open, setOpen] = useState(false);
+  const f = useFontSet();
   return (
     <View style={styles.offlineWrap}>
       <Pressable
@@ -76,18 +79,18 @@ function OfflineButton() {
         ]}
       >
         <Icon name="wifiOff" size={18} strokeWidth={2} color={c.dim} />
-        <Text style={[styles.offlineText, { color: c.text }]}>{t.sigShort}</Text>
+        <Text style={[styles.offlineText, f.sans, { color: c.text }]}>{t.sigShort}</Text>
       </Pressable>
       {open ? (
         <View style={[styles.pop, { backgroundColor: c.raised, borderColor: c.border }]}>
           <View style={styles.popTitleRow}>
             <View style={styles.popTitle}>
               <Icon name="wifiOff" size={16} color={c.text} />
-              <Text style={[styles.popTitleText, { color: c.text }]}>{t.noSignal}</Text>
+              <Text style={[styles.popTitleText, f.sansSemiBold, { color: c.text }]}>{t.noSignal}</Text>
             </View>
             <PlaceholderTag />
           </View>
-          <Text style={[styles.popLine, { color: c.dim }]}>{t.sigLine}</Text>
+          <Text style={[styles.popLine, f.sans, { color: c.dim }]}>{t.sigLine}</Text>
         </View>
       ) : null}
     </View>
@@ -98,8 +101,8 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, zIndex: 2 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   vessel: { flex: 1, minWidth: 0, gap: 3 },
-  name: { fontFamily: fonts.sansSemiBold, fontSize: 24, lineHeight: 28 },
-  reg: { fontFamily: fonts.mono, fontSize: 13 },
+  name: { fontSize: 24, lineHeight: 28 },
+  reg: { fontSize: 13 },
   chips: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: touchTarget, marginTop: 6 },
   chip: {
     flexDirection: 'row',
@@ -111,8 +114,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexShrink: 1,
   },
-  chipText: { fontFamily: fonts.sansMedium, fontSize: 15 },
-  chipMono: { fontFamily: fonts.monoSemiBold, fontSize: 13 },
+  chipText: { fontSize: 15 },
+  chipMono: { fontSize: 13 },
   offlineWrap: { marginLeft: 'auto' },
   offline: {
     width: touchTarget,
@@ -123,7 +126,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
   },
-  offlineText: { fontFamily: fonts.sans, fontSize: 11, lineHeight: 12, textAlign: 'center' },
+  offlineText: { fontSize: 11, lineHeight: 12, textAlign: 'center' },
   pop: {
     position: 'absolute',
     top: 60,
@@ -142,6 +145,6 @@ const styles = StyleSheet.create({
   },
   popTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   popTitle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  popTitleText: { fontFamily: fonts.sansSemiBold, fontSize: 15 },
-  popLine: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 18 },
+  popTitleText: { fontSize: 15 },
+  popLine: { fontSize: 13, lineHeight: 18 },
 });

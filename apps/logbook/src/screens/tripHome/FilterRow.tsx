@@ -1,9 +1,9 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { StateKey } from '../../i18n/strings';
-import { fonts, radius, touchTarget } from '../../theme/tokens';
+import { radius, touchTarget } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { STATE_ORDER } from './model';
 import { stateStyle } from './stateStyle';
 
@@ -22,6 +22,7 @@ export function FilterRow({
 }) {
   const c = useTheme();
   const t = useStrings();
+  const f = useFontSet();
   const items: (StateKey | null)[] = [null, ...STATE_ORDER];
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
@@ -53,7 +54,7 @@ export function FilterRow({
                 color={st ? st.color : on ? c.text : c.dim}
               />
             </View>
-            <Text style={[styles.count, { color: on ? c.text : c.dim }]}>{count}</Text>
+            <Text style={[styles.count, f.monoSemiBold, { color: on ? c.text : c.dim }]}>{count}</Text>
           </Pressable>
         );
       })}
@@ -73,5 +74,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  count: { fontFamily: fonts.monoSemiBold, fontSize: 15 },
+  count: { fontSize: 15 },
 });

@@ -4,10 +4,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { StateKey } from '../i18n/strings';
-import { fonts, radius, touchTarget } from '../theme/tokens';
+import { radius, touchTarget } from '../theme/tokens';
 import { formatQuantity, formatTime, sumTonnes } from '../ui/format';
 import { Icon } from '../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { EntryRow } from './tripHome/EntryRow';
 import { FilterRow } from './tripHome/FilterRow';
@@ -26,6 +26,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const { data, error } = useTripHome();
+  const f = useFontSet();
   const [filter, setFilter] = useState<StateKey | null>(null);
   const [noticesOff, setNoticesOff] = useState(false);
   const unit = 't' as const;
@@ -38,12 +39,12 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
   );
 
   if (error) {
-    return shell(<Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
   }
   if (!data) return shell(null);
   if (!data.profile) {
     // [TO CONFIRM: device enrolment screen; not in the design yet]
-    return shell(<Text style={[styles.error, { color: c.dim }]}>No vessel linked to this device.</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>No vessel linked to this device.</Text>);
   }
 
   const { openTrip, entries, closedTrips } = data;
@@ -58,13 +59,13 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
 
       <View style={styles.titleRow}>
         <View style={styles.titleText}>
-          <Text style={[styles.title, { color: c.text }]}>{t.trip}</Text>
+          <Text style={[styles.title, f.sansSemiBold, { color: c.text }]}>{t.trip}</Text>
           {openTrip ? (
             <View style={styles.tripLine}>
-              <Text style={[styles.tripLineText, { color: c.dim }]}>
+              <Text style={[styles.tripLineText, f.sans, { color: c.dim }]}>
                 {t.started} {formatTime(openTrip.departure_at)} · {entries.length} {t.entriesWord} ·
               </Text>
-              <Text testID="trip-total" style={[styles.tripTotal, { color: c.text }]}>
+              <Text testID="trip-total" style={[styles.tripTotal, f.monoSemiBold, { color: c.text }]}>
                 {formatQuantity(total, unit)} {unit}
               </Text>
               <TierChip tier="S" size={17} />
@@ -79,7 +80,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
             style={[styles.closeButton, { borderColor: c.border }]}
           >
             <Icon name="flag" size={18} strokeWidth={2} color={c.text} />
-            <Text style={[styles.closeText, { color: c.text }]}>{t.closeTrip}</Text>
+            <Text style={[styles.closeText, f.sansMedium, { color: c.text }]}>{t.closeTrip}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -98,8 +99,8 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
         {visible.length === 0 ? (
           <View testID="empty" style={styles.empty}>
             <Icon name="fish" size={32} strokeWidth={1.4} color={c.dim} />
-            <Text style={[styles.emptyTitle, { color: c.dim }]}>{t.noEntries}</Text>
-            {!openTrip ? <Text style={[styles.emptyBody, { color: c.dim }]}>{t.startToLog}</Text> : null}
+            <Text style={[styles.emptyTitle, f.sansMedium, { color: c.dim }]}>{t.noEntries}</Text>
+            {!openTrip ? <Text style={[styles.emptyBody, f.sans, { color: c.dim }]}>{t.startToLog}</Text> : null}
           </View>
         ) : null}
         <PreviousTrips trips={closedTrips} now={now()} unit={unit} />
@@ -113,7 +114,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
           style={[styles.primary, { backgroundColor: c.accent }]}
         >
           <Icon name={openTrip ? 'plus' : 'play'} size={22} strokeWidth={2.2} color={c.onAccent} />
-          <Text style={[styles.primaryText, { color: c.onAccent }]}>
+          <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>
             {openTrip ? t.logCatch : t.startTrip}
           </Text>
         </Pressable>
@@ -124,7 +125,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  error: { fontSize: 13, padding: 16 },
   titleRow: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -134,10 +135,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   titleText: { flexShrink: 1, minWidth: 0, gap: 2 },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 22, lineHeight: 26 },
+  title: { fontSize: 22, lineHeight: 26 },
   tripLine: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5 },
-  tripLineText: { fontFamily: fonts.sans, fontSize: 13 },
-  tripTotal: { fontFamily: fonts.monoSemiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
+  tripLineText: { fontSize: 13 },
+  tripTotal: { fontSize: 13, fontVariant: ['tabular-nums'] },
   closeButton: {
     height: touchTarget,
     paddingHorizontal: 14,
@@ -147,12 +148,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  closeText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  closeText: { fontSize: 17 },
   list: { flex: 1 },
   listContent: { paddingTop: 8, paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
   empty: { paddingVertical: 28, alignItems: 'center', gap: 8 },
-  emptyTitle: { fontFamily: fonts.sansMedium, fontSize: 17 },
-  emptyBody: { fontFamily: fonts.sans, fontSize: 15, textAlign: 'center' },
+  emptyTitle: { fontSize: 17 },
+  emptyBody: { fontSize: 15, textAlign: 'center' },
   footer: { paddingTop: 8, paddingHorizontal: 16 },
   primary: {
     height: 64,
@@ -162,5 +163,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  primaryText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  primaryText: { fontSize: 20 },
 });

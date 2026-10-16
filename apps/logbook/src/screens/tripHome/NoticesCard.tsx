@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { fonts, radius, touchTarget } from '../../theme/tokens';
+import { radius, touchTarget } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 
 // Notices row. Only the training tip is shown, when the entries suggest
 // guessed figures. The design's "approaching port" notice needs a port
@@ -15,6 +15,7 @@ export function NoticesCard({ onDismiss }: { onDismiss: () => void }) {
   const t = useStrings();
   const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState(false);
+  const f = useFontSet();
   const count = 1;
 
   return (
@@ -28,7 +29,7 @@ export function NoticesCard({ onDismiss }: { onDismiss: () => void }) {
           style={styles.headButton}
         >
           <Icon name="info" size={18} color={c.dim} />
-          <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>
+          <Text style={[styles.title, f.sansSemiBold, { color: c.text }]} numberOfLines={1}>
             {count} {count === 1 ? t.notice1 : t.noticeN}
           </Text>
           <PlaceholderTag />
@@ -42,16 +43,16 @@ export function NoticesCard({ onDismiss }: { onDismiss: () => void }) {
           style={styles.dismiss}
         >
           <Icon name="x" size={18} strokeWidth={2} color={c.dim} />
-          <Text style={[styles.dismissText, { color: c.text }]}>{t.dismissL}</Text>
+          <Text style={[styles.dismissText, f.sans, { color: c.text }]}>{t.dismissL}</Text>
         </Pressable>
       </View>
       {open ? (
         <View style={[styles.section, { borderTopColor: c.border }]}>
           <View style={styles.sectionHead}>
             <Icon name="bulb" size={18} color={c.accent} />
-            <Text style={[styles.sectionTitle, { color: c.text }]}>{t.trainShort}</Text>
+            <Text style={[styles.sectionTitle, f.sansSemiBold, { color: c.text }]}>{t.trainShort}</Text>
           </View>
-          <Text style={[styles.line, { color: c.text }]}>{t.trainLine}</Text>
+          <Text style={[styles.line, f.sans, { color: c.text }]}>{t.trainLine}</Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => setViewing(true)}
@@ -61,10 +62,10 @@ export function NoticesCard({ onDismiss }: { onDismiss: () => void }) {
             ]}
           >
             <Icon name="chevR" size={18} strokeWidth={2} color={c.text} />
-            <Text style={[styles.viewText, { color: c.text }]}>{t.view}</Text>
+            <Text style={[styles.viewText, f.sansMedium, { color: c.text }]}>{t.view}</Text>
           </Pressable>
           {viewing ? (
-            <Text style={[styles.stub, { color: c.dim, borderColor: c.border }]}>{t.trainStub}</Text>
+            <Text style={[styles.stub, f.sans, { color: c.dim, borderColor: c.border }]}>{t.trainStub}</Text>
           ) : null}
         </View>
       ) : null}
@@ -85,13 +86,13 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     paddingRight: 4,
   },
-  title: { flex: 1, minWidth: 0, fontFamily: fonts.sansSemiBold, fontSize: 15 },
+  title: { flex: 1, minWidth: 0, fontSize: 15 },
   dismiss: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  dismissText: { fontFamily: fonts.sans, fontSize: 11, lineHeight: 12 },
+  dismissText: { fontSize: 11, lineHeight: 12 },
   section: { marginHorizontal: 12, paddingTop: 12, paddingBottom: 12, paddingLeft: 26, borderTopWidth: 1, gap: 8 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: -26 },
-  sectionTitle: { fontFamily: fonts.sansSemiBold, fontSize: 15 },
-  line: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 20 },
+  sectionTitle: { fontSize: 15 },
+  line: { fontSize: 15, lineHeight: 20 },
   view: {
     alignSelf: 'flex-start',
     height: touchTarget,
@@ -102,14 +103,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  viewText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  viewText: { fontSize: 17 },
   stub: {
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: 8,
-    fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 18,
   },
