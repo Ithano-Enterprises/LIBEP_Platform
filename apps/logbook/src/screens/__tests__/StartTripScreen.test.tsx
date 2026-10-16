@@ -9,7 +9,7 @@ import { openTestRepo } from '../../test/sqlite';
 import { DAY } from '../../theme/tokens';
 import { formatTime } from '../../ui/format';
 import { PreferencesProvider } from '../../ui/preferences';
-import type { Lang } from '../../i18n/strings';
+import { en, sw, type Lang } from '../../i18n/strings';
 import type { Mode } from '../../theme/tokens';
 import { StartTripScreen } from '../StartTripScreen';
 
@@ -110,6 +110,15 @@ describe('StartTripScreen ready', () => {
     expect(screen.getByText('captured automatically')).toBeTruthy();
     expect(screen.getByText('Your assigned site is Mokowe.')).toBeTruthy();
     expect(StyleSheet.flatten(screen.getByTestId('screen').props.style).backgroundColor).toBe(DAY.bg);
+  });
+});
+
+describe('StartTripScreen without a vessel', () => {
+  it('says no vessel is linked, in Kiswahili', async () => {
+    const ctx = await openTestRepo();
+    renderStart(ctx.repo, ctx.deps.clock.now());
+    expect(await screen.findByText(sw.noVessel)).toBeTruthy();
+    expect(screen.queryByText(en.noVessel)).toBeNull();
   });
 });
 
