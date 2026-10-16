@@ -221,13 +221,13 @@ export function EntryDetail({
             ]}
           >
             <Icon name="pencil" size={20} color={c.text} />
-            <Text style={[styles.correctText, { color: c.text }]}>{t.correct}</Text>
+            <Text style={[styles.correctText, f.sansMedium, { color: c.text }]}>{t.correct}</Text>
           </Pressable>
         ) : null}
         {w != null ? (
           <View testID="corr-closed" style={styles.line}>
             <Icon name="lock" size={18} color={c.dim} />
-            <Text style={[styles.lineText, { color: c.dim }]}>{t.corrClosed}</Text>
+            <Text style={[styles.lineText, f.sans, { color: c.dim }]}>{t.corrClosed}</Text>
           </View>
         ) : null}
         {onShowOnMap && gps ? (
@@ -241,7 +241,7 @@ export function EntryDetail({
             ]}
           >
             <Icon name="map" size={20} color={c.text} />
-            <Text style={[styles.correctText, { color: c.text }]}>{t.showOnMap}</Text>
+            <Text style={[styles.correctText, f.sansMedium, { color: c.text }]}>{t.showOnMap}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  correctText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  correctText: { fontSize: 17 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   mapButton: {
     height: 56,

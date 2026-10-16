@@ -4,12 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { GroundsCatch, MenuItem } from '../../data/types';
 import { seasonGloss } from '../../i18n/strings';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { formatQuantity } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { buildGrounds, type Filters, type Range, type Season } from './model';
 
@@ -36,6 +36,7 @@ export function FiltersSheet({
   const t = useStrings();
   const { lang } = usePreferences();
   const insets = useSafeAreaInsets();
+  const f = useFontSet();
   const [draft, setDraft] = useState<Filters>(value);
   const result = buildGrounds(catches, { now, ...draft });
   const toggleSpecies = (id: string) =>
@@ -58,8 +59,8 @@ export function FiltersSheet({
         on ? { backgroundColor: c.accent, borderWidth: 2, borderColor: c.accent } : { backgroundColor: c.raised, borderWidth: 1, borderColor: c.border },
       ]}
     >
-      <Text style={[styles.optionText, { color: on ? c.onAccent : c.text }]}>{label}</Text>
-      {gloss ? <Text style={[styles.gloss, { color: on ? c.onAccent : c.dim }]}>{gloss}</Text> : null}
+      <Text style={[styles.optionText, f.sansSemiBold, { color: on ? c.onAccent : c.text }]}>{label}</Text>
+      {gloss ? <Text style={[styles.gloss, f.sans, { color: on ? c.onAccent : c.dim }]}>{gloss}</Text> : null}
     </Pressable>
   );
 
@@ -80,13 +81,13 @@ export function FiltersSheet({
       >
         <View style={styles.head}>
           <Icon name="filter" size={20} color={c.text} />
-          <Text style={[styles.title, { color: c.text }]}>{t.filters}</Text>
+          <Text style={[styles.title, f.sansSemiBold, { color: c.text }]}>{t.filters}</Text>
           <Pressable testID="flt-close" accessibilityRole="button" accessibilityLabel={t.close} onPress={onClose} style={styles.close}>
             <Icon name="x" size={22} color={c.dim} />
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={styles.body}>
-          <Text style={[styles.label, { color: c.dim }]}>{t.chipSpecies}</Text>
+          <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.chipSpecies}</Text>
           <View style={styles.tiles}>
             {[{ id: null as string | null, item: null as MenuItem | null }, ...menu.map((m) => ({ id: m.id, item: m }))].map(
               ({ id, item }) => {
@@ -108,9 +109,9 @@ export function FiltersSheet({
                       {item?.hold_code ? <HoldBox code={item.hold_code} /> : null}
                       <Icon name={item ? 'fish' : 'list'} size={18} color={on ? c.onAccent : c.dim} />
                     </View>
-                    <Text style={[styles.optionText, { color: on ? c.onAccent : c.text }]}>{item?.local_name ?? t.all}</Text>
+                    <Text style={[styles.optionText, f.sansSemiBold, { color: on ? c.onAccent : c.text }]}>{item?.local_name ?? t.all}</Text>
                     {lang === 'en' && item?.english_gloss ? (
-                      <Text style={[styles.gloss, { color: on ? c.onAccent : c.dim }]}>{item.english_gloss}</Text>
+                      <Text style={[styles.gloss, f.sans, { color: on ? c.onAccent : c.dim }]}>{item.english_gloss}</Text>
                     ) : null}
                   </Pressable>
                 );
@@ -118,16 +119,16 @@ export function FiltersSheet({
             )}
           </View>
           <View style={styles.labelRow}>
-            <Text style={[styles.label, { color: c.dim }]}>{t.chipSeason}</Text>
+            <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.chipSeason}</Text>
             <PlaceholderTag />
-            <Text style={[styles.gloss, { color: c.dim }]}>{t.seasonPh}</Text>
+            <Text style={[styles.gloss, f.sans, { color: c.dim }]}>{t.seasonPh}</Text>
           </View>
           <View style={styles.options}>
             {(['all', 'kaskazi', 'kusi'] as Season[]).map((s) =>
               option(draft.season === s, () => setDraft((d) => ({ ...d, season: s })), seasonLabel[s], `flt-season-${s}`, s === 'all' ? null : seasonGloss[lang][s]),
             )}
           </View>
-          <Text style={[styles.label, { color: c.dim }]}>{t.chipRange}</Text>
+          <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.chipRange}</Text>
           <View style={styles.options}>
             {(['30', '90', 'season', 'all'] as Range[]).map((r) =>
               option(draft.range === r, () => setDraft((d) => ({ ...d, range: r })), rangeLabel[r], `flt-range-${r}`),
@@ -142,8 +143,8 @@ export function FiltersSheet({
             style={({ pressed }) => [styles.apply, { backgroundColor: pressed ? c.accentPress : c.accent }]}
           >
             <Icon name="check" size={22} strokeWidth={2.2} color={c.onAccent} />
-            <Text style={[styles.applyText, { color: c.onAccent }]}>{t.show}</Text>
-            <Text testID="flt-count" style={[styles.count, { color: c.onAccent }]}>
+            <Text style={[styles.applyText, f.sansSemiBold, { color: c.onAccent }]}>{t.show}</Text>
+            <Text testID="flt-count" style={[styles.count, f.mono, { color: c.onAccent }]}>
               {t.spotsN.replace('{n}', String(result.spots.length))} ·{' '}
               {draft.species.length
                 ? `${formatQuantity(result.totalT)} t`
@@ -189,20 +190,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
   },
   head: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16 },
-  title: { flex: 1, fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  title: { flex: 1, fontSize: 20 },
   close: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
-  label: { fontFamily: fonts.sansMedium, fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
+  label: { fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tile: { flexGrow: 1, minHeight: 64, paddingVertical: 8, paddingHorizontal: 10, borderRadius: radius, gap: 4, justifyContent: 'center' },
   tileTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   options: { flexDirection: 'row', gap: 6 },
   option: { flex: 1, minHeight: 56, paddingVertical: 6, paddingHorizontal: 8, borderRadius: radius, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  optionText: { fontFamily: fonts.sansSemiBold, fontSize: 15, textAlign: 'center' },
-  gloss: { fontFamily: fonts.sans, fontSize: 12, textAlign: 'center' },
+  optionText: { fontSize: 15, textAlign: 'center' },
+  gloss: { fontSize: 12, textAlign: 'center' },
   foot: { paddingTop: 12, paddingHorizontal: 16, borderTopWidth: 1 },
   apply: { height: 64, borderRadius: radius, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  applyText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
-  count: { fontFamily: fonts.mono, fontSize: 15 },
+  applyText: { fontSize: 20 },
+  count: { fontSize: 15 },
 });

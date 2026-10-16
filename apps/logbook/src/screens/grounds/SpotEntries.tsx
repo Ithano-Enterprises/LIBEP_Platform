@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { GroundsCatch } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { formatDay, formatQuantity, formatTime } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { stateKey } from '../tripHome/model';
 import { stateStyle } from '../tripHome/stateStyle';
@@ -22,11 +22,12 @@ export function SpotEntries({
   const c = useTheme();
   const t = useStrings();
   const { lang } = usePreferences();
+  const f = useFontSet();
   return (
     <View testID="spot-entries" style={styles.wrap}>
       <View style={styles.inline}>
         <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
-        <Text style={[styles.meta, { color: c.dim }]}>
+        <Text style={[styles.meta, f.mono, { color: c.dim }]}>
           {t.readOnlyShort} · {entries.length} {t.entriesWord}
         </Text>
       </View>
@@ -38,24 +39,24 @@ export function SpotEntries({
             <View style={styles.line}>
               <View style={styles.inline}>
                 <Icon name="fish" size={18} color={c.dim} />
-                <Text style={[styles.species, { color: c.text }]}>{e.species_local_name}</Text>
+                <Text style={[styles.species, f.sans, { color: c.text }]}>{e.species_local_name}</Text>
                 {e.hold_code ? <HoldBox code={e.hold_code} /> : null}
                 {lang === 'en' && glosses[e.species_id] ? (
-                  <Text style={[styles.meta, { color: c.dim }]}>{glosses[e.species_id]}</Text>
+                  <Text style={[styles.meta, f.mono, { color: c.dim }]}>{glosses[e.species_id]}</Text>
                 ) : null}
               </View>
               <View style={styles.inline}>
-                <Text style={[styles.value, { color: c.text }]}>{formatQuantity(e.quantity)}</Text>
-                <Text style={[styles.meta, { color: c.dim }]}>t</Text>
+                <Text style={[styles.value, f.monoSemiBold, { color: c.text }]}>{formatQuantity(e.quantity)}</Text>
+                <Text style={[styles.meta, f.mono, { color: c.dim }]}>t</Text>
                 <TierChip tier="S" />
               </View>
             </View>
             <View style={styles.inline}>
-              <Text style={[styles.meta, { color: c.dim }]}>
+              <Text style={[styles.meta, f.mono, { color: c.dim }]}>
                 {formatDay(new Date(e.recorded_at), lang)} · {formatTime(e.recorded_at)} ·
               </Text>
               <Icon name={s.icon} size={14} strokeWidth={2} color={s.color} />
-              <Text style={[styles.state, { color: s.color }]}>{t.states[k]}</Text>
+              <Text style={[styles.state, f.sansMedium, { color: s.color }]}>{t.states[k]}</Text>
             </View>
           </View>
         );
@@ -69,8 +70,8 @@ const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   row: { minHeight: 64, paddingVertical: 8, paddingHorizontal: 12, borderRadius: radius, gap: 4, justifyContent: 'center' },
   line: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  species: { fontFamily: fonts.sans, fontSize: 17 },
-  value: { fontFamily: fonts.monoSemiBold, fontSize: 17 },
-  meta: { fontFamily: fonts.mono, fontSize: 13 },
-  state: { fontFamily: fonts.sansMedium, fontSize: 13 },
+  species: { fontSize: 17 },
+  value: { fontSize: 17 },
+  meta: { fontSize: 13 },
+  state: { fontSize: 13 },
 });

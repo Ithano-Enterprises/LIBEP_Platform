@@ -4,12 +4,12 @@ import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { DeviceProfile } from '../data/types';
-import { fonts, radius } from '../theme/tokens';
+import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatQuantity } from '../ui/format';
 import { Icon, type IconName } from '../ui/Icon';
 import { useIsTablet } from '../ui/layout';
-import { usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { ExcludedSheet } from './grounds/ExcludedSheet';
 import { FilterChips } from './grounds/FilterChips';
@@ -55,11 +55,12 @@ export function GroundsScreen({
   const c = useTheme();
   const t = useStrings();
   const { data, error } = useGrounds();
+  const f = useFontSet();
 
   if (error) {
     return (
       <Shell onDone={onDone}>
-        <Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>
+        <Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>
       </Shell>
     );
   }
@@ -67,7 +68,7 @@ export function GroundsScreen({
   if (!data.profile) {
     return (
       <Shell onDone={onDone}>
-        <Text style={[styles.error, { color: c.dim }]}>{t.noVessel}</Text>
+        <Text style={[styles.error, f.mono, { color: c.dim }]}>{t.noVessel}</Text>
       </Shell>
     );
   }
@@ -90,6 +91,7 @@ function Shell({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const wide = useIsTablet();
+  const f = useFontSet();
   return (
   const unit = useUnit();
     <View testID="screen" style={[styles.screen, { backgroundColor: c.bg, paddingTop: insets.top }]}>
@@ -138,6 +140,7 @@ function GroundsView({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const wide = useIsTablet();
+  const f = useFontSet();
   const [focus] = useState(() => initialFocus(data, now(), focusCatchId));
   const [metric, setMetric] = useState<Metric>('trips');
   const [filters, setFilters] = useState<Filters>(focus.filters);
@@ -189,7 +192,7 @@ function GroundsView({
     </Text>
   ) : (
     <View style={styles.inline}>
-      <Text style={[styles.sub, { color: c.dim }]}>
+      <Text style={[styles.sub, f.sans, { color: c.dim }]}>
         {speciesNames.length
           ? `${speciesNames.join(', ')} · ${t.spotsN.replace('{n}', String(grounds.spots.length))} ·`
           : `${t.tripsN.replace('{n}', String(grounds.tripCount))} · ${rangeText} ·`}
@@ -205,11 +208,11 @@ function GroundsView({
     <View style={[styles.notes, wide && styles.notesWide]}>
       <View style={styles.inline}>
         <Icon name="wifiOff" size={16} color={c.dim} />
-        <Text style={[styles.note, { color: c.dim }]}>{t.offline}</Text>
+        <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.offline}</Text>
       </View>
       <View style={styles.inline}>
         <Icon name="lock" size={16} color={c.dim} />
-        <Text style={[styles.note, { color: c.dim }]}>{t.privacy}</Text>
+        <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.privacy}</Text>
       </View>
     </View>
   );
@@ -244,7 +247,7 @@ function GroundsView({
           </Text>
           <View style={styles.inline}>
             <Icon name="lock" size={16} color={c.dim} />
-            <Text style={[styles.note, { color: c.dim }]}>{t.privacy}</Text>
+            <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.privacy}</Text>
           </View>
           <Pressable
             testID="grounds-back-trip"
@@ -253,7 +256,7 @@ function GroundsView({
             style={({ pressed }) => [styles.primary, { backgroundColor: pressed ? c.accentPress : c.accent }]}
           >
             <Icon name="back" size={22} strokeWidth={2.2} color={c.onAccent} />
-            <Text style={[styles.primaryText, { color: c.onAccent }]}>{t.backTrip}</Text>
+            <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>{t.backTrip}</Text>
           </Pressable>
         </View>
       </>,
@@ -337,11 +340,11 @@ function GroundsView({
         <View style={styles.topText}>
           <View style={styles.inline}>
             {inSpot ? null : <Icon name="rank" size={20} color={c.accent} />}
-            <Text testID="panel-title" style={[inSpot ? styles.panelTitleMono : styles.panelTitle, { color: c.text }]}>
+            <Text testID="panel-title" style={[inSpot ? [styles.panelTitleMono, f.monoSemiBold] : [styles.panelTitle, f.sansSemiBold], { color: c.text }]}>
               {panelTitle}
             </Text>
           </View>
-          <Text style={[styles.sub, { color: c.dim }]} numberOfLines={1}>
+          <Text style={[styles.sub, f.sans, { color: c.dim }]} numberOfLines={1}>
             {panelSub}
           </Text>
         </View>
@@ -375,7 +378,7 @@ function GroundsView({
             {wide && !selected ? (
               <View testID="tap-hint" style={[styles.inline, styles.hint]}>
                 <Icon name="target" size={18} color={c.dim} />
-                <Text style={[styles.note, { color: c.dim }]}>{t.tapHint}</Text>
+                <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.tapHint}</Text>
               </View>
             ) : null}
             {grounds.excluded.length ? (
@@ -445,10 +448,10 @@ const styles = StyleSheet.create({
   headerWide: { height: 72, gap: 12, paddingRight: 24, paddingLeft: 12 },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 22, lineHeight: 26 },
-  sub: { fontFamily: fonts.sans, fontSize: 15 },
-  total: { fontFamily: fonts.monoSemiBold, fontSize: 15, fontVariant: ['tabular-nums'] },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  title: { fontSize: 22, lineHeight: 26 },
+  sub: { fontSize: 15 },
+  total: { fontSize: 15, fontVariant: ['tabular-nums'] },
+  error: { fontSize: 13, padding: 16 },
   controls: { paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
   controlsWide: { height: 72, flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 24, paddingBottom: 0, borderBottomWidth: 1 },
   seg: { flexDirection: 'row' },
@@ -487,8 +490,8 @@ const styles = StyleSheet.create({
   topBar: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 10, paddingBottom: 4 },
   topBarWide: { minHeight: 72, paddingVertical: 8, paddingLeft: 24, paddingRight: 16 },
   topText: { flex: 1, minWidth: 0, gap: 1 },
-  panelTitle: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
-  panelTitleMono: { fontFamily: fonts.monoSemiBold, fontSize: 18 },
+  panelTitle: { fontSize: 20 },
+  panelTitleMono: { fontSize: 18 },
   expand: { width: 56, height: 56, borderRadius: radius, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   detailPad: { paddingHorizontal: 16, paddingBottom: 20 },
   detailPadWide: { paddingTop: 4, paddingHorizontal: 24, paddingBottom: 24, maxWidth: 560 },
@@ -497,10 +500,10 @@ const styles = StyleSheet.create({
   exText: { flex: 1, fontSize: 15 },
   notes: { paddingTop: 10, paddingHorizontal: 16, gap: 6 },
   notesWide: { paddingTop: 0, paddingHorizontal: 0, alignItems: 'flex-end', gap: 4 },
-  note: { fontFamily: fonts.sans, fontSize: 15 },
+  note: { fontSize: 15 },
   emptyPanel: { alignItems: 'center', gap: 12, paddingTop: 24, paddingHorizontal: 16, borderTopWidth: 1 },
-  emptyText: { fontFamily: fonts.sansMedium, fontSize: 17, textAlign: 'center' },
-  progress: { fontFamily: fonts.monoSemiBold, fontSize: 20 },
+  emptyText: { fontSize: 17, textAlign: 'center' },
+  progress: { fontSize: 20 },
   primary: {
     alignSelf: 'stretch',
     height: 64,
@@ -510,5 +513,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  primaryText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  primaryText: { fontSize: 20 },
 });

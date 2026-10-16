@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { MenuItem } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { DEFAULT_FILTERS, type Filters } from './model';
 
 // Species / Season / Range chips (56dp). Each opens the filters.
@@ -20,6 +20,7 @@ export function FilterChips({
 }) {
   const c = useTheme();
   const t = useStrings();
+  const f = useFontSet();
   const names = value.species.map((id) => menu.find((m) => m.id === id)?.local_name ?? '?');
   const range = { '30': t.r30, '90': t.r90, season: t.rSeason, all: t.rAll }[value.range];
   const season = { all: t.all, kaskazi: t.kaskazi, kusi: t.kusi }[value.season];
@@ -44,8 +45,8 @@ export function FilterChips({
           ]}
         >
           <View style={styles.text}>
-            <Text style={[styles.k, { color: c.dim }]}>{k}</Text>
-            <Text numberOfLines={1} style={[styles.v, { color: on ? c.accent : c.text }]}>
+            <Text style={[styles.k, f.sans, { color: c.dim }]}>{k}</Text>
+            <Text numberOfLines={1} style={[styles.v, f.sansSemiBold, { color: on ? c.accent : c.text }]}>
               {v}
             </Text>
           </View>
@@ -63,6 +64,6 @@ const styles = StyleSheet.create({
   chipNarrow: { flex: 1, minWidth: 0 },
   chipWide: { width: 170 },
   text: { flex: 1, minWidth: 0, gap: 1 },
-  k: { fontFamily: fonts.sans, fontSize: 12 },
-  v: { fontFamily: fonts.sansSemiBold, fontSize: 16 },
+  k: { fontSize: 12 },
+  v: { fontSize: 16 },
 });
