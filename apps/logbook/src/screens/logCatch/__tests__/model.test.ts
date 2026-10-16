@@ -30,7 +30,16 @@ describe('keypad', () => {
     expect(parseEntry('0')).toBeNull();
     expect(parseEntry('0.')).toBeNull();
     expect(parseEntry('2.4')).toBe(2.4);
+    expect(parseEntry('2.')).toBe(2);
+    expect(parseEntry('99999')).toBe(99999);
   });
+
+  it.each(['1.2.3', '2abc', '0.05', '1.25', '-1', ' 2', '123456', '1e3'])(
+    'a figure the keypad cannot type is not a quantity: %p',
+    (s) => {
+      expect(parseEntry(s)).toBeNull();
+    },
+  );
 });
 
 describe('menu search', () => {

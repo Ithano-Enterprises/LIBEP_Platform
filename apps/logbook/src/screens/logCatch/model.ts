@@ -1,3 +1,4 @@
+import { isValidQuantity } from '../../data/repository';
 import type { Gps, MenuItem } from '../../data/types';
 
 // Pure helpers for Log catch (S3.3): the keypad and the fish menu.
@@ -24,8 +25,11 @@ export function quickAdd(entry: string, step: number): string {
 
 /** The typed figure in tonnes, or null while it is not a valid quantity. */
 export function parseEntry(entry: string): number | null {
+  // Only what the keypad can type: up to 5 digits, at most one decimal
+  // (a trailing "." while typing is fine).
+  if (!/^\d{1,5}(\.\d?)?$/.test(entry) || entry.replace('.', '').length > MAX_DIGITS) return null;
   const v = parseFloat(entry);
-  return Number.isFinite(v) && v > 0 ? v : null;
+  return isValidQuantity(v) ? v : null;
 }
 
 /** Search by local name or English gloss, as the design. */
