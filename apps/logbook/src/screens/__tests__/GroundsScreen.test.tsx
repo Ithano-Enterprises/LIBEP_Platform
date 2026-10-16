@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LogbookProvider } from '../../data/LogbookProvider';
 import type { Repository } from '../../data/repository';
 import { seedDevFixtures } from '../../dev/fixtures/seed';
-import type { Lang } from '../../i18n/strings';
+import { en, sw, type Lang } from '../../i18n/strings';
 import { openTestRepo } from '../../test/sqlite';
 import { DAY, type Mode } from '../../theme/tokens';
 import { formatQuantity } from '../../ui/format';
@@ -52,6 +52,15 @@ async function withHistory(opts: { lang?: Lang; mode?: Mode } = {}) {
   });
   return { ...ctx, now, expected, onDone };
 }
+
+describe('GroundsScreen without a vessel', () => {
+  it('says no vessel is linked, in Kiswahili', async () => {
+    const ctx = await openTestRepo();
+    renderGrounds(ctx.repo, ctx.deps.clock.now());
+    expect(await screen.findByText(sw.noVessel)).toBeTruthy();
+    expect(screen.queryByText(en.noVessel)).toBeNull();
+  });
+});
 
 describe('GroundsScreen', () => {
   it('shows the trips, total S, one cell per spot, the legend and the calm lines', async () => {

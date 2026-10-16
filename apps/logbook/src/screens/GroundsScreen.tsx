@@ -62,7 +62,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
   if (error) return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
   if (!data) return shell(null);
   if (!data.profile) {
-    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>No vessel linked to this device.</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>{t.noVessel}</Text>);
   }
 
   const grounds = buildGrounds(data.catches, { now: now(), range: '90', species: [] });
