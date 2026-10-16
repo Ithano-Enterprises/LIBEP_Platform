@@ -66,8 +66,7 @@ describe('EntryDetailScreen', () => {
     const { repo, c } = await openEntry();
     fireEvent.press(screen.getByTestId('correct'));
     expect(screen.getByTestId('correct-save')).toBeDisabled(); // nothing changed yet
-    fireEvent.press(screen.getByTestId('key-back'));
-    fireEvent.press(screen.getByTestId('key-6'));
+    for (const k of ['2', '.', '6']) fireEvent.press(screen.getByTestId(`key-${k}`));
     expect(screen.getByTestId('correct-value')).toHaveTextContent('2.6');
     fireEvent.press(screen.getByTestId('fish-kibua'));
     fireEvent.press(screen.getByTestId('correct-save'));
@@ -95,6 +94,36 @@ describe('EntryDetailScreen', () => {
     await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent('3.6'));
     const h2 = (await repo.getCatchHistory(c.id))!;
     expect(h2.corrections[1].previous_correction_id).toBe(h2.corrections[0].id);
+  });
+
+  it('the old figure starts selected: backspace twice then 1.8 on 18.0 gives 1.8, not 181.8', async () => {
+    const ctx = await openTestRepo();
+    await seedDevReference(ctx.db);
+    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const c = await ctx.repo.logCatch({ speciesId: speciesId('tewa'), quantity: 18, gps: null });
+    renderDetail(ctx.repo, c.id);
+    await screen.findByTestId('detail-species');
+    fireEvent.press(screen.getByTestId('correct'));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent('18.0');
+    expect(screen.getByTestId('correct-value').props.accessibilityState).toEqual({ selected: true });
+    for (const k of ['back', 'back', '1', '.', '8']) fireEvent.press(screen.getByTestId(`key-${k}`));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^1\.8$/);
+    fireEvent.press(screen.getByTestId('correct-save'));
+    await waitFor(() => expect(screen.queryByTestId('correct-sheet')).toBeNull());
+    const [e] = await ctx.repo.listTripEntries(c.trip_id);
+    expect(e.quantity).toBe(1.8);
+  });
+
+  it('typing a digit first replaces the old figure; a quick key adds to it', async () => {
+    await openEntry();
+    fireEvent.press(screen.getByTestId('correct'));
+    fireEvent.press(screen.getByTestId('key-3'));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^3$/);
+    expect(screen.getByTestId('correct-value').props.accessibilityState).toEqual({ selected: false });
+    fireEvent.press(screen.getByTestId('correct-scrim'));
+    fireEvent.press(screen.getByTestId('correct'));
+    fireEvent.press(screen.getByTestId('quick-0.5'));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^2\.9$/);
   });
 
   it('a weighed entry shows W and the difference, and corrections are closed', async () => {

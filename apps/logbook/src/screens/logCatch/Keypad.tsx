@@ -7,8 +7,18 @@ import { pressKey, QUICK_STEPS_KG, quickAdd, type Key } from './model';
 
 // Built-in keypad (no system keyboard) for whole kg: 4 columns, 56dp keys,
 // quick keys +500 kg / +1000 kg, and the voice key shown as coming soon.
-// No decimal key: the captain enters whole kg.
-export function Keypad({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// No decimal key: the captain enters whole kg. With `replace`, the figure
+// shown is selected: the next digit or ⌫ starts a new figure (quick keys
+// still add to it).
+export function Keypad({
+  value,
+  onChange,
+  replace = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  replace?: boolean;
+}) {
   const c = useTheme();
   const t = useStrings();
   const f = useFontSet();
@@ -19,7 +29,7 @@ export function Keypad({ value, onChange }: { value: string; onChange: (v: strin
       testID={`key-${k}`}
       accessibilityRole="button"
       accessibilityLabel={k === 'back' ? t.backspace : label}
-      onPress={() => onChange(pressKey(value, k))}
+      onPress={() => onChange(pressKey(replace ? '' : value, k))}
       style={({ pressed }) => [styles.key, { backgroundColor: pressed ? c.border : c.raised }]}
     >
       <Text style={[styles.digit, f.monoSemiBold, { color: c.text }]}>{label}</Text>

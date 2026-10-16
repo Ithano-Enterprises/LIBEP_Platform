@@ -35,6 +35,9 @@ export function CorrectionSheet({
   const [speciesId, setSpeciesId] = useState(entry.species_id);
   const f = useFontSet();
   const [value, setValue] = useState(formatQuantity(entry.quantity));
+  // The old figure starts selected, so typing replaces it rather than
+  // appending (backspace twice then 1.8 on "18.0" must give 1.8, not 181.8).
+  const [selected, setSelected] = useState(true);
   const quantity = parseEntry(value);
   const changed =
     quantity != null && (speciesId !== entry.species_id || Math.round(quantity * 10) !== Math.round(entry.quantity * 10));
@@ -59,7 +62,16 @@ export function CorrectionSheet({
               <Text style={[styles.titleText, f.sansSemiBold, { color: c.text }]}>{t.correct}</Text>
             </View>
             <View style={styles.figure}>
-              <Text testID="correct-value" style={[styles.value, f.monoSemiBold, { color: c.text }]}>
+              <Text
+                testID="correct-value"
+                accessibilityState={{ selected }}
+                style={[
+                  styles.value,
+                  f.monoSemiBold,
+                  { color: c.text },
+                  selected && { backgroundColor: c.raised, borderRadius: 4 },
+                ]}
+              >
                 {value || '0'}
               </Text>
               <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
@@ -71,7 +83,14 @@ export function CorrectionSheet({
               <MenuTile key={m.id} item={m} active={m.id === speciesId} onPress={() => setSpeciesId(m.id)} />
             ))}
           </View>
-          <Keypad value={value} onChange={setValue} />
+          <Keypad
+            value={value}
+            replace={selected}
+            onChange={(v) => {
+              setSelected(false);
+              setValue(v);
+            }}
+          />
           {error ? <Text style={[styles.error, f.mono, { color: c.danger }]}>{error}</Text> : null}
           <Pressable
             testID="correct-save"
