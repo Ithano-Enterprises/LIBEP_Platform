@@ -120,6 +120,7 @@ describe('EntryDetailScreen', () => {
     fireEvent.press(screen.getByTestId('key-3'));
     expect(screen.getByTestId('correct-value')).toHaveTextContent(/^3$/);
     expect(screen.getByTestId('correct-value').props.accessibilityState).toEqual({ selected: false });
+    expect(screen.getByTestId('correct-scrim').props.accessibilityRole).toBe('button');
     fireEvent.press(screen.getByTestId('correct-scrim'));
     fireEvent.press(screen.getByTestId('correct'));
     fireEvent.press(screen.getByTestId('quick-0.5'));

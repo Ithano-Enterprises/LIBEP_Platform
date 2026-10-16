@@ -47,6 +47,7 @@ export function CorrectionSheet({
     <>
       <Pressable
         testID="correct-scrim"
+        accessibilityRole="button"
         accessibilityLabel={t.back}
         onPress={onClose}
         style={[StyleSheet.absoluteFill, styles.scrim]}
