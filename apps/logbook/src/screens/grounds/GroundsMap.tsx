@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
 
-import { fonts, mapPalettes, radius } from '../../theme/tokens';
+import { mapPalettes, radius } from '../../theme/tokens';
 import { formatQuantity } from '../../ui/format';
 import { Icon, type IconName } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { CELL_DRAW, HOME_PORT, LAND, PLACES, project, VIEW } from './basemap';
 import { heatColours } from './heat';
 import { heatStep, metricValue, type Metric, type Spot } from './model';
@@ -38,6 +38,7 @@ export function GroundsMap({
   const c = useTheme();
   const t = useStrings();
   const { mode } = usePreferences();
+  const f = useFontSet();
   const map = mapPalettes[mode];
   const heat = heatColours(mode);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -86,7 +87,7 @@ export function GroundsMap({
                   return (
                     <View key={p.n} pointerEvents="none" style={[styles.place, placeAt(p.a, px, py)]}>
                       {p.dot ? <View style={[styles.dot, { backgroundColor: c.dim }]} /> : null}
-                      <Text style={[styles.placeText, { color: c.text }]}>{p.n}</Text>
+                      <Text style={[styles.placeText, f.sans, { color: c.text }]}>{p.n}</Text>
                     </View>
                   );
                 })
@@ -124,12 +125,12 @@ export function GroundsMap({
                     ]}
                   >
                     {inside ? (
-                      <Text style={[styles.inLabel, { color: heat.on[step - 1] }]}>{label(metricValue(s, metric))}</Text>
+                      <Text style={[styles.inLabel, f.monoSemiBold, { color: heat.on[step - 1] }]}>{label(metricValue(s, metric))}</Text>
                     ) : null}
                   </View>
                   {showVal && !inside ? (
                     <View style={[styles.pill, { top: hit / 2 - blk / 2 - 30, backgroundColor: c.bg, borderColor: c.text }]}>
-                      <Text style={[styles.pillText, { color: c.text }]}>{label(metricValue(s, metric))}</Text>
+                      <Text style={[styles.pillText, f.monoSemiBold, { color: c.text }]}>{label(metricValue(s, metric))}</Text>
                     </View>
                   ) : null}
                 </Pressable>
@@ -150,7 +151,7 @@ export function GroundsMap({
 
             <View style={[styles.basemapTag, { backgroundColor: c.bg }]}>
               <PlaceholderTag />
-              <Text style={[styles.basemapText, { color: c.dim }]}>{t.basemap}</Text>
+              <Text style={[styles.basemapText, f.sans, { color: c.dim }]}>{t.basemap}</Text>
             </View>
 
             {size.h >= 124 ? (
@@ -166,13 +167,13 @@ export function GroundsMap({
       </View>
       {legend && spots.length ? (
         <View testID="legend" style={[styles.legend, { backgroundColor: c.bg, borderTopColor: c.border }]}>
-          <Text style={[styles.legendLabel, { color: c.dim }]}>{metric === 'trips' ? t.legendTrips : t.legendT}</Text>
+          <Text style={[styles.legendLabel, f.sans, { color: c.dim }]}>{metric === 'trips' ? t.legendTrips : t.legendT}</Text>
           <View style={styles.swatches}>
             {heat.fill.map((f) => (
               <View key={f} style={[styles.swatch, { backgroundColor: f, borderColor: c.border }]} />
             ))}
           </View>
-          <Text style={[styles.legendRange, { color: c.text }]}>
+          <Text style={[styles.legendRange, f.monoMedium, { color: c.text }]}>
             {label(min)} → {label(max)} {metric === 'trips' ? t.tripsWord : 't'}
           </Text>
         </View>
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   map: { flex: 1, overflow: 'hidden' },
   place: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 4, zIndex: 2 },
   dot: { width: 5, height: 5, borderRadius: 3 },
-  placeText: { fontFamily: fonts.sans, fontSize: 12 },
+  placeText: { fontSize: 12 },
   anchor: {
     position: 'absolute',
     width: 28,
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   hit: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  inLabel: { fontFamily: fonts.monoSemiBold, fontSize: 13, textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' },
+  inLabel: { fontSize: 13, textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' },
   pill: {
     position: 'absolute',
     height: 24,
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillText: { fontFamily: fonts.monoSemiBold, fontSize: 13 },
+  pillText: { fontSize: 13 },
   boat: {
     position: 'absolute',
     width: 32,
@@ -266,12 +267,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 4,
   },
-  basemapText: { fontFamily: fonts.sans, fontSize: 11 },
+  basemapText: { fontSize: 11 },
   controls: { position: 'absolute', right: 8, bottom: 8, zIndex: 6, width: 118, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   mapButton: { width: 56, height: 56, borderRadius: radius, alignItems: 'center', justifyContent: 'center' },
   legend: { height: 36, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderTopWidth: 1 },
-  legendLabel: { fontFamily: fonts.sans, fontSize: 13 },
+  legendLabel: { fontSize: 13 },
   swatches: { flexDirection: 'row', gap: 2 },
   swatch: { width: 18, height: 12, borderRadius: 2, borderWidth: 1 },
-  legendRange: { fontFamily: fonts.monoMedium, fontSize: 13 },
+  legendRange: { fontSize: 13 },
 });

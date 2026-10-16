@@ -3,11 +3,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fonts, radius } from '../theme/tokens';
+import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatQuantity } from '../ui/format';
 import { Icon, type IconName } from '../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { ExcludedSheet } from './grounds/ExcludedSheet';
 import { GroundsMap } from './grounds/GroundsMap';
@@ -27,6 +27,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const { data, error } = useGrounds();
+  const f = useFontSet();
   const [metric, setMetric] = useState<Metric>('trips');
   const [selected, setSelected] = useState<string | null>(null);
   const [full, setFull] = useState(false);
@@ -49,7 +50,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
         <View style={styles.headerText}>
           <View style={styles.inline}>
             <Icon name="map" size={22} color={c.accent} />
-            <Text style={[styles.title, { color: c.text }]}>{t.groundsTitle}</Text>
+            <Text style={[styles.title, f.sansSemiBold, { color: c.text }]}>{t.groundsTitle}</Text>
           </View>
           {sub}
         </View>
@@ -58,10 +59,10 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
     </View>
   );
 
-  if (error) return shell(<Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>);
+  if (error) return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
   if (!data) return shell(null);
   if (!data.profile) {
-    return shell(<Text style={[styles.error, { color: c.dim }]}>No vessel linked to this device.</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>No vessel linked to this device.</Text>);
   }
 
   const grounds = buildGrounds(data.catches, { now: now(), range: '90', species: [] });
@@ -73,15 +74,15 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
   const boat = boatCatch ? { lat: boatCatch.latitude!, lon: boatCatch.longitude! } : null;
 
   const sub = empty ? (
-    <Text style={[styles.sub, { color: c.dim }]}>
+    <Text style={[styles.sub, f.sans, { color: c.dim }]}>
       {t.tripsN.replace('{n}', String(data.tripsLogged))} · {t.days90}
     </Text>
   ) : (
     <View style={styles.inline}>
-      <Text style={[styles.sub, { color: c.dim }]}>
+      <Text style={[styles.sub, f.sans, { color: c.dim }]}>
         {t.tripsN.replace('{n}', String(grounds.tripCount))} · {t.days90} ·
       </Text>
-      <Text testID="grounds-total" style={[styles.total, { color: c.text }]}>
+      <Text testID="grounds-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
         {formatQuantity(grounds.totalT)} t
       </Text>
       <TierChip tier="S" />
@@ -104,8 +105,8 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
         </View>
         <View testID="grounds-empty" style={[styles.emptyPanel, { backgroundColor: c.surface, borderTopColor: c.border, paddingBottom: 16 + insets.bottom }]}>
           <Icon name="map" size={32} strokeWidth={1.4} color={c.dim} />
-          <Text style={[styles.emptyText, { color: c.text }]}>{t.empty}</Text>
-          <Text testID="grounds-progress" style={[styles.progress, { color: c.dim }]}>
+          <Text style={[styles.emptyText, f.sansMedium, { color: c.text }]}>{t.empty}</Text>
+          <Text testID="grounds-progress" style={[styles.progress, f.monoSemiBold, { color: c.dim }]}>
             {Math.min(data.tripsLogged, MIN_TRIPS)} / {MIN_TRIPS}
           </Text>
           <Pressable
@@ -114,7 +115,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
             onPress={onDone}
             style={({ pressed }) => [styles.primary, { backgroundColor: pressed ? c.accentPress : c.accent }]}
           >
-            <Text style={[styles.primaryText, { color: c.onAccent }]}>{t.backTrip}</Text>
+            <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>{t.backTrip}</Text>
           </Pressable>
         </View>
       </>,
@@ -146,7 +147,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
               ]}
             >
               <Icon name={icon} size={18} strokeWidth={2} color={on ? c.onAccent : c.text} />
-              <Text numberOfLines={1} style={[styles.segText, { color: on ? c.onAccent : c.text }, on && styles.segTextOn]}>
+              <Text numberOfLines={1} style={[styles.segText, f.sansMedium, { color: on ? c.onAccent : c.text }, on && f.sansSemiBold]}>
                 {label}
               </Text>
             </Pressable>
@@ -180,9 +181,9 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
             <View style={styles.topText}>
               <View style={styles.inline}>
                 <Icon name="rank" size={20} color={c.accent} />
-                <Text style={[styles.panelTitle, { color: c.text }]}>{t.top}</Text>
+                <Text style={[styles.panelTitle, f.sansSemiBold, { color: c.text }]}>{t.top}</Text>
               </View>
-              <Text style={[styles.sub, { color: c.dim }]}>{metric === 'trips' ? t.byTrips : t.byT}</Text>
+              <Text style={[styles.sub, f.sans, { color: c.dim }]}>{metric === 'trips' ? t.byTrips : t.byT}</Text>
             </View>
             <Pressable
               testID="grounds-expand"
@@ -207,7 +208,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
                 ]}
               >
                 <Icon name="eyeOff" size={20} color={c.dim} />
-                <Text style={[styles.exText, { color: c.text }]}>
+                <Text style={[styles.exText, f.sans, { color: c.text }]}>
                   {t.excludedN.replace('{n}', String(grounds.excluded.length))}
                 </Text>
                 <Icon name="chevR" size={18} strokeWidth={2} color={c.dim} />
@@ -216,11 +217,11 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
             <View style={styles.notes}>
               <View style={styles.inline}>
                 <Icon name="wifiOff" size={16} color={c.dim} />
-                <Text style={[styles.note, { color: c.dim }]}>{t.offline}</Text>
+                <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.offline}</Text>
               </View>
               <View style={styles.inline}>
                 <Icon name="lock" size={16} color={c.dim} />
-                <Text style={[styles.note, { color: c.dim }]}>{t.privacy}</Text>
+                <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.privacy}</Text>
               </View>
             </View>
           </ScrollView>
@@ -237,10 +238,10 @@ const styles = StyleSheet.create({
   header: { height: 64, flexDirection: 'row', alignItems: 'center', gap: 6, paddingRight: 16, paddingLeft: 4 },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 22, lineHeight: 26 },
-  sub: { fontFamily: fonts.sans, fontSize: 15 },
-  total: { fontFamily: fonts.monoSemiBold, fontSize: 15, fontVariant: ['tabular-nums'] },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  title: { fontSize: 22, lineHeight: 26 },
+  sub: { fontSize: 15 },
+  total: { fontSize: 15, fontVariant: ['tabular-nums'] },
+  error: { fontSize: 13, padding: 16 },
   seg: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 8 },
   segButton: {
     flex: 1,
@@ -254,8 +255,7 @@ const styles = StyleSheet.create({
   },
   segLeft: { borderTopLeftRadius: radius, borderBottomLeftRadius: radius },
   segRight: { borderTopRightRadius: radius, borderBottomRightRadius: radius },
-  segText: { fontFamily: fonts.sansMedium, fontSize: 17, flexShrink: 1 },
-  segTextOn: { fontFamily: fonts.sansSemiBold },
+  segText: { fontSize: 17, flexShrink: 1 },
   body: { flex: 1 },
   panel: {
     borderTopWidth: 1,
@@ -273,15 +273,15 @@ const styles = StyleSheet.create({
   handle: { width: 36, height: 4, borderRadius: 2 },
   topBar: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 10, paddingBottom: 4 },
   topText: { flex: 1, minWidth: 0, gap: 1 },
-  panelTitle: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  panelTitle: { fontSize: 20 },
   expand: { width: 56, height: 56, borderRadius: radius, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   exRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 16, paddingRight: 10, borderTopWidth: 1 },
-  exText: { flex: 1, fontFamily: fonts.sans, fontSize: 15 },
+  exText: { flex: 1, fontSize: 15 },
   notes: { paddingTop: 10, paddingHorizontal: 16, gap: 6 },
-  note: { fontFamily: fonts.sans, fontSize: 15 },
+  note: { fontSize: 15 },
   emptyPanel: { alignItems: 'center', gap: 12, paddingTop: 24, paddingHorizontal: 16, borderTopWidth: 1 },
-  emptyText: { fontFamily: fonts.sansMedium, fontSize: 17, textAlign: 'center' },
-  progress: { fontFamily: fonts.monoSemiBold, fontSize: 20 },
+  emptyText: { fontSize: 17, textAlign: 'center' },
+  progress: { fontSize: 20 },
   primary: { alignSelf: 'stretch', height: 64, borderRadius: radius, alignItems: 'center', justifyContent: 'center' },
-  primaryText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  primaryText: { fontSize: 20 },
 });

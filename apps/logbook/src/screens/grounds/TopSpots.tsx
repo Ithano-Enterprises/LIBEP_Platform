@@ -1,9 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { fonts } from '../../theme/tokens';
 import { formatQuantity } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { heatColours } from './heat';
 import { formatCoord, heatStep, metricValue, type Metric, type Spot } from './model';
@@ -27,6 +26,7 @@ export function TopSpots({
   const c = useTheme();
   const t = useStrings();
   const { mode } = usePreferences();
+  const f = useFontSet();
   const heat = heatColours(mode);
   const values = ranked.map((s) => metricValue(s, metric));
   const min = Math.min(...values);
@@ -49,7 +49,7 @@ export function TopSpots({
               { borderTopColor: c.border, backgroundColor: sel || pressed ? c.raised : 'transparent' },
             ]}
           >
-            <Text style={[styles.rank, { color: c.dim }]}>{i + 1}</Text>
+            <Text style={[styles.rank, f.monoSemiBold, { color: c.dim }]}>{i + 1}</Text>
             <View
               style={[
                 styles.swatch,
@@ -57,21 +57,21 @@ export function TopSpots({
               ]}
             />
             <View style={styles.name}>
-              <Text style={[styles.coord, { color: c.text }]} numberOfLines={1}>
+              <Text style={[styles.coord, f.monoSemiBold, { color: c.text }]} numberOfLines={1}>
                 {formatCoord(s.lat, s.lon)}
               </Text>
               <View style={styles.secondary}>
-                <Text style={[styles.secondaryText, { color: c.dim }]}>
+                <Text style={[styles.secondaryText, f.mono, { color: c.dim }]}>
                   {trips ? `${formatQuantity(s.t)} t` : `${s.trips} ${t.tripsWord}`}
                 </Text>
                 {trips ? <TierChip tier="S" size={16} /> : null}
               </View>
             </View>
             <View style={styles.primary}>
-              <Text testID={`spot-value-${s.key}`} style={[styles.value, { color: c.text }]}>
+              <Text testID={`spot-value-${s.key}`} style={[styles.value, f.monoSemiBold, { color: c.text }]}>
                 {trips ? String(s.trips) : formatQuantity(s.t)}
               </Text>
-              <Text style={[styles.unit, { color: c.dim }]}>{trips ? t.tripsWord : 't'}</Text>
+              <Text style={[styles.unit, f.mono, { color: c.dim }]}>{trips ? t.tripsWord : 't'}</Text>
               {trips ? null : <TierChip tier="S" />}
             </View>
             <Icon name="chevR" size={18} strokeWidth={2} color={c.dim} />
@@ -92,13 +92,13 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     borderTopWidth: 1,
   },
-  rank: { width: 18, fontFamily: fonts.monoSemiBold, fontSize: 15, textAlign: 'right' },
+  rank: { width: 18, fontSize: 15, textAlign: 'right' },
   swatch: { width: 24, height: 24, borderRadius: 4, borderWidth: 1 },
   name: { flex: 1, minWidth: 0, gap: 2 },
-  coord: { fontFamily: fonts.monoSemiBold, fontSize: 15 },
+  coord: { fontSize: 15 },
   secondary: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  secondaryText: { fontFamily: fonts.mono, fontSize: 13 },
+  secondaryText: { fontSize: 13 },
   primary: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  value: { fontFamily: fonts.monoSemiBold, fontSize: 20, fontVariant: ['tabular-nums'] },
-  unit: { fontFamily: fonts.mono, fontSize: 13, marginRight: 4 },
+  value: { fontSize: 20, fontVariant: ['tabular-nums'] },
+  unit: { fontSize: 13, marginRight: 4 },
 });
