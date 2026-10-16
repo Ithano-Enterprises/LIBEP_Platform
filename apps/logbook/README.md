@@ -2,7 +2,7 @@
 
 Fisher phone app. React Native with Expo, hand-built.
 
-Owner: mobile app developer. Not started.
+Owner: mobile app developer. Scaffold only: Expo SDK 57 + TypeScript.
 
 ## Scope (M1)
 
@@ -26,3 +26,28 @@ Owner: mobile app developer. Not started.
 - On-device store `[TO CONFIRM: expo-sqlite or other]`
 - How app builds are produced and distributed to fishers
   `[TO CONFIRM: EAS build, Play Store or direct APK]`
+
+## Run locally
+
+Node 22 (see `.nvmrc`), npm only.
+
+```bash
+cd apps/logbook
+npm ci
+npx expo start        # scan the QR code with Expo Go on the phone
+```
+
+Checks (the same ones CI runs):
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+```
+
+## Layout
+
+- `src/theme/tokens.ts`: Night/Day colour tokens from the design. Night is the default
+- `src/i18n/strings.ts`: Kiswahili (default) and English UI strings. Fish names are never translated
+- `src/ui/`: shared UI pieces and the preferences context (mode, language)
+- `src/screens/`: screens
