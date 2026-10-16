@@ -444,6 +444,37 @@ describe('plant weights and closed corrections', () => {
   });
 });
 
+describe('plant weights stay put', () => {
+  it('a cached weight cannot be deleted, edited or replaced, so corrections stay closed', async () => {
+    const { repo, db } = await seeded();
+    const trip = (await repo.getOpenTrip())!;
+    const c = await repo.logCatch({ speciesId: speciesId('tewa'), quantity: 2.4, gps: null });
+    await repo.applyPlantWeighing({
+      id: 'w1',
+      trip_id: trip.trip_id,
+      species_id: c.species_id,
+      catch_id: c.id,
+      weight: 2.3,
+      unit: 't',
+      weighed_at: '2026-01-01T10:00:00.000Z',
+    });
+    await expect(db.runAsync('DELETE FROM plant_weighings', [])).rejects.toThrow(/append-only/);
+    await expect(db.runAsync('UPDATE plant_weighings SET weight = 9', [])).rejects.toThrow(/append-only/);
+    await expect(
+      db.runAsync(
+        `INSERT OR REPLACE INTO plant_weighings (id, trip_id, species_id, catch_id, weight, unit, weighed_at)
+         SELECT id, trip_id, species_id, catch_id, 9, unit, weighed_at FROM plant_weighings`,
+        [],
+      ),
+    ).rejects.toThrow(/append-only/);
+    expect(await repo.getPlantWeighing(c.id)).toMatchObject({ weight: 2.3 });
+    await expectCode(
+      repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 2.5 }),
+      'corrections_closed',
+    );
+  });
+});
+
 describe('catch history', () => {
   it('returns the original and its corrections in chain order', async () => {
     const { repo, deps } = await seeded();

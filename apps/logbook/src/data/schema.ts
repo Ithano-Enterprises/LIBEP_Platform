@@ -210,6 +210,12 @@ CREATE TABLE plant_weighings (
 );
 CREATE UNIQUE INDEX plant_weighings_catch ON plant_weighings (catch_id) WHERE catch_id IS NOT NULL;
 CREATE INDEX plant_weighings_trip ON plant_weighings (trip_id);
+-- A cached weight closes corrections on its catch, so it is never changed
+-- or removed on the device. [TO CONFIRM: device cache of W is ledger]
+CREATE TRIGGER plant_weighings_no_update BEFORE UPDATE ON plant_weighings
+BEGIN SELECT RAISE(ABORT, 'append-only: plant_weighings rows cannot be updated'); END;
+CREATE TRIGGER plant_weighings_no_delete BEFORE DELETE ON plant_weighings
+BEGIN SELECT RAISE(ABORT, 'append-only: plant_weighings rows cannot be deleted'); END;
 `,
 ];
 
