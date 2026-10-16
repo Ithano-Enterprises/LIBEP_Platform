@@ -17,6 +17,7 @@ export function CrewStepper({
 }) {
   const c = useTheme();
   const t = useStrings();
+  const f = useFontSet();
   const step = (delta: number, can: boolean, label: string, icon: 'minus' | 'plus') => {
     const enabled = can && !disabled;
     return (

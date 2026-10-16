@@ -3,12 +3,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fonts, radius } from '../theme/tokens';
+import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatDay, formatQuantity, formatTime, sumTonnes } from '../ui/format';
 import { HoldBox } from '../ui/HoldBox';
 import { Icon } from '../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { byType, cleanDistance, parseDistance } from './closeTrip/model';
 import { SitePicker } from './closeTrip/SitePicker';
@@ -36,6 +36,7 @@ export function CloseTripScreen({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const { data, error, submit } = useCloseTrip(null);
+  const f = useFontSet();
   const [crew, setCrew] = useState<number | null>(null);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [distance, setDistance] = useState('');
@@ -63,9 +64,9 @@ export function CloseTripScreen({
       <View style={[styles.header, { borderBottomColor: c.border }]}>
         <BackButton onPress={onDone} />
         <View style={styles.headerText}>
-          <Text style={[styles.title, { color: c.text }]}>{t.closeTrip}</Text>
+          <Text style={[styles.title, f.sansSemiBold, { color: c.text }]}>{t.closeTrip}</Text>
           {sub ? (
-            <Text style={[styles.sub, { color: c.dim }]} numberOfLines={1}>
+            <Text style={[styles.sub, f.mono, { color: c.dim }]} numberOfLines={1}>
               {sub}
             </Text>
           ) : null}
@@ -75,11 +76,11 @@ export function CloseTripScreen({
     </View>
   );
 
-  if (error) return shell(<Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>);
+  if (error) return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
   if (!data) return shell(null);
   const { profile, start, close, closeState, entries, sites } = data;
   if (!profile || !start) {
-    return shell(<Text style={[styles.error, { color: c.dim }]}>{t.noEntries}</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>{t.noEntries}</Text>);
   }
 
   const sub = `${profile.vessel.name} · ${profile.vessel.registration}`;
@@ -122,28 +123,28 @@ export function CloseTripScreen({
           <View style={styles.arrivalText}>
             <View style={styles.inline}>
               <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
-              <Text style={[styles.small, { color: c.dim }]}>{t.arrival}</Text>
+              <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.arrival}</Text>
             </View>
-            <Text style={[styles.date, { color: c.text }]}>
+            <Text style={[styles.date, f.sans, { color: c.text }]}>
               {formatDay(close ? new Date(close.arrival_at) : clock, lang)}
             </Text>
           </View>
-          <Text testID="arrival-time" style={[styles.arrivalTime, { color: c.text }]}>
+          <Text testID="arrival-time" style={[styles.arrivalTime, f.monoSemiBold, { color: c.text }]}>
             {arrival}
           </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface }]}>
-          <Text style={[styles.label, { color: c.dim }]}>{t.totalCatch}</Text>
+          <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.totalCatch}</Text>
           <View style={styles.totalRow}>
             <View style={styles.totalFig}>
-              <Text testID="close-total" style={[styles.total, { color: c.text }]}>
+              <Text testID="close-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
                 {formatQuantity(total)}
               </Text>
-              <Text style={[styles.totalUnit, { color: c.dim }]}>t</Text>
+              <Text style={[styles.totalUnit, f.mono, { color: c.dim }]}>t</Text>
             </View>
             <View style={styles.inline}>
-              <Text style={[styles.estimate, { color: c.dim }]}>{t.estimate}</Text>
+              <Text style={[styles.estimate, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
               <TierChip tier="S" size={22} />
             </View>
           </View>
@@ -152,24 +153,24 @@ export function CloseTripScreen({
         {total > profile.vessel.tonnage_class ? (
           <View testID="over-hint" style={styles.inline}>
             <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
-            <Text style={[styles.hint, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
+            <Text style={[styles.hint, f.sansMedium, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
           </View>
         ) : null}
 
         <SitePicker sites={sites} homeId={homeId} value={siteValue} onChange={setSiteId} disabled={closed} />
 
         <View>
-          <Text style={[styles.label, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
+          <Text style={[styles.label, f.sansMedium, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
           {shown.map((g) => (
             <View key={g.species_id} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
               <Icon name="fish" size={20} color={c.dim} />
-              <Text style={[styles.typeName, { color: c.text }]}>{g.name}</Text>
+              <Text style={[styles.typeName, f.sans, { color: c.text }]}>{g.name}</Text>
               {g.hold ? <HoldBox code={g.hold} /> : null}
               <View style={styles.spacer} />
-              <Text style={[styles.count, { color: c.dim }]}>×{g.n}</Text>
+              <Text style={[styles.count, f.mono, { color: c.dim }]}>×{g.n}</Text>
               <View style={styles.typeFig}>
-                <Text style={[styles.typeValue, { color: c.text }]}>{formatQuantity(g.t)}</Text>
-                <Text style={[styles.count, { color: c.dim }]}>t</Text>
+                <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.t)}</Text>
+                <Text style={[styles.count, f.mono, { color: c.dim }]}>t</Text>
               </View>
               <TierChip tier="S" />
             </View>
@@ -183,7 +184,7 @@ export function CloseTripScreen({
               style={[styles.typesToggle, { borderTopColor: c.border }]}
             >
               <Icon name={typesOpen ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
-              <Text style={[styles.typesToggleText, { color: c.text }]}>
+              <Text style={[styles.typesToggleText, f.sansMedium, { color: c.text }]}>
                 {typesOpen ? t.less : `${t.more} (+${types.length - TOP_TYPES})`}
               </Text>
             </Pressable>
@@ -194,15 +195,15 @@ export function CloseTripScreen({
 
         <View style={styles.inline}>
           <Icon name="link" size={18} color={c.dim} />
-          <Text style={[styles.linked, { color: c.text }]}>
+          <Text style={[styles.linked, f.sans, { color: c.text }]}>
             {t.linkedTo.replace('{n}', String(entries.length))} · {profile.vessel.registration}
           </Text>
         </View>
 
         <View style={[styles.distanceRow, { borderTopColor: c.border }]}>
           <View style={styles.distanceText}>
-            <Text style={[styles.distanceLabel, { color: c.dim }]}>{t.distance}</Text>
-            <Text style={[styles.small, { color: c.dim }]}>{t.optional}</Text>
+            <Text style={[styles.distanceLabel, f.sans, { color: c.dim }]}>{t.distance}</Text>
+            <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.optional}</Text>
           </View>
           <View style={styles.inline}>
             <TextInput
@@ -213,12 +214,12 @@ export function CloseTripScreen({
               keyboardType="decimal-pad"
               placeholder="—"
               placeholderTextColor={c.dim}
-              style={[styles.distanceInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+              style={[styles.distanceInput, f.monoSemiBold, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
             />
-            <Text style={[styles.km, { color: c.dim }]}>km</Text>
+            <Text style={[styles.km, f.mono, { color: c.dim }]}>km</Text>
           </View>
         </View>
-        {saveError ? <Text style={[styles.error, { color: c.danger }]}>{saveError}</Text> : null}
+        {saveError ? <Text style={[styles.error, f.mono, { color: c.danger }]}>{saveError}</Text> : null}
       </ScrollView>
 
       <View style={[styles.footer, { borderTopColor: c.border, paddingBottom: 16 + insets.bottom }]}>
@@ -226,9 +227,9 @@ export function CloseTripScreen({
           <View testID="read-only" style={[styles.readOnly, { borderColor: c.border }]}>
             <View style={styles.inline}>
               <Icon name={s.icon} size={20} strokeWidth={2} color={s.color} />
-              <Text style={[styles.readOnlyState, { color: s.color }]}>{t.states[k]}</Text>
+              <Text style={[styles.readOnlyState, f.sansSemiBold, { color: s.color }]}>{t.states[k]}</Text>
             </View>
-            <Text style={[styles.small, { color: c.dim }]}>{t.readOnly}</Text>
+            <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.readOnly}</Text>
           </View>
         ) : (
           <Pressable
@@ -240,7 +241,7 @@ export function CloseTripScreen({
             style={({ pressed }) => [styles.primary, { backgroundColor: pressed ? c.accentPress : c.accent }]}
           >
             <Icon name="send" size={22} strokeWidth={2} color={c.onAccent} />
-            <Text style={[styles.primaryText, { color: c.onAccent }]}>{t.submit}</Text>
+            <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>{t.submit}</Text>
           </Pressable>
         )}
       </View>
@@ -262,13 +263,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 24, lineHeight: 28 },
-  sub: { fontFamily: fonts.mono, fontSize: 13 },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  title: { fontSize: 24, lineHeight: 28 },
+  sub: { fontSize: 13 },
+  error: { fontSize: 13, padding: 16 },
   body: { flex: 1 },
   bodyContent: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 20, gap: 12 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  small: { fontFamily: fonts.sans, fontSize: 13 },
+  small: { fontSize: 13 },
   arrival: {
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -281,26 +282,26 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   arrivalText: { gap: 2 },
-  date: { fontFamily: fonts.sans, fontSize: 15 },
-  arrivalTime: { fontFamily: fonts.monoSemiBold, fontSize: 24, fontVariant: ['tabular-nums'] },
+  date: { fontSize: 15 },
+  arrivalTime: { fontSize: 24, fontVariant: ['tabular-nums'] },
   card: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: radius, gap: 10 },
-  label: { fontFamily: fonts.sansMedium, fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
+  label: { fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
   totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   totalFig: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  total: { fontFamily: fonts.monoSemiBold, fontSize: 48, lineHeight: 50, fontVariant: ['tabular-nums'] },
-  totalUnit: { fontFamily: fonts.mono, fontSize: 20 },
-  estimate: { fontFamily: fonts.sansMedium, fontSize: 15 },
-  hint: { fontFamily: fonts.sansMedium, fontSize: 13, flexShrink: 1 },
+  total: { fontSize: 48, lineHeight: 50, fontVariant: ['tabular-nums'] },
+  totalUnit: { fontSize: 20 },
+  estimate: { fontSize: 15 },
+  hint: { fontSize: 13, flexShrink: 1 },
   typesLabel: { paddingHorizontal: 2, paddingBottom: 6 },
   typeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, borderTopWidth: 1 },
-  typeName: { fontFamily: fonts.sans, fontSize: 17 },
+  typeName: { fontSize: 17 },
   spacer: { flex: 1 },
-  count: { fontFamily: fonts.mono, fontSize: 13 },
+  count: { fontSize: 13 },
   typeFig: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'flex-end', gap: 4, minWidth: 72 },
-  typeValue: { fontFamily: fonts.monoSemiBold, fontSize: 17, fontVariant: ['tabular-nums'] },
+  typeValue: { fontSize: 17, fontVariant: ['tabular-nums'] },
   typesToggle: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, borderTopWidth: 1 },
-  typesToggleText: { fontFamily: fonts.sansMedium, fontSize: 17 },
-  linked: { fontFamily: fonts.sans, fontSize: 15, flexShrink: 1 },
+  typesToggleText: { fontSize: 17 },
+  linked: { fontSize: 15, flexShrink: 1 },
   distanceRow: {
     paddingTop: 12,
     borderTopWidth: 1,
@@ -310,7 +311,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   distanceText: { gap: 2 },
-  distanceLabel: { fontFamily: fonts.sans, fontSize: 15 },
+  distanceLabel: { fontSize: 15 },
   distanceInput: {
     width: 96,
     height: 56,
@@ -318,10 +319,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     textAlign: 'right',
-    fontFamily: fonts.monoSemiBold,
     fontSize: 20,
   },
-  km: { fontFamily: fonts.mono, fontSize: 15 },
+  km: { fontSize: 15 },
   footer: { paddingTop: 8, paddingHorizontal: 16, borderTopWidth: 1, alignItems: 'center' },
   primary: {
     width: '100%',
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  primaryText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  primaryText: { fontSize: 20 },
   readOnly: {
     width: '100%',
     maxWidth: 480,
@@ -347,5 +347,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  readOnlyState: { fontFamily: fonts.sansSemiBold, fontSize: 17 },
+  readOnlyState: { fontSize: 17 },
 });

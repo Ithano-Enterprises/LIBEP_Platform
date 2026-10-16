@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { LandingSite } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 
 // Landing site row (phone): shows the chosen site, opens to pick another.
 // Landing elsewhere is allowed; the fee note is a placeholder in the design.
@@ -25,6 +25,7 @@ export function SitePicker({
   const c = useTheme();
   const t = useStrings();
   const [open, setOpen] = useState(false);
+  const f = useFontSet();
   // Assigned site first, then the others by name.
   const ordered = [...sites].sort((a, b) => (a.id === homeId ? -1 : b.id === homeId ? 1 : a.name.localeCompare(b.name)));
   const chosen = sites.find((s) => s.id === value);
@@ -41,7 +42,7 @@ export function SitePicker({
         style={({ pressed }) => [styles.row, { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' }]}
       >
         <Icon name="pin" size={20} color={c.dim} />
-        <Text style={[styles.rowText, { color: c.text }]} numberOfLines={1}>
+        <Text style={[styles.rowText, f.sansMedium, { color: c.text }]} numberOfLines={1}>
           {t.siteRow}: {label}
         </Text>
         <Icon name={open ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
@@ -69,8 +70,8 @@ export function SitePicker({
               >
                 <Icon name="pin" size={18} color={active ? c.text : c.dim} />
                 <View style={styles.optionText}>
-                  <Text style={[styles.optionName, { color: c.text }]}>{s.name}</Text>
-                  {s.id === homeId ? <Text style={[styles.assigned, { color: c.dim }]}>{t.assigned}</Text> : null}
+                  <Text style={[styles.optionName, f.sansSemiBold, { color: c.text }]}>{s.name}</Text>
+                  {s.id === homeId ? <Text style={[styles.assigned, f.mono, { color: c.dim }]}>{t.assigned}</Text> : null}
                 </View>
               </Pressable>
             );
@@ -81,8 +82,8 @@ export function SitePicker({
         <View testID="fee-note" style={[styles.fee, { backgroundColor: c.raised }]}>
           <Icon name="info" size={18} color={c.dim} />
           <View style={styles.feeText}>
-            <Text style={[styles.feeLine, { color: c.text }]}>{t.uploadLine}</Text>
-            <Text style={[styles.feeSub, { color: c.dim }]}>{t.feeState}</Text>
+            <Text style={[styles.feeLine, f.sans, { color: c.text }]}>{t.uploadLine}</Text>
+            <Text style={[styles.feeSub, f.sans, { color: c.dim }]}>{t.feeState}</Text>
           </View>
           <PlaceholderTag />
         </View>
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: radius,
     borderWidth: 1,
   },
-  rowText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 17 },
+  rowText: { flex: 1, fontSize: 17 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   option: {
     flexBasis: '48%',
@@ -116,10 +117,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionText: { gap: 1 },
-  optionName: { fontFamily: fonts.sansSemiBold, fontSize: 17 },
-  assigned: { fontFamily: fonts.mono, fontSize: 12 },
+  optionName: { fontSize: 17 },
+  assigned: { fontSize: 12 },
   fee: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
   feeText: { flex: 1, gap: 3 },
-  feeLine: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 20 },
-  feeSub: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 18 },
+  feeLine: { fontSize: 15, lineHeight: 20 },
+  feeSub: { fontSize: 13, lineHeight: 18 },
 });
