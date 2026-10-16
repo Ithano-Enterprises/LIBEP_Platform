@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,6 +35,8 @@ export function StartTripScreen({
   const { data, error, start } = useStartTrip();
   const [crew, setCrew] = useState(CREW_DEFAULT);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [failed, setFailed] = useState<Error | null>(null);
   const [clock, setClock] = useState(now);
   const f = useFontSet();
 
@@ -59,8 +61,8 @@ export function StartTripScreen({
     </View>
   );
 
-  if (error) {
-    return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
+  if (error || failed) {
+    return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{(error ?? failed)!.message}</Text>);
   }
   if (!data) return shell(null);
   if (!data.profile) {
@@ -73,11 +75,17 @@ export function StartTripScreen({
 
   const onPress = async () => {
     if (blocked) return onDone();
-    if (saving) return;
+    // A ref, not state: a second tap in the same frame still sees the old state.
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
+      // false: a trip was opened meanwhile; the reload shows the blocked state.
       if (await start(crew, now())) onDone();
+    } catch (e) {
+      setFailed(e instanceof Error ? e : new Error(String(e)));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
