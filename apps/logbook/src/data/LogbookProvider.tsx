@@ -51,3 +51,8 @@ export function useLogbook(): LogbookState {
   if (!ctx) throw new Error('useLogbook must be used inside LogbookProvider');
   return ctx;
 }
+
+/** The store state, or null outside a LogbookProvider. */
+export function useOptionalLogbook(): LogbookState | null {
+  return useContext(LogbookContext);
+}
