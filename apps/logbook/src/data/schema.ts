@@ -189,6 +189,10 @@ LEFT JOIN species hs ON hs.id = h.species_id;
 ];
 
 export async function migrate(db: SqlDb): Promise<void> {
+  // Per connection, so it is set on every open. INSERT OR REPLACE deletes the
+  // old row before inserting; SQLite fires the append-only BEFORE DELETE
+  // triggers for that delete only with recursive triggers on.
+  await db.execAsync('PRAGMA recursive_triggers = ON');
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version', []);
   const from = row?.user_version ?? 0;
   for (let v = from; v < MIGRATIONS.length; v++) {

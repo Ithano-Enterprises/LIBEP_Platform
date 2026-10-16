@@ -39,6 +39,34 @@ describe('schema', () => {
     },
   );
 
+  it.each(['trip_starts', 'catches', 'catch_corrections', 'trip_closes'])(
+    '%s rejects INSERT OR REPLACE over a saved row (append-only)',
+    async (table) => {
+      const { db, repo, c, trip } = await seeded();
+      await repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 2.5 });
+      await repo.closeTrip({
+        tripId: trip.trip_id,
+        arrivalAt: new Date('2026-01-01T09:00:00Z'),
+        crewCount: 4,
+        landingSiteId: (await repo.getLandingSites())[0].id,
+        distanceKm: null,
+      });
+      const row = (await db.getFirstAsync<Record<string, string | number | null>>(
+        `SELECT * FROM ${table}`,
+        [],
+      ))!;
+      const cols = Object.keys(row);
+      const changed: Record<string, string | number | null> = { ...row, recorded_at: '1999-01-01T00:00:00.000Z' };
+      await expect(
+        db.runAsync(
+          `INSERT OR REPLACE INTO ${table} (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`,
+          cols.map((k) => changed[k]),
+        ),
+      ).rejects.toThrow(/append-only/);
+      expect(await db.getFirstAsync(`SELECT * FROM ${table} WHERE id = ?`, [row.id])).toEqual(row);
+    },
+  );
+
   it('rejects a non-positive quantity or a unit other than t', async () => {
     const { db, c } = await seeded();
     const insert = (id: string, quantity: number, unit: string) =>
