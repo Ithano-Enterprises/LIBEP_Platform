@@ -25,6 +25,19 @@ describe('keypad', () => {
     expect(quickAdd('2.', 1)).toBe('3');
   });
 
+  it.each([
+    ['99999', 1],
+    ['99999', 0.5],
+    ['9999.9', 0.5],
+  ])('quick keys keep the 5-digit limit: %p + %p is left unchanged', (from, step) => {
+    expect(quickAdd(from, step)).toBe(from);
+  });
+
+  it('quick keys still add up to the limit', () => {
+    expect(quickAdd('9998', 1)).toBe('9999');
+    expect(quickAdd('9999.4', 0.5)).toBe('9999.9');
+  });
+
   it('only a positive figure is a quantity', () => {
     expect(parseEntry('')).toBeNull();
     expect(parseEntry('0')).toBeNull();

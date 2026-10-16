@@ -17,10 +17,14 @@ export function pressKey(entry: string, key: Key): string {
   return (entry === '0' ? '' : entry) + key;
 }
 
-/** +0.5 t / +1 t quick keys: adds to the figure, kept to one decimal. */
+/**
+ * +0.5 t / +1 t quick keys: adds to the figure, kept to one decimal. Like the
+ * digit keys, they never go past 5 digits: the figure is left as it is.
+ */
 export function quickAdd(entry: string, step: number): string {
   const v = (parseFloat(entry) || 0) + step;
-  return String(Math.round(v * 10) / 10);
+  const next = String(Math.round(v * 10) / 10);
+  return next.replace('.', '').length > MAX_DIGITS ? entry : next;
 }
 
 /** The typed figure in tonnes, or null while it is not a valid quantity. */
