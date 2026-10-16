@@ -20,7 +20,7 @@ export function ExcludedSheet({ excluded, onClose }: { excluded: Excluded[]; onC
   const afterClose = excluded.some((e) => e.reason === 'after_close');
   return (
     <>
-      <Pressable testID="ex-scrim" accessibilityLabel={t.close} onPress={onClose} style={[StyleSheet.absoluteFill, styles.scrim]} />
+      <Pressable testID="ex-scrim" accessibilityRole="button" accessibilityLabel={t.close} onPress={onClose} style={[StyleSheet.absoluteFill, styles.scrim]} />
       <View
         testID="ex-sheet"
         style={[styles.sheet, { backgroundColor: c.surface, borderTopColor: c.border, paddingBottom: 20 + insets.bottom }]}

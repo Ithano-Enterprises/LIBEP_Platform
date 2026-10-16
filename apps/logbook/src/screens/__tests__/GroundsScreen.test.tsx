@@ -111,6 +111,7 @@ describe('GroundsScreen', () => {
     expect(within(sheet).getByText('tafi')).toBeTruthy();
     expect(within(sheet).getAllByText(/hayana mahali \(GPS\)/).length).toBeGreaterThan(0);
     expect(within(sheet).getByText('Rekodi hazibadilishwi. Mahali hapawezi kuhaririwa.')).toBeTruthy();
+    expect(screen.getByTestId('ex-scrim').props.accessibilityRole).toBe('button');
     fireEvent.press(screen.getByTestId('ex-close'));
     expect(screen.queryByTestId('ex-sheet')).toBeNull();
   });
