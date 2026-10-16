@@ -7,6 +7,7 @@ import { LogbookProvider } from '../../data/LogbookProvider';
 import type { Repository } from '../../data/repository';
 import { devOpenTripEntries, devPreviousTripEntries, devSpecies } from '../../dev/fixtures/reference';
 import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
+import { en, sw } from '../../i18n/strings';
 import { openTestRepo } from '../../test/sqlite';
 import { DAY, NIGHT } from '../../theme/tokens';
 import { formatTime, sumTonnes } from '../../ui/format';
@@ -47,6 +48,13 @@ async function withFixtures() {
 beforeEach(() => mockNetwork.mockReturnValue({ isConnected: true, isInternetReachable: true }));
 
 describe('TripHomeScreen', () => {
+  it('says no vessel is linked, in Kiswahili, when the device has no profile', async () => {
+    const ctx = await openTestRepo();
+    renderHome(ctx.repo, ctx.deps.clock.now());
+    expect(await screen.findByText(sw.noVessel)).toBeTruthy();
+    expect(screen.queryByText(en.noVessel)).toBeNull();
+  });
+
   it('shows the vessel header and chips', async () => {
     await withFixtures();
     expect(screen.getByText('KE-LAM-MKW-T20-014')).toBeTruthy();
