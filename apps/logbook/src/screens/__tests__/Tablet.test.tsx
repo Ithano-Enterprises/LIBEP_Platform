@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LogbookProvider } from '../../data/LogbookProvider';
@@ -8,7 +9,7 @@ import { openTestRepo } from '../../test/sqlite';
 import { setWindow, TABLET } from '../../test/window';
 import { PreferencesProvider } from '../../ui/preferences';
 import { AppScreens } from '../AppScreens';
-import { gridTileWidth } from '../LogCatchScreen';
+import { entryPaneWidth, gridTileWidth } from '../LogCatchScreen';
 
 jest.mock('expo-network', () => ({
   useNetworkState: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
@@ -105,6 +106,40 @@ describe('tablet menu grid', () => {
     // 1280 − 480 entry pane − 48 padding = 752 → 4 columns of 182
     expect(gridTileWidth(752)).toBe(182);
     expect(gridTileWidth(148)).toBe(148);
-    expect(gridTileWidth(100)).toBe(100);
+    // Too narrow for one tile: the tile keeps its minimum.
+    expect(gridTileWidth(100)).toBe(148);
+  });
+
+  it('narrows the entry pane on small tablets so one tile column fits beside it', () => {
+    expect(entryPaneWidth(1280)).toBe(480);
+    expect(entryPaneWidth(800)).toBe(480);
+    // 600 − 404 = 196 = 148 tile + 2 × 24 padding
+    expect(entryPaneWidth(600)).toBe(404);
+  });
+
+  it('S3.3 at 600dp: the entry pane leaves room for 148dp tiles', async () => {
+    setWindow({ width: 600, height: 960 });
+    const ctx = await openTestRepo();
+    await seedDevFixtures(ctx.db, ctx.deps);
+    const open = () => Promise.resolve(ctx.repo);
+    render(
+      <SafeAreaProvider initialMetrics={{ ...metrics, frame: { x: 0, y: 0, width: 600, height: 960 } }}>
+        <LogbookProvider open={open}>
+          <PreferencesProvider>
+            <AppScreens now={() => ctx.deps.clock.now()} locator={{ getFix: jest.fn(async () => null) }} />
+          </PreferencesProvider>
+        </LogbookProvider>
+      </SafeAreaProvider>,
+    );
+    await screen.findByTestId('trip-total');
+    fireEvent.press(screen.getByTestId('primary'));
+    await screen.findByTestId('fish-tewa');
+    const pane = StyleSheet.flatten(screen.getByTestId('entry-pane').props.style).width as number;
+    expect(pane).toBe(404);
+    const menu = screen.UNSAFE_getAllByType(ScrollView)[0];
+    fireEvent(menu, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 600 - pane, height: 700 } } });
+    await waitFor(() =>
+      expect(StyleSheet.flatten(screen.getByTestId('fish-tewa').props.style).width).toBeGreaterThanOrEqual(148),
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deviceLocator, type Locator } from '../data/location';
@@ -23,9 +23,18 @@ const TILE_MIN = 148;
 const TILE_GAP = 8;
 const WIDE_PAD = 24;
 
+/** Never under TILE_MIN: a narrow menu gets fewer columns, not smaller tiles. */
 export function gridTileWidth(inner: number): number {
   const cols = Math.max(1, Math.floor((inner + TILE_GAP) / (TILE_MIN + TILE_GAP)));
-  return Math.floor((inner - TILE_GAP * (cols - 1)) / cols);
+  return Math.max(TILE_MIN, Math.floor((inner - TILE_GAP * (cols - 1)) / cols));
+}
+
+/**
+ * Tablet entry pane: 480dp, narrower on small tablets (600-800dp) so the
+ * menu beside it keeps at least one full column of tiles.
+ */
+export function entryPaneWidth(windowWidth: number): number {
+  return Math.min(480, windowWidth - (TILE_MIN + 2 * WIDE_PAD));
 }
 
 // S3.3 Log catch. Pick a fish from the vessel's menu, type the estimate in
@@ -51,6 +60,7 @@ export function LogCatchScreen({
   const insets = useSafeAreaInsets();
   const { data, error, save } = useLogCatch();
   const wide = useIsTablet();
+  const { width: windowWidth } = useWindowDimensions();
   const [menuWidth, setMenuWidth] = useState(0);
   const [query, setQuery] = useState('');
   const f = useFontSet();
@@ -278,7 +288,13 @@ export function LogCatchScreen({
         </ScrollView>
 
         {wide ? (
-          <View testID="entry-pane" style={[styles.entryPane, { backgroundColor: c.surface, borderLeftColor: c.border }]}>
+          <View
+            testID="entry-pane"
+            style={[
+              styles.entryPane,
+              { width: entryPaneWidth(windowWidth), backgroundColor: c.surface, borderLeftColor: c.border },
+            ]}
+          >
             <ScrollView
               contentContainerStyle={[styles.entryPaneContent, { paddingBottom: 20 + insets.bottom }]}
               keyboardShouldPersistTaps="handled"
@@ -325,7 +341,7 @@ const styles = StyleSheet.create({
   headerWide: { paddingTop: 6, paddingRight: 24, paddingBottom: 12, paddingLeft: 12, gap: 14 },
   bodyWide: { flexDirection: 'row' },
   bodyContentWide: { paddingVertical: 20, paddingHorizontal: WIDE_PAD },
-  entryPane: { width: 480, borderLeftWidth: 1 },
+  entryPane: { borderLeftWidth: 1 },
   entryPaneContent: { paddingTop: 20, paddingHorizontal: 24, gap: 12, flexGrow: 1 },
   pickPrompt: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 48 },
   pickText: { fontSize: 20 },
