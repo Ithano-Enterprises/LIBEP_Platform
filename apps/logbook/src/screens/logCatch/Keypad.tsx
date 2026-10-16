@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { pressKey, quickAdd, type Key } from './model';
 
 // Built-in keypad (no system keyboard): 4 columns, 56dp keys, quick keys
@@ -10,6 +10,7 @@ import { pressKey, quickAdd, type Key } from './model';
 export function Keypad({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const c = useTheme();
   const t = useStrings();
+  const f = useFontSet();
 
   const digit = (k: Key, label: string = k) => (
     <Pressable
@@ -20,7 +21,7 @@ export function Keypad({ value, onChange }: { value: string; onChange: (v: strin
       onPress={() => onChange(pressKey(value, k))}
       style={({ pressed }) => [styles.key, { backgroundColor: pressed ? c.border : c.raised }]}
     >
-      <Text style={[styles.digit, { color: c.text }]}>{label}</Text>
+      <Text style={[styles.digit, f.monoSemiBold, { color: c.text }]}>{label}</Text>
     </Pressable>
   );
 
@@ -36,7 +37,7 @@ export function Keypad({ value, onChange }: { value: string; onChange: (v: strin
         { borderColor: c.accent, backgroundColor: pressed ? c.raised : 'transparent' },
       ]}
     >
-      <Text style={[styles.quickText, { color: c.accent }]}>{`+${step} t`}</Text>
+      <Text style={[styles.quickText, f.monoSemiBold, { color: c.accent }]}>{`+${step} t`}</Text>
     </Pressable>
   );
 
@@ -72,7 +73,7 @@ export function Keypad({ value, onChange }: { value: string; onChange: (v: strin
           style={[styles.key, styles.mic, { borderColor: c.border }]}
         >
           <Icon name="mic" size={18} color={c.dim} />
-          <Text style={[styles.micText, { color: c.dim }]}>{t.soon}</Text>
+          <Text style={[styles.micText, f.sansMedium, { color: c.dim }]}>{t.soon}</Text>
         </View>
       </View>
     </View>
@@ -91,9 +92,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  digit: { fontFamily: fonts.monoSemiBold, fontSize: 24 },
+  digit: { fontSize: 24 },
   quick: { borderWidth: 1.5 },
-  quickText: { fontFamily: fonts.monoSemiBold, fontSize: 15 },
+  quickText: { fontSize: 15 },
   mic: { flex: 2, borderWidth: 1, borderStyle: 'dashed', opacity: 0.7 },
-  micText: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  micText: { fontSize: 15 },
 });

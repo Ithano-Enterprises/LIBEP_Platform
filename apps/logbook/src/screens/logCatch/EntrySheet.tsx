@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Gps, MenuItem } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { AutoStrip } from './AutoStrip';
 import { Keypad } from './Keypad';
@@ -45,6 +45,7 @@ export function EntrySheet({
   const t = useStrings();
   const { lang } = usePreferences();
   const [noteOpen, setNoteOpen] = useState(note.length > 0);
+  const f = useFontSet();
   const valid = parseEntry(value) != null && !saving;
 
   return (
@@ -53,21 +54,21 @@ export function EntrySheet({
         <View style={styles.what}>
           {item.hold_code ? <HoldBox code={item.hold_code} size={26} /> : null}
           <View style={styles.names}>
-            <Text style={[styles.name, { color: c.text }]}>{item.local_name}</Text>
+            <Text style={[styles.name, f.sansSemiBold, { color: c.text }]}>{item.local_name}</Text>
             {lang === 'en' && item.english_gloss ? (
-              <Text style={[styles.gloss, { color: c.dim }]}>{item.english_gloss}</Text>
+              <Text style={[styles.gloss, f.sans, { color: c.dim }]}>{item.english_gloss}</Text>
             ) : null}
           </View>
         </View>
         <View style={styles.figureCol}>
           <View style={styles.figure}>
-            <Text testID="entry-value" style={[styles.value, { color: c.text }]}>
+            <Text testID="entry-value" style={[styles.value, f.monoSemiBold, { color: c.text }]}>
               {value || '0'}
             </Text>
-            <Text style={[styles.unit, { color: c.dim }]}>t</Text>
+            <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
           </View>
           <View style={styles.estimate}>
-            <Text style={[styles.estimateText, { color: c.dim }]}>{t.estimate}</Text>
+            <Text style={[styles.estimateText, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
             <TierChip tier="S" size={22} />
           </View>
         </View>
@@ -83,7 +84,7 @@ export function EntrySheet({
           placeholder={t.notePh}
           placeholderTextColor={c.dim}
           maxLength={NOTE_MAX}
-          style={[styles.note, { backgroundColor: c.bg, borderColor: c.border, color: c.text }]}
+          style={[styles.note, f.sans, { backgroundColor: c.bg, borderColor: c.border, color: c.text }]}
         />
       ) : (
         <Pressable
@@ -93,7 +94,7 @@ export function EntrySheet({
           style={styles.addNote}
         >
           <Icon name="pencil" size={18} color={c.dim} />
-          <Text style={[styles.addNoteText, { color: c.dim }]}>{t.addNote}</Text>
+          <Text style={[styles.addNoteText, f.sansMedium, { color: c.dim }]}>{t.addNote}</Text>
         </Pressable>
       )}
 
@@ -111,7 +112,7 @@ export function EntrySheet({
         ]}
       >
         <Icon name="check" size={22} strokeWidth={2.2} color={valid ? c.onAccent : c.dim} />
-        <Text style={[styles.saveText, { color: valid ? c.onAccent : c.dim }]}>{t.save}</Text>
+        <Text style={[styles.saveText, f.sansSemiBold, { color: valid ? c.onAccent : c.dim }]}>{t.save}</Text>
       </Pressable>
     </View>
   );
@@ -122,22 +123,21 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   what: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1, paddingTop: 4 },
   names: { gap: 1, flexShrink: 1 },
-  name: { fontFamily: fonts.sansSemiBold, fontSize: 20, lineHeight: 23 },
-  gloss: { fontFamily: fonts.sans, fontSize: 13 },
+  name: { fontSize: 20, lineHeight: 23 },
+  gloss: { fontSize: 13 },
   figureCol: { alignItems: 'flex-end', gap: 6 },
   figure: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
-  value: { fontFamily: fonts.monoSemiBold, fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
-  unit: { fontFamily: fonts.mono, fontSize: 17 },
+  value: { fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
+  unit: { fontSize: 17 },
   estimate: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  estimateText: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  estimateText: { fontSize: 15 },
   addNote: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
-  addNoteText: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  addNoteText: { fontSize: 15 },
   note: {
     height: 56,
     borderRadius: radius,
     borderWidth: 1,
     paddingHorizontal: 14,
-    fontFamily: fonts.sans,
     fontSize: 15,
   },
   save: {
@@ -148,5 +148,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  saveText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  saveText: { fontSize: 20 },
 });

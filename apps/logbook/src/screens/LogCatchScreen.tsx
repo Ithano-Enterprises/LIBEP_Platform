@@ -5,11 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deviceLocator, type Locator } from '../data/location';
 import type { Gps, MenuItem } from '../data/types';
-import { fonts, radius } from '../theme/tokens';
+import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { EntrySheet } from './logCatch/EntrySheet';
 import { MenuTile } from './logCatch/MenuTile';
 import { filterMenu, parseEntry } from './logCatch/model';
@@ -36,6 +36,7 @@ export function LogCatchScreen({
   const insets = useSafeAreaInsets();
   const { data, error, save } = useLogCatch();
   const [query, setQuery] = useState('');
+  const f = useFontSet();
   const [pick, setPick] = useState<MenuItem | null>(null);
   const [value, setValue] = useState('');
   const [note, setNote] = useState('');
@@ -77,12 +78,12 @@ export function LogCatchScreen({
   );
 
   if (error) {
-    return shell(<Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
   }
   if (!data) return shell(null);
   if (!data.profile) {
     // [TO CONFIRM: device enrolment screen; not in the design yet]
-    return shell(<Text style={[styles.error, { color: c.dim }]}>No vessel linked to this device.</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>No vessel linked to this device.</Text>);
   }
 
   const { profile, openTrip, menu } = data;
@@ -129,15 +130,15 @@ export function LogCatchScreen({
       <View style={[styles.header, { borderBottomColor: c.border }]}>
         <BackButton onPress={onDone} />
         <View style={styles.headerText}>
-          <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>
+          <Text style={[styles.title, f.sansSemiBold, { color: c.text }]} numberOfLines={1}>
             {t.logCatch}
           </Text>
-          <Text style={[styles.sub, { color: c.dim }]} numberOfLines={1}>
+          <Text style={[styles.sub, f.mono, { color: c.dim }]} numberOfLines={1}>
             {profile.vessel.name} · {profile.vessel.registration}
           </Text>
           <View style={[styles.menuChip, { backgroundColor: c.surface, borderColor: c.border }]}>
             <Icon name="weight" size={15} color={c.text} />
-            <Text style={[styles.menuChipText, { color: c.text }]}>{menuLabel}</Text>
+            <Text style={[styles.menuChipText, f.monoSemiBold, { color: c.text }]}>{menuLabel}</Text>
           </View>
         </View>
       </View>
@@ -150,7 +151,7 @@ export function LogCatchScreen({
         {!tripOpen ? (
           <View testID="no-trip" style={[styles.noTrip, { borderColor: c.accent }]}>
             <Icon name="alert" size={18} strokeWidth={2} color={c.accent} />
-            <Text style={[styles.noTripText, { color: c.accent }]}>{t.startToLog}</Text>
+            <Text style={[styles.noTripText, f.sansMedium, { color: c.accent }]}>{t.startToLog}</Text>
           </View>
         ) : null}
         <View style={styles.search}>
@@ -166,11 +167,11 @@ export function LogCatchScreen({
             placeholderTextColor={c.dim}
             autoCorrect={false}
             autoCapitalize="none"
-            style={[styles.searchInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+            style={[styles.searchInput, f.sans, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
           />
         </View>
         {/* DEV FIXTURE menus and hold codes, as the design marks them. */}
-        <Text style={[styles.placeholderLine, { color: c.dim }]}>
+        <Text style={[styles.placeholderLine, f.mono, { color: c.dim }]}>
           placeholder list · hold codes: placeholder · {menuLabel}
         </Text>
         <View style={styles.grid}>
@@ -215,7 +216,7 @@ export function LogCatchScreen({
                 onSave={onSave}
               />
               {saveError ? (
-                <Text style={[styles.saveError, { color: c.danger }]}>{saveError}</Text>
+                <Text style={[styles.saveError, f.mono, { color: c.danger }]}>{saveError}</Text>
               ) : null}
             </ScrollView>
           </View>
@@ -227,7 +228,7 @@ export function LogCatchScreen({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  error: { fontSize: 13, padding: 16 },
   header: {
     paddingTop: 4,
     paddingRight: 16,
@@ -239,8 +240,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerText: { flex: 1, minWidth: 0, gap: 3 },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 24, lineHeight: 28 },
-  sub: { fontFamily: fonts.mono, fontSize: 13 },
+  title: { fontSize: 24, lineHeight: 28 },
+  sub: { fontSize: 13 },
   menuChip: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
   },
-  menuChipText: { fontFamily: fonts.monoSemiBold, fontSize: 13 },
+  menuChipText: { fontSize: 13 },
   body: { flex: 1 },
   bodyContent: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
   noTrip: {
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: radius,
     borderWidth: 1,
   },
-  noTripText: { fontFamily: fonts.sansMedium, fontSize: 15, flexShrink: 1 },
+  noTripText: { fontSize: 15, flexShrink: 1 },
   search: { maxWidth: 520 },
   searchIcon: { position: 'absolute', left: 14, top: 19, zIndex: 1 },
   searchInput: {
@@ -273,10 +274,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingLeft: 42,
     paddingRight: 14,
-    fontFamily: fonts.sans,
     fontSize: 15,
   },
-  placeholderLine: { fontFamily: fonts.mono, fontSize: 12, paddingHorizontal: 2 },
+  placeholderLine: { fontSize: 12, paddingHorizontal: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   scrim: { backgroundColor: 'rgba(4,9,10,0.6)', zIndex: 4 },
   sheetWrap: {
@@ -292,5 +292,5 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 14,
     zIndex: 5,
   },
-  saveError: { fontFamily: fonts.mono, fontSize: 13, paddingTop: 8 },
+  saveError: { fontSize: 13, paddingTop: 8 },
 });

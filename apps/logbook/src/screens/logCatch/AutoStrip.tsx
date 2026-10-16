@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Gps } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { formatGps } from './model';
 
 // Fields the app captures by itself. Shown locked: the captain never types
@@ -21,20 +21,21 @@ export function AutoStrip({
 }) {
   const c = useTheme();
   const t = useStrings();
+  const f = useFontSet();
   const cell = (label: string, value: string, span: 1 | 2 | 3, sub?: string, id?: string) => (
     <View style={[styles.cell, { flexBasis: `${(span / 3) * 100 - 4}%` }]}>
-      <Text style={[styles.label, { color: c.dim }]}>{label}</Text>
-      <Text testID={id} numberOfLines={1} style={[styles.value, { color: c.text }]}>
+      <Text style={[styles.label, f.sans, { color: c.dim }]}>{label}</Text>
+      <Text testID={id} numberOfLines={1} style={[styles.value, f.monoMedium, { color: c.text }]}>
         {value}
       </Text>
-      {sub ? <Text style={[styles.label, { color: c.dim }]}>{sub}</Text> : null}
+      {sub ? <Text style={[styles.label, f.sans, { color: c.dim }]}>{sub}</Text> : null}
     </View>
   );
   return (
     <View testID="auto-strip" style={[styles.box, { borderColor: c.border }]}>
       <View style={styles.title}>
         <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
-        <Text style={[styles.titleText, { color: c.dim }]}>{t.auto}</Text>
+        <Text style={[styles.titleText, f.sansMedium, { color: c.dim }]}>{t.auto}</Text>
       </View>
       <View style={styles.grid}>
         {cell(t.time, time, 1, undefined, 'auto-time')}
@@ -61,9 +62,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  titleText: { fontFamily: fonts.sansMedium, fontSize: 13 },
+  titleText: { fontSize: 13 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 8 },
   cell: { gap: 2, minWidth: 0, flexGrow: 1 },
-  label: { fontFamily: fonts.sans, fontSize: 12 },
-  value: { fontFamily: fonts.monoMedium, fontSize: 13 },
+  label: { fontSize: 12 },
+  value: { fontSize: 13 },
 });

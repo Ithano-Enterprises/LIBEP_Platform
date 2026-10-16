@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { MenuItem } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
-import { usePreferences, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useTheme } from '../../ui/preferences';
 
 // One fish on the S3.3 menu: local name (never translated), English gloss
 // in English mode, hold code.
@@ -21,6 +21,7 @@ export function MenuTile({
 }) {
   const c = useTheme();
   const { lang } = usePreferences();
+  const f = useFontSet();
   return (
     <Pressable
       testID={`fish-${item.local_name}`}
@@ -37,9 +38,9 @@ export function MenuTile({
     >
       <Icon name="fish" size={22} color={c.dim} />
       <View style={styles.names}>
-        <Text style={[styles.name, { color: c.text }]}>{item.local_name}</Text>
+        <Text style={[styles.name, f.sansMedium, { color: c.text }]}>{item.local_name}</Text>
         {lang === 'en' && item.english_gloss ? (
-          <Text style={[styles.gloss, { color: c.dim }]}>{item.english_gloss}</Text>
+          <Text style={[styles.gloss, f.sans, { color: c.dim }]}>{item.english_gloss}</Text>
         ) : null}
       </View>
       {item.hold_code ? (
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   names: { flex: 1, minWidth: 0, gap: 1 },
-  name: { fontFamily: fonts.sansMedium, fontSize: 17, lineHeight: 20 },
-  gloss: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 16 },
+  name: { fontSize: 17, lineHeight: 20 },
+  gloss: { fontSize: 13, lineHeight: 16 },
   hold: { alignSelf: 'flex-start' },
 });
