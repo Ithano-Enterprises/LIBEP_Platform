@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClosedTrip, Entry } from '../../data/types';
-import { fonts, radius, touchTarget } from '../../theme/tokens';
+import { radius, touchTarget } from '../../theme/tokens';
 import { formatQuantity, formatSigned, formatTime, formatTripDate, sumKg } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
@@ -131,6 +131,7 @@ function PrevEntry({
 }) {
   const c = useTheme();
   const t = useStrings();
+  const f = useFontSet();
   const w = entry.plant_weight_t;
   const meta =
     w != null
@@ -153,13 +154,13 @@ function PrevEntry({
           {entry.hold_code ? <HoldBox code={entry.hold_code} /> : null}
         </View>
         <View style={styles.figure}>
-          <Text style={[styles.total, { color: c.text }]}>{formatQuantity(w ?? entry.quantity, unit)}</Text>
-          <Text style={[styles.unit, { color: c.dim }]}>{unit}</Text>
+          <Text style={[styles.total, f.monoSemiBold, { color: c.text }]}>{formatQuantity(w ?? entry.quantity, unit)}</Text>
+          <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
           <TierChip tier="S" />
           {w != null ? <TierChip tier="W" /> : null}
         </View>
       </View>
-      <Text style={[styles.meta, { color: c.dim }]} numberOfLines={1}>
+      <Text style={[styles.meta, f.mono, { color: c.dim }]} numberOfLines={1}>
         {meta}
       </Text>
     </Pressable>

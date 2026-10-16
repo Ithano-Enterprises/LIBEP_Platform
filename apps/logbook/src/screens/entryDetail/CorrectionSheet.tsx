@@ -3,10 +3,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Entry, MenuItem } from '../../data/types';
-import { fonts, radius } from '../../theme/tokens';
+import { radius } from '../../theme/tokens';
 import { formatQuantity } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { Keypad } from '../logCatch/Keypad';
 import { MenuTile } from '../logCatch/MenuTile';
@@ -33,6 +33,7 @@ export function CorrectionSheet({
   const t = useStrings();
   const insets = useSafeAreaInsets();
   const [speciesId, setSpeciesId] = useState(entry.species_id);
+  const f = useFontSet();
   const [value, setValue] = useState(formatQuantity(entry.quantity));
   const quantity = parseEntry(value);
   const changed =
@@ -55,13 +56,13 @@ export function CorrectionSheet({
           <View style={styles.head}>
             <View style={styles.title}>
               <Icon name="pencil" size={20} color={c.text} />
-              <Text style={[styles.titleText, { color: c.text }]}>{t.correct}</Text>
+              <Text style={[styles.titleText, f.sansSemiBold, { color: c.text }]}>{t.correct}</Text>
             </View>
             <View style={styles.figure}>
-              <Text testID="correct-value" style={[styles.value, { color: c.text }]}>
+              <Text testID="correct-value" style={[styles.value, f.monoSemiBold, { color: c.text }]}>
                 {value || '0'}
               </Text>
-              <Text style={[styles.unit, { color: c.dim }]}>t</Text>
+              <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
               <TierChip tier="S" size={22} />
             </View>
           </View>
@@ -71,7 +72,7 @@ export function CorrectionSheet({
             ))}
           </View>
           <Keypad value={value} onChange={setValue} />
-          {error ? <Text style={[styles.error, { color: c.danger }]}>{error}</Text> : null}
+          {error ? <Text style={[styles.error, f.mono, { color: c.danger }]}>{error}</Text> : null}
           <Pressable
             testID="correct-save"
             accessibilityRole="button"
@@ -84,7 +85,7 @@ export function CorrectionSheet({
             ]}
           >
             <Icon name="check" size={22} strokeWidth={2.2} color={valid ? c.onAccent : c.dim} />
-            <Text style={[styles.saveText, { color: valid ? c.onAccent : c.dim }]}>{t.save}</Text>
+            <Text style={[styles.saveText, f.sansSemiBold, { color: valid ? c.onAccent : c.dim }]}>{t.save}</Text>
           </Pressable>
         </ScrollView>
       </View>
@@ -110,12 +111,12 @@ const styles = StyleSheet.create({
   content: { gap: 10 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  titleText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  titleText: { fontSize: 20 },
   figure: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  value: { fontFamily: fonts.monoSemiBold, fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
-  unit: { fontFamily: fonts.mono, fontSize: 17 },
+  value: { fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },
+  unit: { fontSize: 17 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  error: { fontFamily: fonts.mono, fontSize: 13 },
+  error: { fontSize: 13 },
   save: {
     height: 64,
     borderRadius: radius,
@@ -124,5 +125,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  saveText: { fontFamily: fonts.sansSemiBold, fontSize: 20 },
+  saveText: { fontSize: 20 },
 });

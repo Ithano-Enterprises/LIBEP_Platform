@@ -51,10 +51,10 @@ export function EntryRow({
             {entry.hold_code ? <HoldBox code={entry.hold_code} /> : null}
           </View>
           <View style={styles.figure}>
-            <Text style={[styles.weight, { color: c.text }]}>
+            <Text style={[styles.weight, f.monoSemiBold, { color: c.text }]}>
               {formatQuantity(weighed ? entry.plant_weight_t! : entry.quantity, unit)}
             </Text>
-            <Text style={[styles.unit, { color: c.dim }]}>{unit}</Text>
+            <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
             <View style={styles.tiers}>
               <TierChip tier="S" />
               {weighed ? <TierChip tier="W" /> : null}
@@ -68,7 +68,7 @@ export function EntryRow({
             <Text style={[styles.stateText, f.sansMedium, { color: s.color }]}>{t.states[k]}</Text>
           </View>
           {note ? (
-            <Text style={[styles.time, { color: c.dim }]} numberOfLines={1}>
+            <Text style={[styles.time, f.mono, { color: c.dim }]} numberOfLines={1}>
               {note}
             </Text>
           ) : null}

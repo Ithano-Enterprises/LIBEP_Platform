@@ -4,9 +4,8 @@ import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DataError } from '../data/repository';
-import { fonts } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { CorrectionSheet } from './entryDetail/CorrectionSheet';
 import { EntryDetail } from './entryDetail/EntryDetail';
 import { useEntryDetail } from './entryDetail/useEntryDetail';
@@ -20,6 +19,7 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
   const { data, error, correct } = useEntryDetail(catchId);
   const [correcting, setCorrecting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const f = useFontSet();
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,18 +43,18 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
           style={styles.back}
         >
           <Icon name="back" size={22} strokeWidth={2} color={c.text} />
-          <Text style={[styles.backText, { color: c.text }]}>{t.trip}</Text>
+          <Text style={[styles.backText, f.sansMedium, { color: c.text }]}>{t.trip}</Text>
         </Pressable>
       </View>
       {children}
     </View>
   );
 
-  if (error) return shell(<Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>);
+  if (error) return shell(<Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>);
   if (!data) return shell(null);
   const { entry, history, profile, tripOpen, menu } = data;
   if (!entry || !profile) {
-    return shell(<Text style={[styles.error, { color: c.dim }]}>Entry not found.</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>Entry not found.</Text>);
   }
   const gloss = menu.find((m) => m.id === entry.species_id)?.english_gloss ?? null;
 
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   top: { paddingTop: 4, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
   back: { height: 56, paddingRight: 12, marginLeft: -6, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { fontFamily: fonts.sansMedium, fontSize: 17 },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  backText: { fontSize: 17 },
+  error: { fontSize: 13, padding: 16 },
   body: { flex: 1 },
   content: { paddingTop: 8, paddingHorizontal: 16 },
 });
