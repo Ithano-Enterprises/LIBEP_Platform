@@ -107,6 +107,7 @@ describe('S5.5 filters', () => {
     const only = buildGrounds(catches, { now, ...DEFAULT_FILTERS, species: [kibua] });
     renderGrounds(repo, now);
     fireEvent.press(await screen.findByTestId('chip-species'));
+    expect(screen.getByTestId('flt-scrim').props.accessibilityRole).toBe('button');
     fireEvent.press(screen.getByTestId('flt-species-kibua'));
     expect(screen.getByTestId('flt-count')).toHaveTextContent(
       `Maeneo ${only.spots.length} · ${formatQuantity(only.totalT)} t`,

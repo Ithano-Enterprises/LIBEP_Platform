@@ -68,6 +68,7 @@ export function FiltersSheet({
     <>
       <Pressable
         testID="flt-scrim"
+        accessibilityRole="button"
         accessibilityLabel={t.close}
         onPress={onClose}
         style={[StyleSheet.absoluteFill, styles.scrim, !wide && styles.scrimDim]}
