@@ -33,6 +33,9 @@ export const sw = {
   trainLine: 'Maingizo matatu yana uzito uleule. Mwongozo mfupi unaweza kusaidia.',
   view: 'Tazama',
   trainStub: 'Mwongozo wa mafunzo · stub',
+  // Not in the design: fallback until device enrolment exists.
+  // [TO CONFIRM: Kiswahili wording]
+  noVessel: 'Hakuna chombo kilichounganishwa na kifaa hiki.',
   states: {
     device: 'Kwenye kifaa',
     waiting: 'Inasubiri kutumwa',
@@ -76,6 +79,7 @@ export const en: Strings = {
   trainLine: 'Three entries have the same weight. A short guide may help.',
   view: 'View',
   trainStub: 'Training guide · stub',
+  noVessel: 'No vessel linked to this device.',
   states: {
     device: 'Saved on device',
     waiting: 'Waiting to send',
