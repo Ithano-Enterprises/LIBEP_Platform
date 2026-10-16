@@ -10,7 +10,7 @@ import { BackButton } from '../ui/BackButton';
 import { formatTime } from '../ui/format';
 import { Icon } from '../ui/Icon';
 import { useIsTablet } from '../ui/layout';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { ConfirmCard } from './logCatch/ConfirmCard';
 import { EntrySheet } from './logCatch/EntrySheet';
 import { MenuTile } from './logCatch/MenuTile';
@@ -180,7 +180,7 @@ export function LogCatchScreen({
         onSave={onSave}
         hint={hint}
       />
-      {saveError ? <Text style={[styles.saveError, { color: c.danger }]}>{saveError}</Text> : null}
+      {saveError ? <Text style={[styles.saveError, f.mono, { color: c.danger }]}>{saveError}</Text> : null}
     </>
   ) : null;
 
@@ -202,7 +202,7 @@ export function LogCatchScreen({
   const menuChip = (
     <View style={[styles.menuChip, !wide && styles.menuChipNarrow, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Icon name="weight" size={15} color={c.text} />
-      <Text style={[styles.menuChipText, { color: c.text }]}>{menuLabel}</Text>
+      <Text style={[styles.menuChipText, f.monoSemiBold, { color: c.text }]}>{menuLabel}</Text>
     </View>
   );
 
@@ -232,7 +232,7 @@ export function LogCatchScreen({
           {!tripOpen ? (
             <View testID="no-trip" style={[styles.noTrip, { borderColor: c.accent }]}>
               <Icon name="alert" size={18} strokeWidth={2} color={c.accent} />
-              <Text style={[styles.noTripText, { color: c.accent }]}>{t.startToLog}</Text>
+              <Text style={[styles.noTripText, f.sansMedium, { color: c.accent }]}>{t.startToLog}</Text>
             </View>
           ) : null}
           <View style={styles.search}>
@@ -248,11 +248,11 @@ export function LogCatchScreen({
               placeholderTextColor={c.dim}
               autoCorrect={false}
               autoCapitalize="none"
-              style={[styles.searchInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+              style={[styles.searchInput, f.sans, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
             />
           </View>
           {/* DEV FIXTURE menus and hold codes, as the design marks them. */}
-          <Text style={[styles.placeholderLine, { color: c.dim }]}>
+          <Text style={[styles.placeholderLine, f.mono, { color: c.dim }]}>
             placeholder list · hold codes: placeholder · {menuLabel}
           </Text>
           <View style={styles.grid}>
@@ -286,7 +286,7 @@ export function LogCatchScreen({
               {sheet ?? confirm ?? (
                 <View testID="pick-prompt" style={styles.pickPrompt}>
                   <Icon name="fish" size={32} strokeWidth={1.4} color={c.dim} />
-                  <Text style={[styles.pickText, { color: c.dim }]}>{t.pick}</Text>
+                  <Text style={[styles.pickText, f.sansMedium, { color: c.dim }]}>{t.pick}</Text>
                 </View>
               )}
             </ScrollView>
@@ -321,14 +321,14 @@ export function LogCatchScreen({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  error: { fontSize: 13, padding: 16 },
   headerWide: { paddingTop: 6, paddingRight: 24, paddingBottom: 12, paddingLeft: 12, gap: 14 },
   bodyWide: { flexDirection: 'row' },
   bodyContentWide: { paddingVertical: 20, paddingHorizontal: WIDE_PAD },
   entryPane: { width: 480, borderLeftWidth: 1 },
   entryPaneContent: { paddingTop: 20, paddingHorizontal: 24, gap: 12, flexGrow: 1 },
   pickPrompt: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 48 },
-  pickText: { fontFamily: fonts.sansMedium, fontSize: 20 },
+  pickText: { fontSize: 20 },
   menuChipNarrow: { marginTop: 3 },
   header: {
     paddingTop: 4,

@@ -10,7 +10,7 @@ import { formatDay, formatQuantity, formatTime, sumKg } from '../ui/format';
 import { HoldBox } from '../ui/HoldBox';
 import { Icon } from '../ui/Icon';
 import { useIsTablet } from '../ui/layout';
-import { usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { byType, cleanDistance, crewMismatch, parseDistance } from './closeTrip/model';
 import { SitePicker } from './closeTrip/SitePicker';
@@ -42,6 +42,7 @@ export function CloseTripScreen({
   const insets = useSafeAreaInsets();
   const { data, error, submit } = useCloseTrip(null);
   const wide = useIsTablet();
+  const f = useFontSet();
   const unit = useUnit();
   const [crew, setCrew] = useState<number | null>(null);
   const [confirmCrew, setConfirmCrew] = useState(false);
@@ -144,28 +145,28 @@ export function CloseTripScreen({
                 <View style={styles.arrivalText}>
                   <View style={styles.inline}>
                     <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
-                    <Text style={[styles.small, { color: c.dim }]}>{t.arrival}</Text>
+                    <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.arrival}</Text>
                   </View>
-                  <Text style={[styles.date, { color: c.text }]}>
+                  <Text style={[styles.date, f.sans, { color: c.text }]}>
                     {formatDay(close ? new Date(close.arrival_at) : clock, lang)}
                   </Text>
                 </View>
-                <Text testID="arrival-time" style={[styles.arrivalTime, { color: c.text }]}>
+                <Text testID="arrival-time" style={[styles.arrivalTime, f.monoSemiBold, { color: c.text }]}>
                   {arrival}
                 </Text>
               </View>
 
               <View style={[styles.card, { backgroundColor: c.surface }]}>
-                <Text style={[styles.label, { color: c.dim }]}>{t.totalCatch}</Text>
+                <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.totalCatch}</Text>
                 <View style={styles.totalRow}>
                   <View style={styles.totalFig}>
-                    <Text testID="close-total" style={[styles.total, { color: c.text }]}>
+                    <Text testID="close-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
                       {formatQuantity(total, unit)}
                     </Text>
-                    <Text style={[styles.totalUnit, { color: c.dim }]}>{unit}</Text>
+                    <Text style={[styles.totalUnit, f.mono, { color: c.dim }]}>{unit}</Text>
                   </View>
                   <View style={styles.inline}>
-                    <Text style={[styles.estimate, { color: c.dim }]}>{t.estimate}</Text>
+                    <Text style={[styles.estimate, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
                     <TierChip tier="S" size={22} />
                   </View>
                 </View>
@@ -174,22 +175,22 @@ export function CloseTripScreen({
               {total > profile.vessel.tonnage_class * 1000 ? (
                 <View testID="over-hint" style={styles.inline}>
                   <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
-                  <Text style={[styles.hint, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
+                  <Text style={[styles.hint, f.sansMedium, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
                 </View>
               ) : null}
 
               <View>
-                <Text style={[styles.label, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
+                <Text style={[styles.label, f.sansMedium, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
                 {shown.map((g) => (
                   <View key={g.key} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
                     <Icon name="fish" size={20} color={c.dim} />
-                    <Text style={[styles.typeName, { color: c.text }]}>{g.name}</Text>
+                    <Text style={[styles.typeName, f.sans, { color: c.text }]}>{g.name}</Text>
                     {g.hold ? <HoldBox code={g.hold} /> : null}
                     <View style={styles.spacer} />
-                    <Text style={[styles.count, { color: c.dim }]}>×{g.n}</Text>
+                    <Text style={[styles.count, f.mono, { color: c.dim }]}>×{g.n}</Text>
                     <View style={styles.typeFig}>
-                      <Text style={[styles.typeValue, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
-                      <Text style={[styles.count, { color: c.dim }]}>{unit}</Text>
+                      <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
+                      <Text style={[styles.count, f.mono, { color: c.dim }]}>{unit}</Text>
                     </View>
                     <TierChip tier="S" />
                   </View>
@@ -203,7 +204,7 @@ export function CloseTripScreen({
                     style={[styles.typesToggle, { borderTopColor: c.border }]}
                   >
                     <Icon name={typesOpen ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
-                    <Text style={[styles.typesToggleText, { color: c.text }]}>
+                    <Text style={[styles.typesToggleText, f.sansMedium, { color: c.text }]}>
                       {typesOpen ? t.less : `${t.more} (+${types.length - TOP_TYPES})`}
                     </Text>
                   </Pressable>
@@ -231,15 +232,15 @@ export function CloseTripScreen({
 
               <View style={styles.inline}>
                 <Icon name="link" size={18} color={c.dim} />
-                <Text style={[styles.linked, { color: c.text }]}>
+                <Text style={[styles.linked, f.sans, { color: c.text }]}>
                   {t.linkedTo.replace('{n}', String(entries.length))} · {profile.vessel.registration}
                 </Text>
               </View>
 
               <View style={[styles.distanceRow, { borderTopColor: c.border }]}>
                 <View style={styles.distanceText}>
-                  <Text style={[styles.distanceLabel, { color: c.dim }]}>{t.distance}</Text>
-                  <Text style={[styles.small, { color: c.dim }]}>{t.optional}</Text>
+                  <Text style={[styles.distanceLabel, f.sans, { color: c.dim }]}>{t.distance}</Text>
+                  <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.optional}</Text>
                 </View>
                 <View style={styles.inline}>
                   <TextInput
@@ -250,9 +251,9 @@ export function CloseTripScreen({
                     keyboardType="decimal-pad"
                     placeholder="—"
                     placeholderTextColor={c.dim}
-                    style={[styles.distanceInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+                    style={[styles.distanceInput, f.monoSemiBold, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
                   />
-                  <Text style={[styles.km, { color: c.dim }]}>km</Text>
+                  <Text style={[styles.km, f.mono, { color: c.dim }]}>km</Text>
                 </View>
               </View>
             </View>
@@ -263,28 +264,28 @@ export function CloseTripScreen({
               <View style={styles.arrivalText}>
                 <View style={styles.inline}>
                   <Icon name="lock" size={14} strokeWidth={2} color={c.dim} />
-                  <Text style={[styles.small, { color: c.dim }]}>{t.arrival}</Text>
+                  <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.arrival}</Text>
                 </View>
-                <Text style={[styles.date, { color: c.text }]}>
+                <Text style={[styles.date, f.sans, { color: c.text }]}>
                   {formatDay(close ? new Date(close.arrival_at) : clock, lang)}
                 </Text>
               </View>
-              <Text testID="arrival-time" style={[styles.arrivalTime, { color: c.text }]}>
+              <Text testID="arrival-time" style={[styles.arrivalTime, f.monoSemiBold, { color: c.text }]}>
                 {arrival}
               </Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: c.surface }]}>
-              <Text style={[styles.label, { color: c.dim }]}>{t.totalCatch}</Text>
+              <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.totalCatch}</Text>
               <View style={styles.totalRow}>
                 <View style={styles.totalFig}>
-                  <Text testID="close-total" style={[styles.total, { color: c.text }]}>
+                  <Text testID="close-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
                     {formatQuantity(total, unit)}
                   </Text>
-                  <Text style={[styles.totalUnit, { color: c.dim }]}>{unit}</Text>
+                  <Text style={[styles.totalUnit, f.mono, { color: c.dim }]}>{unit}</Text>
                 </View>
                 <View style={styles.inline}>
-                  <Text style={[styles.estimate, { color: c.dim }]}>{t.estimate}</Text>
+                  <Text style={[styles.estimate, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
                   <TierChip tier="S" size={22} />
                 </View>
               </View>
@@ -293,24 +294,24 @@ export function CloseTripScreen({
             {total > profile.vessel.tonnage_class * 1000 ? (
               <View testID="over-hint" style={styles.inline}>
                 <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
-                <Text style={[styles.hint, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
+                <Text style={[styles.hint, f.sansMedium, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
               </View>
             ) : null}
 
             <SitePicker sites={sites} homeId={homeId} value={siteValue} onChange={setSiteId} disabled={closed} />
 
             <View>
-              <Text style={[styles.label, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
+              <Text style={[styles.label, f.sansMedium, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
               {shown.map((g) => (
                 <View key={g.key} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
                   <Icon name="fish" size={20} color={c.dim} />
-                  <Text style={[styles.typeName, { color: c.text }]}>{g.name}</Text>
+                  <Text style={[styles.typeName, f.sans, { color: c.text }]}>{g.name}</Text>
                   {g.hold ? <HoldBox code={g.hold} /> : null}
                   <View style={styles.spacer} />
-                  <Text style={[styles.count, { color: c.dim }]}>×{g.n}</Text>
+                  <Text style={[styles.count, f.mono, { color: c.dim }]}>×{g.n}</Text>
                   <View style={styles.typeFig}>
-                    <Text style={[styles.typeValue, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
-                    <Text style={[styles.count, { color: c.dim }]}>{unit}</Text>
+                    <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
+                    <Text style={[styles.count, f.mono, { color: c.dim }]}>{unit}</Text>
                   </View>
                   <TierChip tier="S" />
                 </View>
@@ -324,7 +325,7 @@ export function CloseTripScreen({
                   style={[styles.typesToggle, { borderTopColor: c.border }]}
                 >
                   <Icon name={typesOpen ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
-                  <Text style={[styles.typesToggleText, { color: c.text }]}>
+                  <Text style={[styles.typesToggleText, f.sansMedium, { color: c.text }]}>
                     {typesOpen ? t.less : `${t.more} (+${types.length - TOP_TYPES})`}
                   </Text>
                 </Pressable>
@@ -348,15 +349,15 @@ export function CloseTripScreen({
 
             <View style={styles.inline}>
               <Icon name="link" size={18} color={c.dim} />
-              <Text style={[styles.linked, { color: c.text }]}>
+              <Text style={[styles.linked, f.sans, { color: c.text }]}>
                 {t.linkedTo.replace('{n}', String(entries.length))} · {profile.vessel.registration}
               </Text>
             </View>
 
             <View style={[styles.distanceRow, { borderTopColor: c.border }]}>
               <View style={styles.distanceText}>
-                <Text style={[styles.distanceLabel, { color: c.dim }]}>{t.distance}</Text>
-                <Text style={[styles.small, { color: c.dim }]}>{t.optional}</Text>
+                <Text style={[styles.distanceLabel, f.sans, { color: c.dim }]}>{t.distance}</Text>
+                <Text style={[styles.small, f.sans, { color: c.dim }]}>{t.optional}</Text>
               </View>
               <View style={styles.inline}>
                 <TextInput
@@ -367,14 +368,14 @@ export function CloseTripScreen({
                   keyboardType="decimal-pad"
                   placeholder="—"
                   placeholderTextColor={c.dim}
-                  style={[styles.distanceInput, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+                  style={[styles.distanceInput, f.monoSemiBold, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
                 />
-                <Text style={[styles.km, { color: c.dim }]}>km</Text>
+                <Text style={[styles.km, f.mono, { color: c.dim }]}>km</Text>
               </View>
             </View>
           </>
         )}
-        {saveError ? <Text style={[styles.error, { color: c.danger }]}>{saveError}</Text> : null}
+        {saveError ? <Text style={[styles.error, f.mono, { color: c.danger }]}>{saveError}</Text> : null}
       </ScrollView>
 
       <View

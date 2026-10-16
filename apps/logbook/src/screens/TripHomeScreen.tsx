@@ -9,7 +9,7 @@ import { radius, touchTarget } from '../theme/tokens';
 import { formatQuantity, formatTime, sumKg } from '../ui/format';
 import { Icon } from '../ui/Icon';
 import { useIsTablet } from '../ui/layout';
-import { usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { EntryDetailBody } from './entryDetail/EntryDetailBody';
 import { EntryRow } from './tripHome/EntryRow';
@@ -85,13 +85,13 @@ export function TripHomeScreen({
 
           <View style={styles.titleRow}>
             <View style={styles.titleText}>
-              <Text style={[styles.title, { color: c.text }]}>{t.trip}</Text>
+              <Text style={[styles.title, f.sansSemiBold, { color: c.text }]}>{t.trip}</Text>
               {openTrip ? (
                 <View style={styles.tripLine}>
-                  <Text style={[styles.tripLineText, { color: c.dim }]}>
+                  <Text style={[styles.tripLineText, f.sans, { color: c.dim }]}>
                     {t.started} {formatTime(openTrip.departure_at)} · {entries.length} {t.entriesWord} ·
                   </Text>
-                  <Text testID="trip-total" style={[styles.tripTotal, { color: c.text }]}>
+                  <Text testID="trip-total" style={[styles.tripTotal, f.monoSemiBold, { color: c.text }]}>
                     {formatQuantity(total, unit)} {unit}
                   </Text>
                   <TierChip tier="S" size={17} />
@@ -111,7 +111,7 @@ export function TripHomeScreen({
                 ]}
               >
                 <Icon name="flag" size={18} strokeWidth={2} color={c.text} />
-                <Text style={[styles.closeText, { color: c.text }]}>{t.closeTrip}</Text>
+                <Text style={[styles.closeText, f.sansMedium, { color: c.text }]}>{t.closeTrip}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -130,8 +130,8 @@ export function TripHomeScreen({
             {visible.length === 0 ? (
               <View testID="empty" style={styles.empty}>
                 <Icon name="fish" size={32} strokeWidth={1.4} color={c.dim} />
-                <Text style={[styles.emptyTitle, { color: c.dim }]}>{t.noEntries}</Text>
-                {!openTrip ? <Text style={[styles.emptyBody, { color: c.dim }]}>{t.startToLog}</Text> : null}
+                <Text style={[styles.emptyTitle, f.sansMedium, { color: c.dim }]}>{t.noEntries}</Text>
+                {!openTrip ? <Text style={[styles.emptyBody, f.sans, { color: c.dim }]}>{t.startToLog}</Text> : null}
               </View>
             ) : null}
             <PreviousTrips
@@ -156,7 +156,7 @@ export function TripHomeScreen({
               ]}
             >
               <Icon name={openTrip ? 'plus' : 'play'} size={22} strokeWidth={2.2} color={c.onAccent} />
-              <Text style={[styles.primaryText, { color: c.onAccent }]}>
+              <Text style={[styles.primaryText, f.sansSemiBold, { color: c.onAccent }]}>
                 {openTrip ? t.logCatch : t.startTrip}
               </Text>
             </Pressable>
@@ -169,7 +169,7 @@ export function TripHomeScreen({
             ) : (
               <View style={styles.empty}>
                 <Icon name="fish" size={32} strokeWidth={1.4} color={c.dim} />
-                <Text style={[styles.emptyTitle, { color: c.dim }]}>{t.noEntries}</Text>
+                <Text style={[styles.emptyTitle, f.sansMedium, { color: c.dim }]}>{t.noEntries}</Text>
               </View>
             )}
           </View>
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  closeText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  closeText: { fontSize: 17 },
   body: { flex: 1 },
   bodyWide: { flexDirection: 'row' },
   listPane: { width: 440, borderRightWidth: 1, paddingTop: 6 },

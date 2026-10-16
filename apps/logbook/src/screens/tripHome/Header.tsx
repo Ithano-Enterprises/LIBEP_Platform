@@ -32,10 +32,10 @@ export function Header({ profile, wide = false }: { profile: DeviceProfile; wide
     return (
       <View style={[styles.header, styles.headerWide, { borderBottomColor: c.border }]}>
         <View style={styles.vesselWide}>
-          <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>
+          <Text style={[styles.name, f.sansSemiBold, { color: c.text }]} numberOfLines={1}>
             {profile.vessel.name}
           </Text>
-          <Text style={[styles.reg, { color: c.dim }]} numberOfLines={1}>
+          <Text style={[styles.reg, f.mono, { color: c.dim }]} numberOfLines={1}>
             {profile.vessel.registration}
           </Text>
         </View>

@@ -3,9 +3,8 @@ import { useEffect } from 'react';
 import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fonts } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
-import { usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { EntryDetailBody } from './entryDetail/EntryDetailBody';
 
 // Entry detail, phone: full screen with a back link to the trip.
@@ -14,6 +13,7 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
   const c = useTheme();
   const t = useStrings();
   const insets = useSafeAreaInsets();
+  const f = useFontSet();
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -47,5 +47,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   top: { paddingTop: 4, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
   back: { height: 56, paddingRight: 12, marginLeft: -6, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { fontFamily: fonts.sansMedium, fontSize: 17 },
+  backText: { fontSize: 17 },
 });

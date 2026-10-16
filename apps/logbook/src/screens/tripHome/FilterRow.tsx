@@ -63,9 +63,9 @@ export function FilterRow({
               />
             </View>
             {wide ? (
-              <Text style={[styles.label, { color: on ? c.text : c.dim }]}>{t.fShort[k ?? 'all']}</Text>
+              <Text style={[styles.label, f.sansMedium, { color: on ? c.text : c.dim }]}>{t.fShort[k ?? 'all']}</Text>
             ) : null}
-            <Text style={[styles.count, { color: on ? c.text : c.dim }]}>{count}</Text>
+            <Text style={[styles.count, f.monoSemiBold, { color: on ? c.text : c.dim }]}>{count}</Text>
           </Pressable>
         );
       })}
@@ -76,7 +76,7 @@ export function FilterRow({
 const styles = StyleSheet.create({
   row: { gap: 6, paddingHorizontal: 16, paddingTop: 2 },
   rowWide: { flexDirection: 'row', flexWrap: 'wrap' },
-  label: { fontFamily: fonts.sansMedium, fontSize: 15 },
+  label: { fontSize: 15 },
   button: {
     height: touchTarget,
     minWidth: touchTarget,

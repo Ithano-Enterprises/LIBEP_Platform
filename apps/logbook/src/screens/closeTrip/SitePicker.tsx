@@ -38,7 +38,7 @@ export function SitePicker({
 
   return (
     <View style={[styles.wrap, wide && [styles.card, { backgroundColor: c.surface }]]}>
-      {wide ? <Text style={[styles.label, { color: c.dim }]}>{t.site}</Text> : null}
+      {wide ? <Text style={[styles.label, f.sansMedium, { color: c.dim }]}>{t.site}</Text> : null}
       {wide ? null : (
         <Pressable
           testID="site-row"
@@ -49,7 +49,7 @@ export function SitePicker({
           style={({ pressed }) => [styles.row, { borderColor: c.border, backgroundColor: pressed ? c.raised : 'transparent' }]}
         >
           <Icon name="pin" size={20} color={c.dim} />
-          <Text style={[styles.rowText, { color: c.text }]} numberOfLines={1}>
+          <Text style={[styles.rowText, f.sansMedium, { color: c.text }]} numberOfLines={1}>
             {t.siteRow}: {label}
           </Text>
           <Icon name={open ? 'chevU' : 'chevD'} size={18} strokeWidth={2} color={c.dim} />
@@ -104,7 +104,7 @@ export function SitePicker({
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
   card: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: radius, gap: 10 },
-  label: { fontFamily: fonts.sansMedium, fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
+  label: { fontSize: 13, letterSpacing: 13 * 0.08, textTransform: 'uppercase' },
   row: {
     minHeight: 56,
     flexDirection: 'row',

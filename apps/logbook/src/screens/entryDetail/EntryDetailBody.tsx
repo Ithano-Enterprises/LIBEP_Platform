@@ -3,8 +3,7 @@ import { BackHandler, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DataError } from '../../data/repository';
-import { fonts } from '../../theme/tokens';
-import { useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { CorrectionSheet } from './CorrectionSheet';
 import { EntryDetail } from './EntryDetail';
 import { useEntryDetail } from './useEntryDetail';
@@ -18,6 +17,7 @@ export function EntryDetailBody({ catchId, wide = false }: { catchId: string; wi
   const { data, error, correct } = useEntryDetail(catchId);
   const [correcting, setCorrecting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const f = useFontSet();
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // While the sheet is open, Android back closes it (the newest handler runs first).
@@ -30,11 +30,11 @@ export function EntryDetailBody({ catchId, wide = false }: { catchId: string; wi
     return () => sub.remove();
   }, [correcting]);
 
-  if (error) return <Text style={[styles.error, { color: c.danger }]}>{error.message}</Text>;
+  if (error) return <Text style={[styles.error, f.mono, { color: c.danger }]}>{error.message}</Text>;
   if (!data) return null;
   const { entry, history, profile, tripOpen, menu } = data;
   if (!entry || !profile) {
-    return <Text style={[styles.error, { color: c.dim }]}>{t.entryNotFound}</Text>;
+    return <Text style={[styles.error, f.mono, { color: c.dim }]}>{t.entryNotFound}</Text>;
   }
   const gloss = menu.find((m) => m.id === entry.species_id)?.english_gloss ?? null;
 
@@ -95,7 +95,7 @@ export function EntryDetailBody({ catchId, wide = false }: { catchId: string; wi
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  error: { fontFamily: fonts.mono, fontSize: 13, padding: 16 },
+  error: { fontSize: 13, padding: 16 },
   content: { paddingTop: 8, paddingHorizontal: 16 },
   wideContent: { paddingTop: 28, paddingHorizontal: 32, maxWidth: 720, width: '100%' },
 });
