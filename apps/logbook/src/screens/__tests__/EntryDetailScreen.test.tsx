@@ -5,7 +5,7 @@ import { LogbookProvider } from '../../data/LogbookProvider';
 import type { Repository } from '../../data/repository';
 import { devPreviousTripEntries, devSpecies } from '../../dev/fixtures/reference';
 import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
-import type { Lang } from '../../i18n/strings';
+import { en, sw, type Lang } from '../../i18n/strings';
 import { openTestRepo } from '../../test/sqlite';
 import { PreferencesProvider } from '../../ui/preferences';
 import { EntryDetailScreen } from '../EntryDetailScreen';
@@ -147,6 +147,14 @@ describe('EntryDetailScreen', () => {
     expect(screen.getByTestId('checking-note')).toBeTruthy();
     expect(screen.getByText('Inakaguliwa')).toBeTruthy();
     expect(screen.getByText('Ingizo hili linakaguliwa. Unaweza kuendelea kurekodi.')).toBeTruthy();
+  });
+
+  it('an unknown entry says so in Kiswahili', async () => {
+    const ctx = await openTestRepo();
+    await seedDevReference(ctx.db);
+    renderDetail(ctx.repo, 'not-on-this-device');
+    expect(await screen.findByText(sw.entryNotFound)).toBeTruthy();
+    expect(screen.queryByText(en.entryNotFound)).toBeNull();
   });
 
   it('back returns to the trip', async () => {

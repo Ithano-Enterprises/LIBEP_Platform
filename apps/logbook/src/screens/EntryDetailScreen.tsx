@@ -54,7 +54,7 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
   if (!data) return shell(null);
   const { entry, history, profile, tripOpen, menu } = data;
   if (!entry || !profile) {
-    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>Entry not found.</Text>);
+    return shell(<Text style={[styles.error, f.mono, { color: c.dim }]}>{t.entryNotFound}</Text>);
   }
   const gloss = menu.find((m) => m.id === entry.species_id)?.english_gloss ?? null;
 

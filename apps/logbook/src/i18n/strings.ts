@@ -39,6 +39,9 @@ export const sw = {
   // Screen-reader label of the keypad's ⌫ key. Not in the design.
   // [TO CONFIRM: Kiswahili wording]
   backspace: 'Futa',
+  // Entry detail for an id that is not on the device. Not in the design.
+  // [TO CONFIRM: Kiswahili wording]
+  entryNotFound: 'Ingizo halikupatikana.',
   search: 'Tafuta',
   // "Other" species tile and its name field. Not in the design.
   // [TO CONFIRM: Kiswahili]
@@ -143,6 +146,7 @@ export const en: Strings = {
   trainStub: 'Training guide · stub',
   noVessel: 'No vessel linked to this device.',
   backspace: 'Backspace',
+  entryNotFound: 'Entry not found.',
   search: 'Search',
   other: 'Other',
   otherNamePh: 'Type the fish name',
