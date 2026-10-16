@@ -191,6 +191,7 @@ export function LogCatchScreen({
         <>
           <Pressable
             testID="scrim"
+            accessibilityRole="button"
             accessibilityLabel={t.back}
             onPress={closeSheet}
             style={[StyleSheet.absoluteFill, styles.scrim]}

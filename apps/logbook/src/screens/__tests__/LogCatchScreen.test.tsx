@@ -148,6 +148,7 @@ describe('LogCatchScreen entry sheet', () => {
     const { repo, onDone } = await withTrip();
     fireEvent.press(screen.getByTestId('fish-tewa'));
     fireEvent.press(screen.getByTestId('key-5'));
+    expect(screen.getByTestId('scrim').props.accessibilityRole).toBe('button');
     fireEvent.press(screen.getByTestId('scrim'));
     expect(screen.queryByTestId('entry-sheet')).toBeNull();
     fireEvent.press(screen.getByLabelText('Rudi', { exact: true }));
