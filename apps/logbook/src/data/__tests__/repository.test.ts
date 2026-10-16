@@ -92,6 +92,34 @@ describe('trips', () => {
     await expectCode(repo.startTrip({ crewCount: 4, departureAt: deps.clock.now() }), 'trip_already_open');
   });
 
+  it('two overlapping starts open exactly one trip', async () => {
+    // Transactions queued one after another, as one SQLite connection runs them.
+    const ctx = await openTestRepo();
+    await seedDevReference(ctx.db);
+    const run = ctx.db.withTransactionAsync.bind(ctx.db);
+    let chain: Promise<void> = Promise.resolve();
+    const db = {
+      ...ctx.db,
+      withTransactionAsync(task: () => Promise<void>) {
+        const next = chain.then(() => run(task));
+        chain = next.catch(() => undefined);
+        return next;
+      },
+    };
+    const repo = createRepository(db, ctx.deps);
+    const [a, b] = await Promise.allSettled([
+      repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() }),
+      repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() }),
+    ]);
+    expect(a.status).toBe('fulfilled');
+    expect(b).toMatchObject({ status: 'rejected', reason: { code: 'trip_already_open' } });
+    const open = await ctx.db.getFirstAsync<{ n: number }>(
+      'SELECT count(*) AS n FROM trip_starts WHERE trip_id NOT IN (SELECT trip_id FROM trip_closes)',
+      [],
+    );
+    expect(open!.n).toBe(1);
+  });
+
   it('rejects crew outside 1-24', async () => {
     const { repo, deps } = await seeded();
     await expectCode(repo.startTrip({ crewCount: 0, departureAt: deps.clock.now() }), 'invalid_crew');

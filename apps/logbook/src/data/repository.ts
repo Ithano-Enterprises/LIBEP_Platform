@@ -178,7 +178,6 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
   async function startTrip(input: { crewCount: number; departureAt: Date }): Promise<TripStart> {
     if (!isValidCrew(input.crewCount)) throw new DataError('invalid_crew');
     const profile = await requireProfile();
-    if (await getOpenTrip()) throw new DataError('trip_already_open');
     const b = await base();
     const record: TripStart = {
       ...b,
@@ -189,6 +188,9 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
       departure_at: input.departureAt.toISOString(),
     };
     await db.withTransactionAsync(async () => {
+      // Checked inside the write transaction, so two overlapping starts
+      // cannot both see "no open trip".
+      if (await getOpenTrip()) throw new DataError('trip_already_open');
       await insert('trip_starts', record);
       await track(record.id, 'trip_start');
     });

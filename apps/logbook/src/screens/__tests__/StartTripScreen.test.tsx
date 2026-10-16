@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -91,6 +91,33 @@ describe('StartTripScreen ready', () => {
     expect(trip.departure_at).toBe(deps.clock.now().toISOString());
     expect(await repo.listTripEntries(trip.trip_id)).toEqual([]);
     expect(await count(db)).toBe(1);
+  });
+
+  it('a double tap in one frame starts one trip and shows no error', async () => {
+    const { db, onDone } = await ready();
+    const before = await count(db);
+    // Call the same onPress twice before React re-renders (one frame).
+    let el: ReturnType<typeof screen.getByTestId> | null = screen.getByTestId('primary');
+    while (el && typeof el.props.onPress !== 'function') el = el.parent;
+    const onPress = el!.props.onPress as () => Promise<void>;
+    let calls: Promise<void>[] = [];
+    act(() => {
+      calls = [onPress(), onPress()];
+    });
+    await act(async () => {
+      await Promise.all(calls);
+    });
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(await count(db)).toBe(before + 1);
+    expect(screen.queryByText(/transaction|SqliteError/)).toBeNull();
+  });
+
+  it('a trip opened meanwhile turns S1 into the blocked state, not an error', async () => {
+    const { repo, deps, onDone } = await ready();
+    await repo.startTrip({ crewCount: 3, departureAt: deps.clock.now() });
+    fireEvent.press(screen.getByTestId('primary'));
+    expect(await screen.findByText(sw.tripOpenNote)).toBeTruthy();
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it('back returns to S2.1 without creating a trip', async () => {
