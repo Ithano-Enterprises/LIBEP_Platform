@@ -244,6 +244,22 @@ describe('device feed', () => {
     expect(ids).toHaveLength(5);
   });
 
+  it('a held record the feed later acknowledges is sent and no longer held', async () => {
+    const { repo, c2 } = await trip();
+    const mock = createMockTransport([
+      {
+        status: 409,
+        body: { contract_version: 1, error: { code: 'CONFLICT', retryable: false, record_id: c2.id, field: null } },
+      },
+    ]);
+    const queue = repo.syncQueue(mock.transport);
+    expect(await queue.runOnce()).toMatchObject({ kind: 'held', recordId: c2.id });
+    expect(await queue.held()).toHaveLength(1);
+    await queue.applyFeed({ acks: [{ id: c2.id, status: 'already_present' }] });
+    expect(await repo.getSyncState(c2.id)).toBe('sent');
+    expect(await queue.held()).toEqual([]);
+  });
+
   it('a late ack from the feed marks an on-device record sent', async () => {
     const { repo, c1 } = await trip();
     const queue = repo.syncQueue(createMockTransport().transport);

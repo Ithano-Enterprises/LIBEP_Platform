@@ -83,6 +83,15 @@ export function createSyncQueue(
     return true;
   }
 
+  /** The server stored it: sent, and no longer held for an earlier refusal. */
+  async function ack(recordId: string): Promise<boolean> {
+    const moved = await apply(recordId, 'acked');
+    await db.runAsync('UPDATE sync_state SET last_error = NULL WHERE record_id = ? AND last_error IS NOT NULL', [
+      recordId,
+    ]);
+    return moved;
+  }
+
   async function note(ids: string[], sql: string, params: (string | null)[] = []) {
     for (const id of ids) await db.runAsync(sql, [...params, id]);
   }
@@ -111,7 +120,7 @@ export function createSyncQueue(
       for (const r of res.body.results) {
         // Only IDs we sent, and only when the server says they are stored.
         if (!inBatch.has(r.id) || (r.status !== 'inserted' && r.status !== 'already_present')) continue;
-        if (await apply(r.id, 'acked')) acked += 1;
+        if (await ack(r.id)) acked += 1;
       }
       return { kind: 'sent', acked, unacked: ids.length - acked };
     }
@@ -159,7 +168,7 @@ export function createSyncQueue(
   /** Applies the device feed: late acks, review flags and plant weights. */
   async function applyFeed(feed: DeviceFeed): Promise<void> {
     for (const a of feed.acks ?? []) {
-      if (a.status === 'inserted' || a.status === 'already_present') await apply(a.id, 'acked');
+      if (a.status === 'inserted' || a.status === 'already_present') await ack(a.id);
     }
     for (const r of feed.reviews ?? []) await apply(r.catch_id, r.status === 'being_checked' ? 'review' : 'cleared');
     for (const w of feed.weighings ?? []) await deps.applyPlantWeighing(w);
