@@ -90,6 +90,25 @@ describe('payload', () => {
   });
 });
 
+describe('correction chain order', () => {
+  it('a correction follows the correction it points at, even when the clock went back', async () => {
+    const ctx = await openTestRepo();
+    await seedDevReference(ctx.db);
+    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const c = await ctx.repo.logCatch({ speciesId: speciesId('tewa'), quantity: 5, gps: null });
+    ctx.deps.tick(30 * 60_000);
+    const f1 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 4 });
+    ctx.deps.tick(-60 * 60_000); // phone clock set back
+    const f2 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: f1.id, quantity: 3 });
+    ctx.deps.tick(5 * 60_000);
+    const f3 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: f2.id, quantity: 2 });
+    expect(f2.recorded_at < f1.recorded_at).toBe(true);
+    const batch = buildBatch(await ctx.repo.syncQueue(createMockTransport().transport).pending());
+    const order = batch.records.filter((r) => r.kind === 'catch_correction').map((r) => r.data.id);
+    expect(order).toEqual([f1.id, f2.id, f3.id]);
+  });
+});
+
 describe('sending', () => {
   type Ctx = Awaited<ReturnType<typeof trip>>;
   async function run(script: MockStep[] | ((ctx: Ctx) => MockStep[]) = [], maxBatch?: number) {
