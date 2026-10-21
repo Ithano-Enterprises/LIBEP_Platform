@@ -1,8 +1,10 @@
 # Backend development and verification
 
-This setup is local. Do not link a hosted project to run these checks. The first
-backend code implements only the UUIDv4 validation invariant from ADR 0001; it
-is not a deployed sync endpoint or an accepted schema contract.
+This setup is local. Do not link a hosted project to run these checks. The backend
+foundation provides
+UUIDv4 validation, append-only guards, bounded request parsing and exact conversion
+arithmetic. It is not a deployed sync endpoint or an accepted schema contract.
+See the [shared handoff](../backend-handoff.md) before integrating an app.
 
 ## Prerequisites
 
@@ -11,7 +13,7 @@ is not a deployed sync endpoint or an accepted schema contract.
 - Supabase CLI 2.116.0, matching CI.
 - A working Docker installation and daemon for database checks.
 
-Run the read-only prerequisite check from the repository root:
+Run the prerequisite check from the repository root:
 
 ```sh
 bash scripts/check-backend-tools.sh
@@ -19,8 +21,26 @@ bash scripts/check-backend-tools.sh
 
 It reports missing commands and an unavailable Docker daemon, exits nonzero
 when prerequisites are missing, and does not print keys or start/reset anything.
-The tools must be available on PATH. A locally installed Deno executable also
-works; Node/npm are not required by the committed backend test harness.
+Tools can be on PATH or provided as executable paths using `DENO_BIN`,
+`SUPABASE_BIN` and `DOCKER_BIN`. The checker does not start/reset databases, but
+an invoked CLI may initialize its own local configuration when reporting its
+version. Node/npm are not required by the committed backend test harness.
+
+For a downloaded Deno executable outside PATH:
+
+```sh
+DENO_BIN="/absolute/path/to/deno" bash scripts/ci/check-backend.sh
+```
+
+For the prerequisite check, supply the locations that differ on your machine:
+
+```sh
+DENO_BIN="/absolute/path/to/deno" SUPABASE_BIN="/absolute/path/to/supabase" bash scripts/check-backend-tools.sh
+```
+
+These variables contain an executable path, not a command with arguments. They
+do not install tools or replace Docker. Use the selected Supabase executable
+when running database commands below, or add its directory to PATH.
 
 ## Fast checks (no Docker or credentials)
 
@@ -35,6 +55,7 @@ only to a separately identified integration test command when needed.
 
 The first six unit tests cover the UUIDv4 syntax constraint, including wrong
 versions, variant bits, malformed strings, non-string values and generated IDs.
+Sixteen additional tests cover bounded request input, for 22 Deno tests in total.
 They do not establish database uniqueness, record ownership or sync behavior.
 
 ## Database checks (Docker required)
@@ -51,8 +72,9 @@ The reset erases the local development database and replays migrations. Preserve
 any local data you need first. Never add --linked or a hosted database URL.
 
 Add transactional pgTAP cases in supabase/tests as migrations are introduced.
-There are currently no SQL acceptance cases. CI reports this explicitly instead
-of presenting the empty suite as application verification. The broader local
+There are 16 ledger-invariant and 17 conversion assertions, 33 in total.
+Full application schema acceptance cases remain incomplete. If no SQL cases are
+present, CI reports that explicitly. The broader local
 stack needed for future endpoint integration can be started with supabase start;
 that step is not needed for the credential-free unit tests.
 

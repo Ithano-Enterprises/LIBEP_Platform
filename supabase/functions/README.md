@@ -15,3 +15,8 @@ From this directory run `deno task verify`, or from the repository root run
 require no credentials, external dependencies or permissions. See
 [backend setup](../../docs/setup/backend-development.md) for database checks and verification
 limitations.
+
+`_shared/request_input.ts` adds bounded JSON reading and bearer-header syntax parsing for the future
+sync transport. It does not authenticate a device or validate a catch payload. See
+[transport scope](../../docs/setup/sync-transport.md) for the required integration steps and
+remaining gaps.
