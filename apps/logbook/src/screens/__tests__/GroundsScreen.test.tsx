@@ -66,7 +66,7 @@ describe('GroundsScreen', () => {
   it('shows the trips, total S, one cell per spot, the legend and the calm lines', async () => {
     const { expected } = await withHistory();
     expect(screen.getByText(`Safari ${expected.tripCount} · siku 90 ·`)).toBeTruthy();
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(expected.totalT)} t`);
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(expected.totalKg)} t`);
     expect(screen.getAllByTestId(/^cell-/)).toHaveLength(expected.spots.length);
     expect(screen.getByTestId('legend')).toHaveTextContent(/Safari.*→.*safari/);
     expect(screen.getByText('Ramani ya mchoro — si kwa kipimo')).toBeTruthy();
@@ -91,7 +91,7 @@ describe('GroundsScreen', () => {
     fireEvent.press(screen.getByTestId('metric-tonnes'));
     expect(keys()).toEqual(byT.map((s) => s.key));
     expect(screen.getByText('kwa samaki wengi')).toBeTruthy();
-    expect(screen.getByTestId(`spot-value-${byT[0].key}`)).toHaveTextContent(formatQuantity(byT[0].t));
+    expect(screen.getByTestId(`spot-value-${byT[0].key}`)).toHaveTextContent(formatQuantity(byT[0].kg));
   });
 
   it('tapping a row selects its cell', async () => {

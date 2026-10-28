@@ -1,5 +1,6 @@
 import type { GroundsCatch, HoldCode } from '../../data/types';
-import { sumTonnes } from '../../ui/format';
+import { sumKg } from '../../ui/format';
+import { speciesKey } from '../closeTrip/model';
 
 // My grounds (S5), computed on the device from this captain's own catches
 // only. Pure functions so they can be tested without rendering.
@@ -20,19 +21,21 @@ export type Spot = {
   lat: number;
   lon: number;
   trips: number;
-  t: number;
+  /** Total S on this cell, in kg; avg per trip, whole kg. */
+  kg: number;
   avg: number;
-  bySpecies: { species_id: string; name: string; hold: HoldCode | null; t: number }[];
+  /** key: species id, or "other:<name>" for "Other" catches. */
+  bySpecies: { key: string; species_id: string | null; name: string; hold: HoldCode | null; kg: number }[];
   lastAt: string;
   /** Plant weights (W) on this cell's catches, from closed trips only. */
-  plantT: number | null;
+  plantKg: number | null;
   plantTrips: number;
   catchIds: string[];
 };
 
 export type Excluded = { catch: GroundsCatch; reason: 'no_gps' | 'after_close' };
 
-export type Grounds = { spots: Spot[]; excluded: Excluded[]; tripCount: number; totalT: number };
+export type Grounds = { spots: Spot[]; excluded: Excluded[]; tripCount: number; totalKg: number };
 
 const idx = (v: number) => Math.round(v / CELL_DEG);
 
@@ -49,6 +52,7 @@ export function exclusion(c: GroundsCatch): Excluded['reason'] | null {
 
 export function buildGrounds(
   catches: GroundsCatch[],
+  /** species: species keys to keep (species id, or "other:<name>"); empty keeps all. */
   opts: { now: Date; range: Range; species: string[] },
 ): Grounds {
   const since = opts.range === 'all' ? null : opts.now.getTime() - Number(opts.range) * DAY_MS;
@@ -56,7 +60,7 @@ export function buildGrounds(
   const excluded: Excluded[] = [];
   const cells = new Map<string, GroundsCatch[]>();
   for (const c of inRange) {
-    if (opts.species.length && !opts.species.includes(c.species_id)) continue;
+    if (opts.species.length && !opts.species.includes(speciesKey(c))) continue;
     const why = exclusion(c);
     if (why) {
       excluded.push({ catch: c, reason: why });
@@ -69,24 +73,25 @@ export function buildGrounds(
   const spots: Spot[] = [...cells.entries()].map(([key, cs]) => {
     const [la, lo] = key.split(':').map(Number);
     const trips = new Set(cs.map((c) => c.trip_id)).size;
-    const t = sumTonnes(cs.map((c) => c.quantity));
+    const kg = sumKg(cs.map((c) => c.quantity));
     const species = new Map<string, Spot['bySpecies'][number]>();
     for (const c of cs) {
-      const s = species.get(c.species_id) ?? { species_id: c.species_id, name: c.species_local_name, hold: c.hold_code, t: 0 };
-      s.t = sumTonnes([s.t, c.quantity]);
-      species.set(c.species_id, s);
+      const k = speciesKey(c);
+      const s = species.get(k) ?? { key: k, species_id: c.species_id, name: c.species_local_name, hold: c.hold_code, kg: 0 };
+      s.kg = sumKg([s.kg, c.quantity]);
+      species.set(k, s);
     }
-    const weighed = cs.filter((c) => c.trip_closed_at && c.plant_weight_t != null);
+    const weighed = cs.filter((c) => c.trip_closed_at && c.plant_weight_kg != null);
     return {
       key,
       lat: la * CELL_DEG,
       lon: lo * CELL_DEG,
       trips,
-      t,
-      avg: Math.round((t / trips) * 10) / 10,
-      bySpecies: [...species.values()].sort((a, b) => b.t - a.t || a.name.localeCompare(b.name)),
+      kg,
+      avg: Math.round(kg / trips),
+      bySpecies: [...species.values()].sort((a, b) => b.kg - a.kg || a.name.localeCompare(b.name)),
       lastAt: cs.reduce((m, c) => (c.recorded_at > m ? c.recorded_at : m), cs[0].recorded_at),
-      plantT: weighed.length ? sumTonnes(weighed.map((c) => c.plant_weight_t!)) : null,
+      plantKg: weighed.length ? sumKg(weighed.map((c) => c.plant_weight_kg!)) : null,
       plantTrips: new Set(weighed.map((c) => c.trip_id)).size,
       catchIds: cs.map((c) => c.id),
     };
@@ -96,11 +101,11 @@ export function buildGrounds(
     spots,
     excluded,
     tripCount: new Set(inRange.map((c) => c.trip_id)).size,
-    totalT: sumTonnes(spots.map((s) => s.t)),
+    totalKg: sumKg(spots.map((s) => s.kg)),
   };
 }
 
-export const metricValue = (s: Spot, m: Metric) => (m === 'trips' ? s.trips : s.t);
+export const metricValue = (s: Spot, m: Metric) => (m === 'trips' ? s.trips : s.kg);
 
 /** Ranked by the metric; ties broken by the other metric, then position. */
 export function rankSpots(spots: Spot[], m: Metric): Spot[] {

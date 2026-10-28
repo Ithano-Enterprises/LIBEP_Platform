@@ -447,7 +447,7 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
               e.latitude, e.longitude, e.recorded_at,
               coalesce(s.state, 'on_device') AS sync_state,
               c.arrival_at AS trip_closed_at,
-              CASE p.unit WHEN 'kg' THEN p.weight / 1000.0 ELSE p.weight END AS plant_weight_t
+              CASE p.unit WHEN 't' THEN p.weight * 1000.0 ELSE p.weight END AS plant_weight_kg
          FROM v_catches_effective e
          LEFT JOIN sync_state s ON s.record_id = e.id
          LEFT JOIN trip_closes c ON c.trip_id = e.trip_id

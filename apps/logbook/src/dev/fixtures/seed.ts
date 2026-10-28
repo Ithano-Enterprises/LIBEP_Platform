@@ -143,19 +143,19 @@ async function seedGroundsHistory(db: SqlDb, deps: RepoDeps, now: Date) {
   for (const trip of trips) {
     const start = now.getTime() - trip.daysAgo * 24 * 60 * MIN;
     t = start;
-    const s = await repo.startTrip({ crewCount: devOpenTrip.crewCount, departureAt: new Date(t) });
+    const s = await repo.startTrip({ crewDeparted: devOpenTrip.crewDeparted, departureAt: new Date(t) });
     const ids = [s.id];
     for (const [i, c] of trip.catches.entries()) {
       t = start + (i + 1) * devEntryStepMinutes * MIN;
       const gps =
         c.lat == null || c.lon == null ? null : { latitude: c.lat, longitude: c.lon, gps_accuracy_m: devGpsAccuracyM };
-      ids.push((await repo.logCatch({ speciesId: speciesId(c.species), quantity: c.t, gps })).id);
+      ids.push((await repo.logCatch({ speciesId: speciesId(c.species), quantity: c.kg, gps })).id);
     }
     t = start + devTripHours * 60 * MIN;
     const close = await repo.closeTrip({
       tripId: s.trip_id,
       arrivalAt: new Date(t),
-      crewCount: devOpenTrip.crewCount,
+      crewReturned: devOpenTrip.crewDeparted,
       landingSiteId: devLandingSite.id,
       distanceKm: null,
     });

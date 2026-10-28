@@ -133,9 +133,11 @@ export type ClosedTrip = {
 export type GroundsCatch = {
   id: string;
   trip_id: string;
-  species_id: string;
+  /** Null for "Other". */
+  species_id: string | null;
   species_local_name: string;
   hold_code: HoldCode | null;
+  /** Whole kg. */
   quantity: number;
   latitude: number | null;
   longitude: number | null;
@@ -143,7 +145,7 @@ export type GroundsCatch = {
   sync_state: SyncStateValue;
   /** When the trip was closed, if it is. */
   trip_closed_at: string | null;
-  plant_weight_t: number | null;
+  plant_weight_kg: number | null;
 };
 
 export type Preferences = { lang: 'sw' | 'en'; mode: 'night' | 'day'; unit: 't' | 'kg' };

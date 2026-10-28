@@ -17,7 +17,7 @@ const c = (o: Partial<GroundsCatch>): GroundsCatch => ({
   recorded_at: day(1),
   sync_state: 'sent',
   trip_closed_at: null,
-  plant_weight_t: null,
+  plant_weight_kg: null,
   ...o,
 });
 
@@ -25,20 +25,20 @@ describe('grounds model', () => {
   it('groups catches into cells: trips, total, average, species, last fished', () => {
     const g = buildGrounds(
       [
-        c({ trip_id: 'a', quantity: 2.4, recorded_at: day(1) }),
-        c({ trip_id: 'a', quantity: 0.1, latitude: -2.2701, species_id: 'kibua', species_local_name: 'kibua' }),
-        c({ trip_id: 'b', quantity: 0.2, recorded_at: day(5) }),
-        c({ trip_id: 'b', quantity: 3, latitude: -2.19, longitude: 41.06 }),
+        c({ trip_id: 'a', quantity: 2400, recorded_at: day(1) }),
+        c({ trip_id: 'a', quantity: 15, latitude: -2.2701, species_id: 'kibua', species_local_name: 'kibua' }),
+        c({ trip_id: 'b', quantity: 200, recorded_at: day(5) }),
+        c({ trip_id: 'b', quantity: 3000, latitude: -2.19, longitude: 41.06 }),
       ],
       { now: NOW, range: '90', species: [] },
     );
     expect(g.tripCount).toBe(2);
-    expect(g.totalT).toBe(5.7);
+    expect(g.totalKg).toBe(5615);
     const s = g.spots.find((x) => x.key === '-227:4103')!;
-    expect(s).toMatchObject({ trips: 2, t: 2.7, avg: 1.4, lastAt: day(1) });
-    expect(s.bySpecies.map((x) => [x.name, x.t])).toEqual([
-      ['tewa', 2.6],
-      ['kibua', 0.1],
+    expect(s).toMatchObject({ trips: 2, kg: 2615, avg: 1308, lastAt: day(1) });
+    expect(s.bySpecies.map((x) => [x.name, x.kg])).toEqual([
+      ['tewa', 2600],
+      ['kibua', 15],
     ]);
     expect(s.lat).toBeCloseTo(-2.27);
     expect(s.lon).toBeCloseTo(41.03);
@@ -48,13 +48,13 @@ describe('grounds model', () => {
     expect(exclusion(c({ latitude: null, longitude: null }))).toBe('no_gps');
     expect(exclusion(c({ trip_closed_at: day(2), recorded_at: day(1) }))).toBe('after_close');
     expect(exclusion(c({ trip_closed_at: day(1), recorded_at: day(2) }))).toBeNull();
-    const g = buildGrounds([c({}), c({ latitude: null, longitude: null, quantity: 0.4 })], {
+    const g = buildGrounds([c({}), c({ latitude: null, longitude: null, quantity: 400 })], {
       now: NOW,
       range: '90',
       species: [],
     });
     expect(g.excluded.map((e) => e.reason)).toEqual(['no_gps']);
-    expect(g.totalT).toBe(1);
+    expect(g.totalKg).toBe(1);
   });
 
   it('range and species filters', () => {
@@ -63,22 +63,35 @@ describe('grounds model', () => {
       c({ recorded_at: day(60), species_id: 'kibua', species_local_name: 'kibua', quantity: 2 }),
       c({ recorded_at: day(120), quantity: 5 }),
     ];
-    expect(buildGrounds(all, { now: NOW, range: '30', species: [] }).totalT).toBe(1);
-    expect(buildGrounds(all, { now: NOW, range: '90', species: [] }).totalT).toBe(3);
-    expect(buildGrounds(all, { now: NOW, range: 'all', species: [] }).totalT).toBe(8);
-    expect(buildGrounds(all, { now: NOW, range: 'all', species: ['kibua'] }).totalT).toBe(2);
+    expect(buildGrounds(all, { now: NOW, range: '30', species: [] }).totalKg).toBe(1);
+    expect(buildGrounds(all, { now: NOW, range: '90', species: [] }).totalKg).toBe(3);
+    expect(buildGrounds(all, { now: NOW, range: 'all', species: [] }).totalKg).toBe(8);
+    expect(buildGrounds(all, { now: NOW, range: 'all', species: ['kibua'] }).totalKg).toBe(2);
   });
 
   it('plant weight counts only weighed catches of closed trips', () => {
     const g = buildGrounds(
       [
-        c({ trip_id: 'a', trip_closed_at: day(0), plant_weight_t: 2.2, quantity: 2.4 }),
-        c({ trip_id: 'b', plant_weight_t: 9, quantity: 1 }), // open trip: never W
+        c({ trip_id: 'a', trip_closed_at: day(0), plant_weight_kg: 2200.5, quantity: 2400 }),
+        c({ trip_id: 'b', plant_weight_kg: 9000, quantity: 1000 }), // open trip: never W
         c({ trip_id: 'c', trip_closed_at: day(0), quantity: 1 }),
       ],
       { now: NOW, range: '90', species: [] },
     );
-    expect(g.spots[0]).toMatchObject({ trips: 3, plantT: 2.2, plantTrips: 1 });
+    expect(g.spots[0]).toMatchObject({ trips: 3, plantKg: 2200.5, plantTrips: 1 });
+  });
+
+  it('"Other" catches group and filter by their typed name', () => {
+    const other = (name: string, quantity: number) =>
+      c({ species_id: null, species_local_name: name, hold_code: null, quantity });
+    const all = [other('kaa', 40), other('pweza mdogo', 15), other('kaa', 10), c({ quantity: 100 })];
+    const g = buildGrounds(all, { now: NOW, range: '90', species: [] });
+    expect(g.spots[0].bySpecies.map((x) => [x.key, x.kg])).toEqual([
+      ['tewa', 100],
+      ['other:kaa', 50],
+      ['other:pweza mdogo', 15],
+    ]);
+    expect(buildGrounds(all, { now: NOW, range: '90', species: ['other:kaa'] }).totalKg).toBe(50);
   });
 
   it('ranks by the chosen metric, ties broken by the other', () => {

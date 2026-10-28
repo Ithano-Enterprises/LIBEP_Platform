@@ -62,14 +62,14 @@ export function TopSpots({
               </Text>
               <View style={styles.secondary}>
                 <Text style={[styles.secondaryText, f.mono, { color: c.dim }]}>
-                  {trips ? `${formatQuantity(s.t)} t` : `${s.trips} ${t.tripsWord}`}
+                  {trips ? `${formatQuantity(s.kg)} t` : `${s.trips} ${t.tripsWord}`}
                 </Text>
                 {trips ? <TierChip tier="S" size={16} /> : null}
               </View>
             </View>
             <View style={styles.primary}>
               <Text testID={`spot-value-${s.key}`} style={[styles.value, f.monoSemiBold, { color: c.text }]}>
-                {trips ? String(s.trips) : formatQuantity(s.t)}
+                {trips ? String(s.trips) : formatQuantity(s.kg)}
               </Text>
               <Text style={[styles.unit, f.mono, { color: c.dim }]}>{trips ? t.tripsWord : 't'}</Text>
               {trips ? null : <TierChip tier="S" />}

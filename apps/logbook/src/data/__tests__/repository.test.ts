@@ -485,7 +485,7 @@ describe('my grounds privacy', () => {
     await repo.closeTrip({
       tripId: trip.trip_id,
       arrivalAt: deps.clock.now(),
-      crewCount: 4,
+      crewReturned: 4,
       landingSiteId: (await repo.getLandingSites())[0].id,
       distanceKm: null,
     });
@@ -495,7 +495,7 @@ describe('my grounds privacy', () => {
     const other = '9a9a9a9a-0000-4000-8000-000000000001';
     await db.runAsync("INSERT INTO captains (id, display_name) VALUES (?, 'Other')", [other]);
     await db.runAsync('UPDATE device_profile SET captain_id = ?', [other]);
-    await repo.startTrip({ crewCount: 4, departureAt: deps.clock.now() });
+    await repo.startTrip({ crewDeparted: 4, departureAt: deps.clock.now() });
     await repo.logCatch({ speciesId: speciesId('kibua'), quantity: 9, gps: null });
     expect((await repo.listGroundsCatches()).map((c) => c.species_local_name)).toEqual(['kibua']);
     expect(await repo.countTrips()).toBe(1);

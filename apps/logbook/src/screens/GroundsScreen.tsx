@@ -83,7 +83,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
         {t.tripsN.replace('{n}', String(grounds.tripCount))} · {t.days90} ·
       </Text>
       <Text testID="grounds-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
-        {formatQuantity(grounds.totalT)} t
+        {formatQuantity(grounds.totalKg)} t
       </Text>
       <TierChip tier="S" />
     </View>
