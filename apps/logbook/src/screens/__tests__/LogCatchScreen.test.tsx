@@ -25,7 +25,7 @@ function renderLog(
   repo: Repository,
   now: Date,
   locator: Locator,
-  { lang = 'sw', mode = 'night' }: { lang?: Lang; mode?: Mode } = {},
+  { lang = 'sw', mode = 'night', unit }: { lang?: Lang; mode?: Mode; unit?: 't' | 'kg' } = {},
 ) {
   const onDone = jest.fn();
   const open = () => Promise.resolve(repo);
@@ -33,7 +33,7 @@ function renderLog(
   render(
     <SafeAreaProvider initialMetrics={metrics}>
       <LogbookProvider open={open}>
-        <PreferencesProvider initialLang={lang} initialMode={mode}>
+        <PreferencesProvider initialLang={lang} initialMode={mode} initialUnit={unit}>
           <LogCatchScreen onDone={onDone} now={clock} locator={locator} />
         </PreferencesProvider>
       </LogbookProvider>
@@ -42,7 +42,7 @@ function renderLog(
   return onDone;
 }
 
-async function withTrip(opts: { fix?: Gps | null; lang?: Lang; mode?: Mode } = {}) {
+async function withTrip(opts: { fix?: Gps | null; lang?: Lang; mode?: Mode; unit?: 't' | 'kg' } = {}) {
   const ctx = await openTestRepo();
   await seedDevReference(ctx.db);
   await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
@@ -238,6 +238,16 @@ describe('LogCatchScreen confirmation', () => {
     expect(screen.getByTestId('confirm-ref')).toHaveTextContent(e.short_ref);
     expect(screen.getByText('Kwenye kifaa')).toBeTruthy();
     expect(screen.getByText('2.27S 40.93E')).toBeTruthy();
+  });
+
+  it('shows the saved figure in the preferred unit: t when the captain chose t', async () => {
+    await withTrip({ unit: 't' });
+    fireEvent.press(screen.getByTestId('fish-kibua'));
+    for (const k of ['1', '5'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
+    fireEvent.press(screen.getByTestId('save'));
+    await screen.findByTestId('confirm-card');
+    expect(screen.getByTestId('confirm-weight')).toHaveTextContent('0.015');
+    expect(screen.getByTestId('confirm-card')).toHaveTextContent(/0\.015t/);
   });
 
   it('Rekodi samaki mwingine goes back to the menu; X dismisses', async () => {

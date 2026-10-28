@@ -6,7 +6,7 @@ import { formatQuantity, formatTime } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { stateStyle } from '../tripHome/stateStyle';
 import { formatGps } from './model';
@@ -29,6 +29,7 @@ export function ConfirmCard({
   const c = useTheme();
   const t = useStrings();
   const { lang } = usePreferences();
+  const unit = useUnit();
   const f = useFontSet();
   const s = stateStyle('device', c);
   const gps =
@@ -81,9 +82,9 @@ export function ConfirmCard({
         <View style={styles.figureCol}>
           <View style={styles.figure}>
             <Text testID="confirm-weight" style={[styles.weight, f.monoSemiBold, { color: c.text }]}>
-              {formatQuantity(record.quantity, 'kg')}
+              {formatQuantity(record.quantity, unit)}
             </Text>
-            <Text style={[styles.unit, f.mono, { color: c.dim }]}>kg</Text>
+            <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
           </View>
           <View style={styles.estimate}>
             <Text style={[styles.estimateText, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
