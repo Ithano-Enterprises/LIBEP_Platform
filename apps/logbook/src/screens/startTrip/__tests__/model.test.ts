@@ -1,4 +1,4 @@
-import { CREW_DEFAULT, CREW_MAX, CREW_MIN } from '../../../data/repository';
+import { CREW_DEFAULT, CREW_MAX, CREW_MIN, CREW_RETURNED_MIN } from '../../../data/repository';
 import type { TripStart } from '../../../data/types';
 import { canStepDown, canStepUp, startMode, stepCrew } from '../model';
 
@@ -23,5 +23,13 @@ describe('start trip model', () => {
     expect(canStepDown(2)).toBe(true);
     expect(canStepUp(24)).toBe(false);
     expect(canStepUp(23)).toBe(true);
+  });
+
+  it('crew returned may step down to 0', () => {
+    expect(CREW_RETURNED_MIN).toBe(0);
+    expect(stepCrew(1, -1, CREW_RETURNED_MIN)).toBe(0);
+    expect(stepCrew(0, -1, CREW_RETURNED_MIN)).toBe(0);
+    expect(canStepDown(1, CREW_RETURNED_MIN)).toBe(true);
+    expect(canStepDown(0, CREW_RETURNED_MIN)).toBe(false);
   });
 });

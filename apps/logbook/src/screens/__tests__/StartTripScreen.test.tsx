@@ -81,13 +81,13 @@ describe('StartTripScreen ready', () => {
     expect(plus).toBeDisabled();
   });
 
-  it('Anza safari writes one trip_start with the chosen crew, then returns', async () => {
+  it('Anza safari writes one trip_start with the chosen crew_departed, then returns', async () => {
     const { db, repo, deps, onDone } = await ready();
     fireEvent.press(screen.getByTestId('crew-plus'));
     fireEvent.press(screen.getByTestId('primary'));
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
     const trip = (await repo.getOpenTrip())!;
-    expect(trip.crew_count).toBe(5);
+    expect(trip.crew_departed).toBe(5);
     expect(trip.departure_at).toBe(deps.clock.now().toISOString());
     expect(await repo.listTripEntries(trip.trip_id)).toEqual([]);
     expect(await count(db)).toBe(1);
@@ -114,7 +114,7 @@ describe('StartTripScreen ready', () => {
 
   it('a trip opened meanwhile turns S1 into the blocked state, not an error', async () => {
     const { repo, deps, onDone } = await ready();
-    await repo.startTrip({ crewCount: 3, departureAt: deps.clock.now() });
+    await repo.startTrip({ crewDeparted: 3, departureAt: deps.clock.now() });
     fireEvent.press(screen.getByTestId('primary'));
     expect(await screen.findByText(sw.tripOpenNote)).toBeTruthy();
     expect(onDone).not.toHaveBeenCalled();

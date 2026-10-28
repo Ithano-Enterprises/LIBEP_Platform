@@ -9,10 +9,13 @@ export function startMode(openTrip: TripStart | null): 'ready' | 'blocked' {
   return openTrip ? 'blocked' : 'ready';
 }
 
-/** Moves the crew count by delta, kept within 1-24. */
-export function stepCrew(n: number, delta: number): number {
-  return Math.min(CREW_MAX, Math.max(CREW_MIN, n + delta));
+/**
+ * Moves a crew headcount by delta, kept within min-24: 1 for crew departed
+ * (S1), 0 for crew returned (S4).
+ */
+export function stepCrew(n: number, delta: number, min: number = CREW_MIN): number {
+  return Math.min(CREW_MAX, Math.max(min, n + delta));
 }
 
-export const canStepDown = (n: number) => n > CREW_MIN;
+export const canStepDown = (n: number, min: number = CREW_MIN) => n > min;
 export const canStepUp = (n: number) => n < CREW_MAX;

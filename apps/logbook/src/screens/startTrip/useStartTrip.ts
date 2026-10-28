@@ -29,10 +29,10 @@ export function useStartTrip() {
    * meantime; the reload then shows the blocked state.
    */
   const start = useCallback(
-    async (crewCount: number, departureAt: Date): Promise<boolean> => {
+    async (crewDeparted: number, departureAt: Date): Promise<boolean> => {
       if (!repo) return false;
       try {
-        await repo.startTrip({ crewCount, departureAt });
+        await repo.startTrip({ crewDeparted, departureAt });
         return true;
       } catch (e) {
         if (e instanceof DataError && e.code === 'trip_already_open') return false;

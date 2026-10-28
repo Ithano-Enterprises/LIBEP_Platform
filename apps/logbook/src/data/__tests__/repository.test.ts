@@ -1,4 +1,4 @@
-import { createRepository, DataError, isValidCrew, isValidQuantity, makeShortRef } from '../repository';
+import { createRepository, CREW_RETURNED_MIN, DataError, isValidCrew, isValidQuantity, makeShortRef } from '../repository';
 import { openTestRepo } from '../../test/sqlite';
 import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
 import {
@@ -214,21 +214,21 @@ describe('trip_start record', () => {
       clock: { now: ctx.deps.clock.now, skewMs: () => -1500 },
     });
     const departure = new Date('2026-01-01T02:59:00Z');
-    const rec = await repo.startTrip({ crewCount: 7, departureAt: departure });
+    const rec = await repo.startTrip({ crewDeparted: 7, departureAt: departure });
 
     expect(Object.keys(rec).sort()).toEqual(
       [
         'id', 'device_id', 'recorded_at', 'device_clock_skew_ms',
-        'trip_id', 'vessel_id', 'captain_id', 'crew_count', 'departure_at',
+        'trip_id', 'vessel_id', 'captain_id', 'crew_departed', 'departure_at',
       ].sort(),
     );
     expect(rec.id).toMatch(UUID_V4);
-    expect(rec.trip_id).toMatch(UUID_V4);
-    expect(rec.trip_id).not.toBe(rec.id);
+    // One UUID per trip: the trip is its trip_start record (contract v0.2).
+    expect(rec.trip_id).toBe(rec.id);
     expect(rec.recorded_at).toBe('2026-01-01T03:00:00.000Z');
     expect(rec.device_clock_skew_ms).toBe(-1500);
     expect(rec.departure_at).toBe(departure.toISOString());
-    expect(rec.crew_count).toBe(7);
+    expect(rec.crew_departed).toBe(7);
     const profile = (await repo.getDeviceProfile())!;
     expect(rec.device_id).toBe(profile.device_id);
     expect(rec.vessel_id).toBe(profile.vessel.id);
@@ -244,7 +244,7 @@ describe('trip_start record', () => {
     const { db, repo } = await seeded();
     const open = (await repo.getOpenTrip())!;
     await expect(
-      db.runAsync('UPDATE trip_starts SET crew_count = 5 WHERE id = ?', [open.id]),
+      db.runAsync('UPDATE trip_starts SET crew_departed = 5 WHERE id = ?', [open.id]),
     ).rejects.toThrow(/append-only/);
     await expect(db.runAsync('DELETE FROM trip_starts WHERE id = ?', [open.id])).rejects.toThrow(
       /append-only/,
@@ -258,6 +258,12 @@ describe('trip_start record', () => {
     expect(isValidCrew(25)).toBe(false);
     expect(isValidCrew(2.5)).toBe(false);
     expect(isValidCrew(Number.NaN)).toBe(false);
+  });
+
+  it('crew returned may be 0', () => {
+    expect(isValidCrew(0, CREW_RETURNED_MIN)).toBe(true);
+    expect(isValidCrew(-1, CREW_RETURNED_MIN)).toBe(false);
+    expect(isValidCrew(25, CREW_RETURNED_MIN)).toBe(false);
   });
 });
 
