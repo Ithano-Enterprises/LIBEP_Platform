@@ -136,7 +136,10 @@ describe('LogCatchScreen entry sheet', () => {
     fireEvent.changeText(screen.getByTestId('other-name'), 'Pweza Mdogo');
     expect(screen.getByTestId('save')).not.toBeDisabled();
     fireEvent.press(screen.getByTestId('save'));
-    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    await screen.findByTestId('confirm-card');
+    expect(screen.getByText('Pweza Mdogo')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('view-list'));
+    expect(onDone).toHaveBeenCalledTimes(1);
     const [e] = await repo.listTripEntries((await repo.getOpenTrip())!.trip_id);
     expect(e).toMatchObject({
       species_id: null,
@@ -223,15 +226,15 @@ describe('LogCatchScreen in Kiswahili', () => {
 });
 
 describe('LogCatchScreen confirmation', () => {
-  it('shows what was saved: species, t with S, ID and state', async () => {
+  it('shows what was saved: species, kg with S, ID and state', async () => {
     const { repo } = await withTrip();
     fireEvent.press(screen.getByTestId('fish-kibua'));
-    for (const k of ['3', '.', '1'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
+    for (const k of ['3', '1', '0', '0'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
     fireEvent.press(screen.getByTestId('save'));
     await screen.findByTestId('confirm-card');
     const [e] = await repo.listTripEntries((await repo.getOpenTrip())!.trip_id);
     expect(screen.getByText('Imehifadhiwa')).toBeTruthy();
-    expect(screen.getByTestId('confirm-weight')).toHaveTextContent('3.1');
+    expect(screen.getByTestId('confirm-weight')).toHaveTextContent('3,100');
     expect(screen.getByTestId('confirm-ref')).toHaveTextContent(e.short_ref);
     expect(screen.getByText('Kwenye kifaa')).toBeTruthy();
     expect(screen.getByText('2.27S 40.93E')).toBeTruthy();
@@ -246,7 +249,7 @@ describe('LogCatchScreen confirmation', () => {
     fireEvent.press(await screen.findByTestId('log-another'));
     expect(screen.queryByTestId('confirm-card')).toBeNull();
     expect(screen.getByTestId('search').props.value).toBe('');
-    expect(screen.getAllByTestId(/^fish-/)).toHaveLength(devMenus[20].length);
+    expect(screen.getAllByTestId(/^fish-/)).toHaveLength(devMenus[20].length + 1); // + Other
 
     fireEvent.press(screen.getByTestId('fish-tafi'));
     fireEvent.press(screen.getByTestId('key-1'));
@@ -261,16 +264,18 @@ describe('LogCatchScreen soft warnings', () => {
   it('warns above the class and when the trip total would pass it, but still saves', async () => {
     const { repo } = await withTrip();
     fireEvent.press(screen.getByTestId('fish-kibua'));
-    for (const k of ['1', '9'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
+    // 19,000 kg, then 20,000 kg (at the class, no warning), then 21,000 kg.
+    for (const k of ['1', '9', '0', '0', '0'] as const) fireEvent.press(screen.getByTestId(`key-${k}`));
     expect(screen.queryByTestId('cap-hint')).toBeNull();
-    fireEvent.press(screen.getByTestId('quick-1'));
-    fireEvent.press(screen.getByTestId('quick-1'));
+    fireEvent.press(screen.getByTestId('quick-1000'));
+    expect(screen.queryByTestId('cap-hint')).toBeNull();
+    fireEvent.press(screen.getByTestId('quick-1000'));
     expect(screen.getByTestId('cap-hint')).toHaveTextContent('Juu ya daraja la chombo hiki (20 t). Hakiki namba.');
     expect(screen.getByTestId('save')).not.toBeDisabled();
     fireEvent.press(screen.getByTestId('save'));
     await screen.findByTestId('confirm-card');
 
-    // Trip is now 21 t: any further entry passes the class.
+    // Trip is now 21,000 kg: any further entry passes the class, even 1 kg.
     fireEvent.press(screen.getByTestId('fish-tafi'));
     await waitFor(() => expect(screen.queryByTestId('confirm-card')).toBeNull());
     fireEvent.press(screen.getByTestId('key-1'));

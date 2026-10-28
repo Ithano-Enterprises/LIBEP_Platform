@@ -76,19 +76,25 @@ describe('menu search', () => {
 
 describe('plausibility (soft, never blocks)', () => {
   it('flags an entry above the class first, then a trip total that would pass it', () => {
+    // kg against tonnage_class x 1000 (20 t = 20,000 kg).
     expect(plausibility(null, 0, 20)).toBeNull();
-    expect(plausibility(2.4, 10, 20)).toBeNull();
-    expect(plausibility(20, 0, 20)).toBeNull();
-    expect(plausibility(20.1, 0, 20)).toBe('entry_over_class');
-    expect(plausibility(25, 18, 20)).toBe('entry_over_class');
-    expect(plausibility(2.2, 17.9, 20)).toBe('trip_would_pass');
-    expect(plausibility(2.2, 17.9, 50)).toBeNull();
+    expect(plausibility(2400, 10000, 20)).toBeNull();
+    expect(plausibility(20000, 0, 20)).toBeNull();
+    expect(plausibility(20001, 0, 20)).toBe('entry_over_class');
+    expect(plausibility(25000, 18000, 20)).toBe('entry_over_class');
+    expect(plausibility(2200, 17900, 20)).toBe('trip_would_pass');
+    expect(plausibility(2200, 17900, 50)).toBeNull();
   });
 
-  it('a trip total exactly at the class does not warn (no float drift)', () => {
-    expect(plausibility(2.1, 17.9, 20)).toBeNull();
-    expect(plausibility(0.3, 19.7, 20)).toBeNull();
-    expect(plausibility(0.1, 19.9, 20)).toBeNull();
+  it('a trip total exactly at the class does not warn', () => {
+    expect(plausibility(2100, 17900, 20)).toBeNull();
+    expect(plausibility(1, 19999, 20)).toBeNull();
+    expect(plausibility(2, 19999, 20)).toBe('trip_would_pass');
+  });
+
+  it('a 15 kg catch never warns on its own', () => {
+    expect(plausibility(15, 0, 10)).toBeNull();
+    expect(plausibility(15, 9985, 10)).toBeNull();
   });
 });
 

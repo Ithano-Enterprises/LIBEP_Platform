@@ -58,16 +58,18 @@ export function filterMenu(menu: MenuItem[], query: string): MenuItem[] {
 /**
  * Soft plausibility check, never blocking (design rule): a single entry
  * above the vessel's tonnage class, or a trip total that would pass it.
+ * Quantities are kg; the class is in t, so the cap is tonnage_class x 1000.
  * [TO CONFIRM: plausibility thresholds; the class as a cap is the design's]
  */
 export function plausibility(
-  quantity: number | null,
-  tripTotal: number,
+  quantityKg: number | null,
+  tripTotalKg: number,
   tonnageClass: number,
 ): 'entry_over_class' | 'trip_would_pass' | null {
-  if (quantity == null || quantity <= 0) return null;
-  if (quantity > tonnageClass) return 'entry_over_class';
-  if (Math.round((tripTotal + quantity) * 10) > tonnageClass * 10) return 'trip_would_pass';
+  if (quantityKg == null || quantityKg <= 0) return null;
+  const capKg = tonnageClass * 1000;
+  if (quantityKg > capKg) return 'entry_over_class';
+  if (tripTotalKg + quantityKg > capKg) return 'trip_would_pass';
   return null;
 }
 

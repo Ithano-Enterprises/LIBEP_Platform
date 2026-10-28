@@ -81,9 +81,9 @@ export function ConfirmCard({
         <View style={styles.figureCol}>
           <View style={styles.figure}>
             <Text testID="confirm-weight" style={[styles.weight, f.monoSemiBold, { color: c.text }]}>
-              {formatQuantity(record.quantity)}
+              {formatQuantity(record.quantity, 'kg')}
             </Text>
-            <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
+            <Text style={[styles.unit, f.mono, { color: c.dim }]}>kg</Text>
           </View>
           <View style={styles.estimate}>
             <Text style={[styles.estimateText, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
