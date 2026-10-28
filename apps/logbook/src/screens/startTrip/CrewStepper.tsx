@@ -1,19 +1,23 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { CREW_MIN } from '../../data/repository';
 import { radius } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
 import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { canStepDown, canStepUp, stepCrew } from './model';
 
-// Crew card (S1 and S4): 64dp minus / plus buttons around the count, 1-24.
+// Crew card (S1 and S4): 64dp minus / plus buttons around the headcount,
+// min-24: crew departed from 1 (S1), crew returned from 0 (S4).
 export function CrewStepper({
   value,
   onChange,
   disabled = false,
+  min = CREW_MIN,
 }: {
   value: number;
   onChange: (n: number) => void;
   disabled?: boolean;
+  min?: number;
 }) {
   const c = useTheme();
   const t = useStrings();
@@ -27,7 +31,7 @@ export function CrewStepper({
       accessibilityLabel={label}
       accessibilityState={{ disabled: !enabled }}
       disabled={!enabled}
-      onPress={() => onChange(stepCrew(value, delta))}
+      onPress={() => onChange(stepCrew(value, delta, min))}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: pressed ? c.border : c.raised, opacity: enabled ? 1 : 0.4 },
@@ -45,7 +49,7 @@ export function CrewStepper({
         <Text style={[styles.labelText, f.sansSemiBold, { color: c.text }]}>{t.crew}</Text>
       </View>
       <View style={styles.stepper}>
-        {step(-1, canStepDown(value), t.crewDown, 'minus')}
+        {step(-1, canStepDown(value, min), t.crewDown, 'minus')}
         <Text testID="crew-count" style={[styles.count, f.monoSemiBold, { color: c.text }]}>
           {value}
         </Text>

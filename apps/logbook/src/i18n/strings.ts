@@ -108,6 +108,12 @@ export const sw = {
   crew: 'Wafanyakazi',
   crewDown: 'Punguza wafanyakazi', // not in the design. [TO CONFIRM: Kiswahili wording]
   crewUp: 'Ongeza wafanyakazi', // not in the design. [TO CONFIRM: Kiswahili wording]
+  // S4 crew headcount check. Not in the design. {r} returned, {d} departed.
+  // [TO CONFIRM: Kiswahili]
+  crewMismatch: 'Wafanyakazi waliorudi ({r}) si sawa na walioondoka ({d}). Thibitisha.',
+  crewReasonPh: 'Sababu (si lazima)', // [TO CONFIRM: Kiswahili]
+  crewConfirm: 'Thibitisha na tuma', // [TO CONFIRM: Kiswahili]
+  crewEdit: 'Rekebisha', // [TO CONFIRM: Kiswahili]
   departure: 'Kuondoka',
   autoCap: 'imekamatwa yenyewe',
   tripOpenNote: 'Safari iko wazi tayari. Imalize kwanza.',
@@ -224,6 +230,10 @@ export const en: Strings = {
   crew: 'Crew',
   crewDown: 'Fewer crew',
   crewUp: 'More crew',
+  crewMismatch: 'Crew returned ({r}) differs from crew departed ({d}). Please confirm.',
+  crewReasonPh: 'Reason (optional)',
+  crewConfirm: 'Confirm and submit',
+  crewEdit: 'Edit',
   departure: 'Departure',
   autoCap: 'captured automatically',
   tripOpenNote: 'A trip is already open. Close it first.',

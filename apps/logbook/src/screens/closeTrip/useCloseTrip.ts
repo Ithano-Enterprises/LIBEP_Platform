@@ -43,7 +43,8 @@ export function useCloseTrip(tripId: string | null) {
     async (input: {
       tripId: string;
       arrivalAt: Date;
-      crewCount: number;
+      crewReturned: number;
+      crewChangeReason?: string | null;
       landingSiteId: string;
       distanceKm: number | null;
     }) => {

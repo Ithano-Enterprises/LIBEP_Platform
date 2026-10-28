@@ -5,12 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
-import { formatDay, formatQuantity, formatTime, sumTonnes } from '../ui/format';
+import { CREW_RETURNED_MIN } from '../data/repository';
+import { formatDay, formatQuantity, formatTime, sumKg } from '../ui/format';
 import { HoldBox } from '../ui/HoldBox';
 import { Icon } from '../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
-import { byType, cleanDistance, parseDistance } from './closeTrip/model';
+import { byType, cleanDistance, crewMismatch, parseDistance } from './closeTrip/model';
 import { SitePicker } from './closeTrip/SitePicker';
 import { useCloseTrip } from './closeTrip/useCloseTrip';
 import { CrewStepper } from './startTrip/CrewStepper';
@@ -21,9 +22,10 @@ const systemNow = () => new Date();
 /** By-type rows shown before "Zaidi", as the design. */
 const TOP_TYPES = 3;
 
-// S4 Close trip, phone layout. Arrival is the time of Tuma. Crew starts
-// from the trip start, the site from the vessel's assigned site. After
-// Tuma the trip is read-only.
+// S4 Close trip, phone layout. Arrival is the time of Tuma. Crew returned
+// starts from crew departed, the site from the vessel's assigned site. If
+// the headcounts differ, Tuma asks the captain to confirm, with an optional
+// reason; it never blocks the close. After Tuma the trip is read-only.
 export function CloseTripScreen({
   onDone,
   now = systemNow,
@@ -38,6 +40,8 @@ export function CloseTripScreen({
   const { data, error, submit } = useCloseTrip(null);
   const f = useFontSet();
   const [crew, setCrew] = useState<number | null>(null);
+  const [confirmCrew, setConfirmCrew] = useState(false);
+  const [crewReason, setCrewReason] = useState('');
   const [siteId, setSiteId] = useState<string | null>(null);
   const [distance, setDistance] = useState('');
   const [typesOpen, setTypesOpen] = useState(false);
@@ -86,10 +90,11 @@ export function CloseTripScreen({
   const sub = `${profile.vessel.name} · ${profile.vessel.registration}`;
   const closed = !!close;
   const homeId = profile.home_site.id;
-  const crewValue = close?.crew_count ?? crew ?? start.crew_count;
+  const crewValue = close?.crew_returned ?? crew ?? start.crew_departed;
+  const mismatch = crewMismatch(start.crew_departed, crewValue);
   const siteValue = close?.landing_site_id ?? siteId ?? homeId;
   const distanceText = close ? (close.distance_km == null ? '' : String(close.distance_km)) : distance;
-  const total = sumTonnes(entries.map((e) => e.quantity));
+  const total = sumKg(entries.map((e) => e.quantity));
   const types = byType(entries);
   const shown = typesOpen ? types : types.slice(0, TOP_TYPES);
   const classLabel = `${profile.vessel.tonnage_class} t`;
@@ -97,15 +102,20 @@ export function CloseTripScreen({
   const k = stateKey[closeState ?? 'on_device'];
   const s = stateStyle(k, c);
 
-  const onSubmit = async () => {
+  const onSubmit = async (confirmed = false) => {
     if (closed || saving) return;
+    if (mismatch && !confirmed) {
+      setConfirmCrew(true);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     try {
       await submit({
         tripId: start.trip_id,
         arrivalAt: now(),
-        crewCount: crewValue,
+        crewReturned: crewValue,
+        crewChangeReason: mismatch ? crewReason : null,
         landingSiteId: siteValue,
         distanceKm: parseDistance(distance),
       });
@@ -150,7 +160,7 @@ export function CloseTripScreen({
           </View>
         </View>
 
-        {total > profile.vessel.tonnage_class ? (
+        {total > profile.vessel.tonnage_class * 1000 ? (
           <View testID="over-hint" style={styles.inline}>
             <Icon name="alert" size={16} strokeWidth={2} color={c.accent} />
             <Text style={[styles.hint, f.sansMedium, { color: c.accent }]}>{t.tripOverHint.replace('{c}', classLabel)}</Text>
@@ -162,14 +172,14 @@ export function CloseTripScreen({
         <View>
           <Text style={[styles.label, f.sansMedium, styles.typesLabel, { color: c.dim }]}>{t.byType}</Text>
           {shown.map((g) => (
-            <View key={g.species_id} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
+            <View key={g.key} testID={`type-${g.name}`} style={[styles.typeRow, { borderTopColor: c.border }]}>
               <Icon name="fish" size={20} color={c.dim} />
               <Text style={[styles.typeName, f.sans, { color: c.text }]}>{g.name}</Text>
               {g.hold ? <HoldBox code={g.hold} /> : null}
               <View style={styles.spacer} />
               <Text style={[styles.count, f.mono, { color: c.dim }]}>×{g.n}</Text>
               <View style={styles.typeFig}>
-                <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.t)}</Text>
+                <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.kg)}</Text>
                 <Text style={[styles.count, f.mono, { color: c.dim }]}>t</Text>
               </View>
               <TierChip tier="S" />
@@ -191,7 +201,20 @@ export function CloseTripScreen({
           ) : null}
         </View>
 
-        <CrewStepper value={crewValue} onChange={setCrew} disabled={closed} />
+        <CrewStepper
+          value={crewValue}
+          onChange={(n) => {
+            setCrew(n);
+            setConfirmCrew(false);
+          }}
+          disabled={closed}
+          min={CREW_RETURNED_MIN}
+        />
+        {closed && close.crew_change_reason ? (
+          <Text testID="crew-reason-shown" style={[styles.small, f.sans, { color: c.dim }]}>
+            {close.crew_change_reason}
+          </Text>
+        ) : null}
 
         <View style={styles.inline}>
           <Icon name="link" size={18} color={c.dim} />
@@ -223,6 +246,45 @@ export function CloseTripScreen({
       </ScrollView>
 
       <View style={[styles.footer, { borderTopColor: c.border, paddingBottom: 16 + insets.bottom }]}>
+        {!closed && confirmCrew && mismatch ? (
+          <View testID="crew-mismatch" style={[styles.mismatch, { borderColor: c.accent, backgroundColor: c.surface }]}>
+            <View style={styles.inline}>
+              <Icon name="alert" size={18} strokeWidth={2} color={c.accent} />
+              <Text style={[styles.hint, f.sansMedium, { color: c.accent }]}>
+                {t.crewMismatch.replace('{r}', String(crewValue)).replace('{d}', String(start.crew_departed))}
+              </Text>
+            </View>
+            <TextInput
+              testID="crew-reason"
+              value={crewReason}
+              onChangeText={setCrewReason}
+              placeholder={t.crewReasonPh}
+              placeholderTextColor={c.dim}
+              accessibilityLabel={t.crewReasonPh}
+              style={[styles.reasonInput, f.sans, { backgroundColor: c.bg, borderColor: c.border, color: c.text }]}
+            />
+            <View style={styles.mismatchActions}>
+              <Pressable
+                testID="crew-edit"
+                accessibilityRole="button"
+                onPress={() => setConfirmCrew(false)}
+                style={[styles.secondary, { borderColor: c.border }]}
+              >
+                <Text style={[styles.secondaryText, f.sansSemiBold, { color: c.text }]}>{t.crewEdit}</Text>
+              </Pressable>
+              <Pressable
+                testID="crew-confirm"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: saving, busy: saving }}
+                disabled={saving}
+                onPress={() => onSubmit(true)}
+                style={({ pressed }) => [styles.secondary, { borderColor: c.accent, backgroundColor: pressed ? c.raised : 'transparent' }]}
+              >
+                <Text style={[styles.secondaryText, f.sansSemiBold, { color: c.accent }]}>{t.crewConfirm}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
         {closed ? (
           <View testID="read-only" style={[styles.readOnly, { borderColor: c.border }]}>
             <View style={styles.inline}>
@@ -237,7 +299,7 @@ export function CloseTripScreen({
             accessibilityRole="button"
             accessibilityState={{ disabled: saving, busy: saving }}
             disabled={saving}
-            onPress={onSubmit}
+            onPress={() => onSubmit()}
             style={({ pressed }) => [styles.primary, { backgroundColor: pressed ? c.accentPress : c.accent }]}
           >
             <Icon name="send" size={22} strokeWidth={2} color={c.onAccent} />
@@ -269,6 +331,19 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 20, gap: 12 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  mismatch: { borderWidth: 1, borderRadius: radius, padding: 12, gap: 10, marginBottom: 10 },
+  reasonInput: { height: 56, borderRadius: radius, borderWidth: 1, paddingHorizontal: 14, fontSize: 15 },
+  mismatchActions: { flexDirection: 'row', gap: 8 },
+  secondary: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: radius,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  secondaryText: { fontSize: 16, textAlign: 'center' },
   small: { fontSize: 13 },
   arrival: {
     paddingVertical: 12,

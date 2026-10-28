@@ -1,27 +1,44 @@
 import type { Entry, HoldCode } from '../../data/types';
-import { sumTonnes } from '../../ui/format';
+import { sumKg } from '../../ui/format';
 
 // Pure helpers for Close trip (S4).
 
-export type TypeTotal = { species_id: string; name: string; hold: HoldCode | null; t: number; n: number };
+export type TypeTotal = {
+  /** Species id, or "other:<name>" so each typed "Other" name is its own row. */
+  key: string;
+  species_id: string | null;
+  name: string;
+  hold: HoldCode | null;
+  kg: number;
+  n: number;
+};
 
-/** Effective entries grouped by fish, largest total first (S, in t). */
+/** Groups by species; "Other" catches (species_id null) by their typed name. */
+export const speciesKey = (e: Pick<Entry, 'species_id' | 'species_local_name'>) =>
+  e.species_id ?? `other:${e.species_local_name}`;
+
+/** Effective entries grouped by fish, largest total first (S, in kg). */
 export function byType(entries: Entry[]): TypeTotal[] {
   const groups = new Map<string, TypeTotal>();
   for (const e of entries) {
-    const g = groups.get(e.species_id) ?? {
+    const key = speciesKey(e);
+    const g = groups.get(key) ?? {
+      key,
       species_id: e.species_id,
       name: e.species_local_name,
       hold: e.hold_code,
-      t: 0,
+      kg: 0,
       n: 0,
     };
-    g.t = sumTonnes([g.t, e.quantity]);
+    g.kg = sumKg([g.kg, e.quantity]);
     g.n += 1;
-    groups.set(e.species_id, g);
+    groups.set(key, g);
   }
-  return [...groups.values()].sort((a, b) => b.t - a.t || a.name.localeCompare(b.name));
+  return [...groups.values()].sort((a, b) => b.kg - a.kg || a.name.localeCompare(b.name));
 }
+
+/** Crew returned differs from crew departed: the captain confirms, never blocked. */
+export const crewMismatch = (departed: number, returned: number) => departed !== returned;
 
 /** Keeps what a distance field may hold: digits and one dot, 5 characters. */
 export function cleanDistance(text: string): string {

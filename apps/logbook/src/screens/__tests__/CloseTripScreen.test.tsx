@@ -7,7 +7,7 @@ import { devOpenTrip, devOpenTripEntries, devOtherLandingSite, devSpecies } from
 import { seedDevFixtures } from '../../dev/fixtures/seed';
 import type { Lang } from '../../i18n/strings';
 import { openTestRepo } from '../../test/sqlite';
-import { formatTime, sumTonnes } from '../../ui/format';
+import { formatTime, sumKg } from '../../ui/format';
 import { PreferencesProvider } from '../../ui/preferences';
 import { CloseTripScreen } from '../CloseTripScreen';
 
@@ -42,17 +42,18 @@ async function withFixtures(lang: Lang = 'sw') {
   return { ...ctx, trip, now, onDone };
 }
 
-const total = sumTonnes(devOpenTripEntries.map((e) => e.t));
+const total = sumKg(devOpenTripEntries.map((e) => e.kg)); // 17,000 kg
 
 describe('CloseTripScreen', () => {
   it('shows arrival, total S, assigned site, crew from the start and top 3 types', async () => {
     const { now } = await withFixtures();
     expect(screen.getByTestId('arrival-time')).toHaveTextContent(formatTime(now.toISOString()));
-    expect(screen.getByTestId('close-total')).toHaveTextContent(total.toFixed(1));
+    expect(total).toBe(17000);
+    expect(screen.getByTestId('close-total')).toHaveTextContent('17');
     expect(screen.getByText('Kituo: Mokowe (kilichopangwa)')).toBeTruthy();
-    expect(screen.getByTestId('crew-count')).toHaveTextContent(String(devOpenTrip.crewCount));
+    expect(screen.getByTestId('crew-count')).toHaveTextContent(String(devOpenTrip.crewDeparted));
     expect(screen.getByText(`Imeunganishwa na maingizo ${devOpenTripEntries.length} · KE-LAM-MKW-T20-014`)).toBeTruthy();
-    // kibua 8.7 (×2) is the largest group in the fixture
+    // kibua 8,700 kg (×2) is the largest group in the fixture
     const rows = screen.getAllByTestId(/^type-/).map((n) => n.props.testID);
     expect(rows).toEqual(['type-kibua', 'type-tewa', 'type-kolekole']);
     expect(screen.getByTestId('type-kibua')).toHaveTextContent(/×2.*8\.7/);
@@ -71,6 +72,10 @@ describe('CloseTripScreen', () => {
     expect(screen.getByTestId('fee-note')).toBeTruthy();
     fireEvent.changeText(screen.getByTestId('distance'), '18.5 km');
     fireEvent.press(screen.getByTestId('submit'));
+    // Crew returned 5, departed 4: confirm, with a reason.
+    expect(screen.getByTestId('crew-mismatch')).toHaveTextContent(/\(5\).*\(4\)/);
+    fireEvent.changeText(screen.getByTestId('crew-reason'), 'alipanda Lamu');
+    fireEvent.press(screen.getByTestId('crew-confirm'));
 
     await screen.findByTestId('read-only');
     expect(screen.getByText('Safari imefungwa · kusoma tu')).toBeTruthy();
@@ -78,17 +83,19 @@ describe('CloseTripScreen', () => {
     expect(screen.getByTestId('crew-plus')).toBeDisabled();
     expect(screen.getByTestId('site-row')).toBeDisabled();
     expect(screen.getByTestId('distance').props.editable).toBe(false);
+    expect(screen.getByTestId('crew-reason-shown')).toHaveTextContent('alipanda Lamu');
 
     const close = (await repo.getTripClose(trip.trip_id))!;
     const entries = await repo.listTripEntries(trip.trip_id);
     expect(close).toMatchObject({
       trip_id: trip.trip_id,
       arrival_at: now.toISOString(),
-      crew_count: devOpenTrip.crewCount + 1,
+      crew_returned: devOpenTrip.crewDeparted + 1,
+      crew_change_reason: 'alipanda Lamu',
       landing_site_id: devOtherLandingSite.id,
       distance_km: 18.5,
-      total_quantity: total,
-      unit: 't',
+      total_quantity: 17000,
+      unit: 'kg',
     });
     expect([...close.catch_ids].sort()).toEqual(entries.map((e) => e.id).sort());
     expect(await repo.getSyncState(close.id)).toBe('on_device');
@@ -99,17 +106,47 @@ describe('CloseTripScreen', () => {
     ).rejects.toMatchObject({ code: 'no_open_trip' } satisfies Partial<DataError>);
   });
 
-  it('distance is optional (stored as null)', async () => {
+  it('distance is optional (stored as null); equal crew closes with no prompt and no reason', async () => {
     const { repo, trip } = await withFixtures();
     fireEvent.press(screen.getByTestId('submit'));
+    expect(screen.queryByTestId('crew-mismatch')).toBeNull();
     await screen.findByTestId('read-only');
-    expect((await repo.getTripClose(trip.trip_id))!.distance_km).toBeNull();
+    expect((await repo.getTripClose(trip.trip_id))!).toMatchObject({
+      distance_km: null,
+      crew_returned: devOpenTrip.crewDeparted,
+      crew_change_reason: null,
+    });
+  });
+
+  it('a crew mismatch asks to confirm; Edit goes back; the reason is optional and never blocks', async () => {
+    const { repo, trip } = await withFixtures('en');
+    fireEvent.press(screen.getByTestId('crew-minus'));
+    fireEvent.press(screen.getByTestId('submit'));
+    expect(screen.getByText('Crew returned (3) differs from crew departed (4). Please confirm.')).toBeTruthy();
+    expect(await repo.getTripClose(trip.trip_id)).toBeNull();
+    fireEvent.press(screen.getByTestId('crew-edit'));
+    expect(screen.queryByTestId('crew-mismatch')).toBeNull();
+    fireEvent.press(screen.getByTestId('submit'));
+    fireEvent.press(screen.getByTestId('crew-confirm')); // no reason given
+    await screen.findByTestId('read-only');
+    expect((await repo.getTripClose(trip.trip_id))!).toMatchObject({ crew_returned: 3, crew_change_reason: null });
+  });
+
+  it('crew returned can step down to 0', async () => {
+    const { repo, trip } = await withFixtures();
+    for (let i = 0; i < devOpenTrip.crewDeparted; i++) fireEvent.press(screen.getByTestId('crew-minus'));
+    expect(screen.getByTestId('crew-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('crew-minus')).toBeDisabled();
+    fireEvent.press(screen.getByTestId('submit'));
+    fireEvent.press(screen.getByTestId('crew-confirm'));
+    await screen.findByTestId('read-only');
+    expect((await repo.getTripClose(trip.trip_id))!.crew_returned).toBe(0);
   });
 
   it('warns when the trip total passes the vessel class', async () => {
     const ctx = await openTestRepo();
     await seedDevFixtures(ctx.db, ctx.deps);
-    await ctx.repo.logCatch({ speciesId: devSpecies[0].id, quantity: 5, gps: null });
+    await ctx.repo.logCatch({ speciesId: devSpecies[0].id, quantity: 5000, gps: null }); // 22,000 kg > 20 t
     renderClose(ctx.repo, ctx.deps.clock.now(), 'en');
     await screen.findByTestId('over-hint');
     expect(screen.getByText('Trip total passes 20 t for this boat. Check the figures.')).toBeTruthy();
