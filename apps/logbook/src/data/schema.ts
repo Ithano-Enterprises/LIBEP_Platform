@@ -1,6 +1,6 @@
 import type { SqlDb } from './sql';
 
-// Local SQLite schema, following the frontend data contract (v0.1) and
+// Local SQLite schema, following the frontend data contract (v0.2) and
 // ADR 0001. Each migration runs once, tracked by PRAGMA user_version.
 // A shipped migration is never edited; add a new one.
 
@@ -61,7 +61,8 @@ CREATE TABLE hold_codes (
 CREATE TABLE measurement_units (
   code TEXT PRIMARY KEY NOT NULL
 );
-INSERT INTO measurement_units (code) VALUES ('t'), ('kg');
+-- Records are stored in kg; t may come with plant weights from the feed.
+INSERT INTO measurement_units (code) VALUES ('kg'), ('t');
 
 -- Device only, never sent.
 CREATE TABLE device_profile (
@@ -85,8 +86,11 @@ CREATE TABLE trip_starts (
   trip_id              TEXT NOT NULL UNIQUE,
   vessel_id            TEXT NOT NULL REFERENCES vessels (id),
   captain_id           TEXT NOT NULL REFERENCES captains (id),
-  crew_count           INTEGER NOT NULL CHECK (crew_count BETWEEN 1 AND 24),
-  departure_at         TEXT NOT NULL
+  -- [TO CONFIRM: crew limit 24]
+  crew_departed        INTEGER NOT NULL CHECK (crew_departed BETWEEN 1 AND 24),
+  departure_at         TEXT NOT NULL,
+  -- One UUID per trip: the trip is identified by its trip_start record.
+  CHECK (trip_id = id)
 );
 
 CREATE TABLE catches (
@@ -97,10 +101,12 @@ CREATE TABLE catches (
   trip_id              TEXT NOT NULL REFERENCES trip_starts (trip_id),
   vessel_id            TEXT NOT NULL REFERENCES vessels (id),
   captain_id           TEXT NOT NULL REFERENCES captains (id),
-  species_id           TEXT NOT NULL REFERENCES species (id),
+  -- Null for "Other": the local name as the captain typed it.
+  species_id           TEXT REFERENCES species (id),
   species_local_name   TEXT NOT NULL,
-  quantity             REAL NOT NULL CHECK (quantity > 0),
-  unit                 TEXT NOT NULL CHECK (unit = 't') REFERENCES measurement_units (code),
+  -- Whole kg, as the captain enters it.
+  quantity             INTEGER NOT NULL CHECK (typeof(quantity) = 'integer' AND quantity >= 1),
+  unit                 TEXT NOT NULL CHECK (unit = 'kg') REFERENCES measurement_units (code),
   tier                 TEXT NOT NULL CHECK (tier = 'S'),
   hold_code            TEXT CHECK (hold_code IN ('A', 'B', 'C', 'D')),
   latitude             REAL,
@@ -122,9 +128,10 @@ CREATE TABLE catch_corrections (
   catch_id               TEXT NOT NULL REFERENCES catches (id),
   previous_correction_id TEXT REFERENCES catch_corrections (id),
   reason                 TEXT,
-  species_id             TEXT NOT NULL REFERENCES species (id),
-  quantity               REAL NOT NULL CHECK (quantity > 0),
-  unit                   TEXT NOT NULL CHECK (unit = 't') REFERENCES measurement_units (code),
+  species_id             TEXT REFERENCES species (id),
+  species_local_name     TEXT NOT NULL,
+  quantity               INTEGER NOT NULL CHECK (typeof(quantity) = 'integer' AND quantity >= 1),
+  unit                   TEXT NOT NULL CHECK (unit = 'kg') REFERENCES measurement_units (code),
   hold_code              TEXT CHECK (hold_code IN ('A', 'B', 'C', 'D')),
   note                   TEXT
 );
@@ -145,12 +152,14 @@ CREATE TABLE trip_closes (
   device_clock_skew_ms INTEGER,
   trip_id              TEXT NOT NULL UNIQUE REFERENCES trip_starts (trip_id),
   arrival_at           TEXT NOT NULL,
-  crew_count           INTEGER NOT NULL CHECK (crew_count BETWEEN 1 AND 24),
+  -- [TO CONFIRM: crew limit 24]
+  crew_returned        INTEGER NOT NULL CHECK (crew_returned BETWEEN 0 AND 24),
+  crew_change_reason   TEXT,
   landing_site_id      TEXT NOT NULL REFERENCES landing_sites (id),
   distance_km          REAL CHECK (distance_km IS NULL OR distance_km >= 0),
   catch_ids            TEXT NOT NULL,
-  total_quantity       REAL NOT NULL,
-  unit                 TEXT NOT NULL CHECK (unit = 't') REFERENCES measurement_units (code)
+  total_quantity       INTEGER NOT NULL CHECK (typeof(total_quantity) = 'integer' AND total_quantity >= 0),
+  unit                 TEXT NOT NULL CHECK (unit = 'kg') REFERENCES measurement_units (code)
 );
 
 ${appendOnlyTriggers}
@@ -170,8 +179,8 @@ CREATE VIEW v_catches_effective AS
 SELECT
   c.id, c.trip_id, c.vessel_id, c.captain_id, c.device_id,
   c.recorded_at, c.device_clock_skew_ms, c.short_ref, c.tier,
-  coalesce(h.species_id, c.species_id)         AS species_id,
-  coalesce(hs.local_name, c.species_local_name) AS species_local_name,
+  CASE WHEN h.id IS NULL THEN c.species_id ELSE h.species_id END                 AS species_id,
+  CASE WHEN h.id IS NULL THEN c.species_local_name ELSE h.species_local_name END AS species_local_name,
   coalesce(h.quantity, c.quantity)             AS quantity,
   coalesce(h.unit, c.unit)                     AS unit,
   CASE WHEN h.id IS NULL THEN c.hold_code ELSE h.hold_code END AS hold_code,
@@ -183,8 +192,7 @@ SELECT
 FROM catches c
 LEFT JOIN catch_corrections h
   ON h.catch_id = c.id
- AND NOT EXISTS (SELECT 1 FROM catch_corrections n WHERE n.previous_correction_id = h.id)
-LEFT JOIN species hs ON hs.id = h.species_id;
+ AND NOT EXISTS (SELECT 1 FROM catch_corrections n WHERE n.previous_correction_id = h.id);
 `,
 ];
 

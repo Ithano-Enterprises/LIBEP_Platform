@@ -58,7 +58,7 @@ export async function seedDevFixtures(db: SqlDb, repo: Repository, now: Date): P
 
   if (!(await repo.getOpenTrip())) {
     await repo.startTrip({
-      crewCount: devOpenTrip.crewCount,
+      crewDeparted: devOpenTrip.crewDeparted,
       departureAt: new Date(now.getTime() - devOpenTrip.departedMinutesAgo * 60_000),
     });
   }

@@ -72,4 +72,4 @@ export const devHoldCodes: Record<string, HoldCode> = {
 
 // Open trip: crew of 4 as in the design prototype; departure 2h30 before
 // seeding so the trip always looks current. [TO CONFIRM: not real values]
-export const devOpenTrip = { crewCount: 4, departedMinutesAgo: 150 };
+export const devOpenTrip = { crewDeparted: 4, departedMinutesAgo: 150 };

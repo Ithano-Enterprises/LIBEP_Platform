@@ -1,4 +1,4 @@
-// Shapes of the local data, named after the frontend data contract (v0.1).
+// Shapes of the local data, named after the frontend data contract (v0.2).
 
 export type TonnageClass = 10 | 20 | 50 | 100;
 export type HoldCode = 'A' | 'B' | 'C' | 'D';
@@ -38,10 +38,11 @@ export type DeviceProfile = {
 };
 
 export type TripStart = RecordBase & {
+  /** Same as id: one UUID per trip, made at trip start. */
   trip_id: string;
   vessel_id: string;
   captain_id: string;
-  crew_count: number;
+  crew_departed: number;
   departure_at: string;
 };
 
@@ -51,10 +52,12 @@ export type CatchRecord = RecordBase & {
   trip_id: string;
   vessel_id: string;
   captain_id: string;
-  species_id: string;
+  /** Null for "Other"; species_local_name is then the name as typed. */
+  species_id: string | null;
   species_local_name: string;
+  /** Whole kg. */
   quantity: number;
-  unit: 't';
+  unit: 'kg';
   tier: 'S';
   hold_code: HoldCode | null;
   latitude: number | null;
@@ -71,9 +74,11 @@ export type CatchCorrection = RecordBase & {
   catch_id: string;
   previous_correction_id: string | null;
   reason: string | null;
-  species_id: string;
+  species_id: string | null;
+  species_local_name: string;
+  /** Whole kg. */
   quantity: number;
-  unit: 't';
+  unit: 'kg';
   hold_code: HoldCode | null;
   note: string | null;
 };
@@ -81,12 +86,15 @@ export type CatchCorrection = RecordBase & {
 export type TripClose = RecordBase & {
   trip_id: string;
   arrival_at: string;
-  crew_count: number;
+  crew_returned: number;
+  /** Optional, only when crew_returned differs from crew_departed. */
+  crew_change_reason: string | null;
   landing_site_id: string;
   distance_km: number | null;
   catch_ids: string[];
+  /** Whole kg. */
   total_quantity: number;
-  unit: 't';
+  unit: 'kg';
 };
 
 /** A catch as shown in lists: latest correction applied, with its sync state. */

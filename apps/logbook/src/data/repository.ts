@@ -40,6 +40,7 @@ export class DataError extends Error {
       | 'invalid_quantity'
       | 'invalid_crew'
       | 'unknown_species'
+      | 'invalid_species_name'
       | 'unknown_catch'
       | 'stale_correction',
     message?: string,
@@ -51,10 +52,13 @@ export class DataError extends Error {
 
 export const DEFAULT_PREFERENCES: Preferences = { lang: 'sw', mode: 'night', unit: 't' };
 
-/** Quantity in tonnes: positive, finite, at most one decimal (contract §2). */
+/** Quantity in whole kg, at least 1 (contract §2). */
 export function isValidQuantity(q: number): boolean {
-  return Number.isFinite(q) && q > 0 && Math.abs(q * 10 - Math.round(q * 10)) < 1e-9;
+  return Number.isInteger(q) && q >= 1;
 }
+
+/** Species for a catch: from the menu, or "Other" with the local name as typed. */
+export type SpeciesChoice = { speciesId: string } | { speciesId: null; speciesLocalName: string };
 
 /** Display reference, e.g. 3F2A-008. [TO CONFIRM: short_ref format] */
 export function makeShortRef(id: string, seq: number): string {
@@ -164,8 +168,9 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     );
   }
 
-  async function startTrip(input: { crewCount: number; departureAt: Date }): Promise<TripStart> {
-    if (!Number.isInteger(input.crewCount) || input.crewCount < 1 || input.crewCount > 24) {
+  async function startTrip(input: { crewDeparted: number; departureAt: Date }): Promise<TripStart> {
+    // [TO CONFIRM: crew limit 24]
+    if (!Number.isInteger(input.crewDeparted) || input.crewDeparted < 1 || input.crewDeparted > 24) {
       throw new DataError('invalid_crew');
     }
     const profile = await requireProfile();
@@ -173,10 +178,10 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     const b = await base();
     const record: TripStart = {
       ...b,
-      trip_id: deps.uuid(),
+      trip_id: b.id, // one UUID per trip: the trip_start id (contract §2)
       vessel_id: profile.vessel.id,
       captain_id: profile.captain.id,
-      crew_count: input.crewCount,
+      crew_departed: input.crewDeparted,
       departure_at: input.departureAt.toISOString(),
     };
     await db.withTransactionAsync(async () => {
@@ -197,17 +202,31 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     return s;
   }
 
-  async function logCatch(input: {
-    speciesId: string;
-    quantity: number;
-    gps: Gps | null;
-    note?: string | null;
-  }): Promise<CatchRecord> {
+  /** Resolves a species choice to what a record stores. "Other" has no hold code. */
+  async function resolveSpecies(
+    choice: SpeciesChoice,
+  ): Promise<{ species_id: string | null; species_local_name: string; hold_code: HoldCode | null }> {
+    if (choice.speciesId === null) {
+      // Sent exactly as typed; only a blank name is refused.
+      if (!choice.speciesLocalName.trim()) throw new DataError('invalid_species_name');
+      return { species_id: null, species_local_name: choice.speciesLocalName, hold_code: null };
+    }
+    const s = await findSpecies(choice.speciesId);
+    return { species_id: s.id, species_local_name: s.local_name, hold_code: s.hold_code };
+  }
+
+  async function logCatch(
+    input: SpeciesChoice & {
+      quantity: number;
+      gps: Gps | null;
+      note?: string | null;
+    },
+  ): Promise<CatchRecord> {
     if (!isValidQuantity(input.quantity)) throw new DataError('invalid_quantity');
     const profile = await requireProfile();
     const trip = await getOpenTrip();
     if (!trip) throw new DataError('no_open_trip');
-    const species = await findSpecies(input.speciesId);
+    const species = await resolveSpecies(input);
     const b = await base();
     const count = await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM catches', []);
     const record: CatchRecord = {
@@ -215,10 +234,10 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
       trip_id: trip.trip_id,
       vessel_id: profile.vessel.id,
       captain_id: profile.captain.id,
-      species_id: species.id,
-      species_local_name: species.local_name,
+      species_id: species.species_id,
+      species_local_name: species.species_local_name,
       quantity: input.quantity,
-      unit: 't',
+      unit: 'kg',
       tier: 'S',
       hold_code: species.hold_code,
       latitude: input.gps?.latitude ?? null,
@@ -247,18 +266,22 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     catchId: string;
     previousCorrectionId: string | null;
     reason?: string | null;
-    speciesId?: string;
+    /** Leave out to keep the current species; null is "Other" with speciesLocalName. */
+    speciesId?: string | null;
+    speciesLocalName?: string;
     quantity?: number;
     note?: string | null;
   }): Promise<CatchCorrection> {
     const current = await db.getFirstAsync<{
-      species_id: string;
+      species_id: string | null;
+      species_local_name: string;
       quantity: number;
       hold_code: HoldCode | null;
       note: string | null;
       head_correction_id: string | null;
     }>(
-      'SELECT species_id, quantity, hold_code, note, head_correction_id FROM v_catches_effective WHERE id = ?',
+      `SELECT species_id, species_local_name, quantity, hold_code, note, head_correction_id
+         FROM v_catches_effective WHERE id = ?`,
       [input.catchId],
     );
     if (!current) throw new DataError('unknown_catch');
@@ -267,16 +290,24 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     }
     const quantity = input.quantity ?? current.quantity;
     if (!isValidQuantity(quantity)) throw new DataError('invalid_quantity');
-    const species = input.speciesId ? await findSpecies(input.speciesId) : null;
+    const species =
+      input.speciesId === undefined
+        ? null
+        : await resolveSpecies(
+            input.speciesId === null
+              ? { speciesId: null, speciesLocalName: input.speciesLocalName ?? '' }
+              : { speciesId: input.speciesId },
+          );
     const b = await base();
     const record: CatchCorrection = {
       ...b,
       catch_id: input.catchId,
       previous_correction_id: input.previousCorrectionId,
       reason: input.reason?.trim() || null,
-      species_id: species?.id ?? current.species_id,
+      species_id: species ? species.species_id : current.species_id,
+      species_local_name: species ? species.species_local_name : current.species_local_name,
       quantity,
-      unit: 't',
+      unit: 'kg',
       hold_code: species ? species.hold_code : current.hold_code,
       note: input.note === undefined ? current.note : input.note?.trim() || null,
     };
@@ -290,11 +321,14 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
   async function closeTrip(input: {
     tripId: string;
     arrivalAt: Date;
-    crewCount: number;
+    crewReturned: number;
+    /** Optional, kept only when crew_returned differs from crew_departed. */
+    crewChangeReason?: string | null;
     landingSiteId: string;
     distanceKm: number | null;
   }): Promise<TripClose> {
-    if (!Number.isInteger(input.crewCount) || input.crewCount < 1 || input.crewCount > 24) {
+    // [TO CONFIRM: crew limit 24]
+    if (!Number.isInteger(input.crewReturned) || input.crewReturned < 0 || input.crewReturned > 24) {
       throw new DataError('invalid_crew');
     }
     const trip = await getOpenTrip();
@@ -303,18 +337,20 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
       'SELECT id, quantity FROM v_catches_effective WHERE trip_id = ? ORDER BY recorded_at',
       [input.tripId],
     );
-    const total = Math.round(entries.reduce((sum, e) => sum + e.quantity * 10, 0)) / 10;
+    const total = entries.reduce((sum, e) => sum + e.quantity, 0);
     const b = await base();
     const record: TripClose = {
       ...b,
       trip_id: input.tripId,
       arrival_at: input.arrivalAt.toISOString(),
-      crew_count: input.crewCount,
+      crew_returned: input.crewReturned,
+      crew_change_reason:
+        input.crewReturned === trip.crew_departed ? null : input.crewChangeReason?.trim() || null,
       landing_site_id: input.landingSiteId,
       distance_km: input.distanceKm,
       catch_ids: entries.map((e) => e.id),
       total_quantity: total, // display check only; the server recomputes it
-      unit: 't',
+      unit: 'kg',
     };
     await db.withTransactionAsync(async () => {
       await insert('trip_closes', { ...record, catch_ids: JSON.stringify(record.catch_ids) });
