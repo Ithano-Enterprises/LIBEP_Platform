@@ -66,7 +66,7 @@ describe('tablet (1280×800)', () => {
     const { repo, entries } = await tablet();
     await screen.findByTestId('detail-pane');
     fireEvent.press(await screen.findByTestId('correct'));
-    fireEvent.press(screen.getByTestId('quick-1'));
+    fireEvent.press(screen.getByTestId('quick-1000'));
     fireEvent.press(screen.getByTestId('correct-save'));
     await waitFor(async () => expect((await repo.getEntry(entries[0].id))!.correction_count).toBe(1));
   });
@@ -79,12 +79,40 @@ describe('tablet (1280×800)', () => {
     fireEvent.press(screen.getByTestId('fish-nguru'));
     expect(screen.queryByTestId('scrim')).toBeNull();
     expect(within(screen.getByTestId('entry-pane')).getByTestId('entry-sheet')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('key-2'));
+    fireEvent.press(screen.getByTestId('key-1'));
+    fireEvent.press(screen.getByTestId('key-5'));
     fireEvent.press(screen.getByTestId('save'));
     const card = await within(screen.getByTestId('entry-pane')).findByTestId('confirm-card');
     expect(within(card).queryByTestId('confirm-dismiss')).toBeNull();
+    expect(within(card).getByTestId('confirm-weight')).toHaveTextContent('15');
     const [newest] = await repo.listTripEntries(trip.trip_id);
-    expect(newest).toMatchObject({ species_local_name: 'nguru', quantity: 2 });
+    expect(newest).toMatchObject({ species_local_name: 'nguru', quantity: 15, unit: 'kg' });
+  });
+
+  it('S3.3: "Other" is on the tablet menu and its name field shows in the pane', async () => {
+    const { repo, trip } = await tablet();
+    fireEvent.press(screen.getByTestId('primary'));
+    fireEvent.press(await screen.findByTestId('fish-other'));
+    const pane = screen.getByTestId('entry-pane');
+    fireEvent.changeText(within(pane).getByTestId('other-name'), 'kaa');
+    fireEvent.press(screen.getByTestId('key-4'));
+    fireEvent.press(screen.getByTestId('key-0'));
+    fireEvent.press(screen.getByTestId('save'));
+    await within(pane).findByTestId('confirm-card');
+    const [newest] = await repo.listTripEntries(trip.trip_id);
+    expect(newest).toMatchObject({ species_id: null, species_local_name: 'kaa', quantity: 40 });
+  });
+
+  it('S4: total in t from stored kg; a crew mismatch is confirmed in the footer', async () => {
+    const { repo, trip } = await tablet();
+    fireEvent.press(screen.getByTestId('close-trip'));
+    expect(await screen.findByTestId('close-total')).toHaveTextContent('17');
+    fireEvent.press(screen.getByTestId('crew-minus'));
+    fireEvent.press(screen.getByTestId('submit'));
+    expect(screen.getByTestId('crew-mismatch')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('crew-confirm'));
+    await screen.findByTestId('read-only');
+    expect((await repo.getTripClose(trip.trip_id))!).toMatchObject({ crew_returned: 3, total_quantity: 17000 });
   });
 
   it('S4: two columns with site options shown; Tuma closes the trip', async () => {
