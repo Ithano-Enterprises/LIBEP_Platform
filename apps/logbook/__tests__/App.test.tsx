@@ -4,11 +4,24 @@ import { StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
 import mockSafeAreaContext from 'react-native-safe-area-context/jest/mock';
 
 import App from '../App';
+import { seedDevFixtures as mockSeed } from '../src/dev/fixtures/seed';
+import { openTestRepo as mockOpenTestRepo } from '../src/test/sqlite';
 import { NIGHT, plexFonts } from '../src/theme/tokens';
 
 // App mounts the real SafeAreaProvider, which needs native metrics.
 jest.mock('react-native-safe-area-context', () => mockSafeAreaContext);
 jest.mock('expo-font', () => ({ useFonts: jest.fn() }));
+jest.mock('expo-network', () => ({
+  useNetworkState: () => ({ isConnected: true, isInternetReachable: true }),
+}));
+// App opens the on-device store; here it gets a seeded in-memory one.
+jest.mock('../src/data/open', () => ({
+  openLogbook: async () => {
+    const ctx = await mockOpenTestRepo();
+    await mockSeed(ctx.db, ctx.deps);
+    return ctx.repo;
+  },
+}));
 
 const mockUseFonts = useFonts as jest.MockedFunction<typeof useFonts>;
 
@@ -38,12 +51,12 @@ describe('App font loading', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('renders the app in IBM Plex once fonts load', () => {
+  it('renders the app in IBM Plex once fonts load', async () => {
     mockUseFonts.mockReturnValue([true, null]);
     render(<App />);
 
     expect(screen.queryByTestId('font-splash')).toBeNull();
-    expect(StyleSheet.flatten(screen.getByText('Safari ya leo').props.style).fontFamily).toBe(
+    expect(StyleSheet.flatten((await screen.findByText('Safari ya leo')).props.style).fontFamily).toBe(
       plexFonts.sansSemiBold.fontFamily,
     );
     expect(warn).not.toHaveBeenCalled();
@@ -60,13 +73,13 @@ describe('App font loading', () => {
     }
   });
 
-  it('falls back to system fonts and stays usable when fonts fail to load', () => {
+  it('falls back to system fonts and stays usable when fonts fail to load', async () => {
     const error = new Error('font file missing');
     mockUseFonts.mockReturnValue([false, error]);
     const { rerender } = render(<App />);
 
     expect(screen.queryByTestId('font-splash')).toBeNull();
-    expect(screen.getByText('Safari ya leo')).toBeTruthy();
+    expect(await screen.findByText('Safari ya leo')).toBeTruthy();
     fireEvent.press(screen.getByTestId('toggle-lang'));
     expect(screen.getByText("Today's trip")).toBeTruthy();
 

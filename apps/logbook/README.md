@@ -2,7 +2,7 @@
 
 Fisher phone app. React Native with Expo, hand-built.
 
-Owner: mobile app developer. Scaffold only: Expo SDK 57 + TypeScript.
+Owner: mobile app developer. Expo SDK 57 + TypeScript. In progress.
 
 ## Scope (M1)
 
@@ -50,4 +50,9 @@ npm test
 - `src/theme/tokens.ts`: Night/Day colour tokens from the design. Night is the default
 - `src/i18n/strings.ts`: Kiswahili (default) and English UI strings. Fish names are never translated
 - `src/ui/`: shared UI pieces and the preferences context (mode, language)
-- `src/screens/`: screens
+- `src/data/`: the only data access layer. Local SQLite schema (append-only
+  triggers), repository functions, and the provider screens read through
+- `src/dev/fixtures/`: DEV FIXTURE placeholder data, seeded in development
+  builds only. Not real data. Start with `EXPO_PUBLIC_DEV_SEED=no-open-trip`
+  (after clearing app data) to seed without an open trip, so S1 can be tried
+- `src/screens/`: screens (S1 Start trip, S2.1 Trip home, S3.3 Log catch, entry detail, S4 Close trip)
