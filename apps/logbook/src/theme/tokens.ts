@@ -9,7 +9,10 @@ import { IBMPlexSans_600SemiBold } from '@expo-google-fonts/ibm-plex-sans/600Sem
 import { Platform, type TextStyle } from 'react-native';
 
 // Design tokens copied verbatim from the design reference
-// (Catch Log v2, NIGHT / DAY). Night is the default mode.
+// (Catch Log v2, NIGHT / DAY). Night is the default mode. Exception: the
+// state colours (Day accent, ok, danger; Night danger; the night S chip)
+// are darkened or lightened a few steps so 13px state text on raised rows
+// reaches WCAG 4.5:1.
 
 export type Mode = 'night' | 'day';
 
@@ -36,7 +39,7 @@ export const NIGHT: Palette = {
   dim: '#8FA3A4',
   accent: '#E8A33D',
   accentPress: '#C4842A',
-  danger: '#E8654A',
+  danger: '#E96E54',
   ok: '#3FBF7F',
   onAccent: '#12100A',
 };
@@ -48,14 +51,42 @@ export const DAY: Palette = {
   border: '#C6D0CE',
   text: '#0B1416',
   dim: '#5A6B6C',
-  accent: '#A8650B',
+  accent: '#975A0A',
   accentPress: '#8A5208',
-  danger: '#C43F24',
-  ok: '#1E7A4C',
+  danger: '#BB3C22',
+  ok: '#1D774A',
   onAccent: '#FFFFFF',
 };
 
 export const palettes: Record<Mode, Palette> = { night: NIGHT, day: DAY };
+
+// Tier chips (S = captain estimate, W = plant weight), from the design's
+// chip(). Fixed colours outside the palette.
+export const tierChip = {
+  sNight: { border: '#8C94A0', text: '#8C94A0' },
+  sDay: { background: '#55606B', text: '#FFFFFF' },
+  w: { background: '#3FBF7F', text: '#07120C' },
+} as const;
+
+// Map colours and the 5-step heat ramp for My grounds (S5), verbatim from
+// the design (My Grounds, NIGHT / DAY / RAMP / ON). One hue, stepped by
+// lightness and opacity; `on` is the text colour that passes on each step.
+export const mapPalettes = {
+  night: {
+    sea: '#0F1C21',
+    land: '#1E2F36',
+    landLine: '#2C3F44',
+    ramp: ['rgba(232,163,61,0.18)', 'rgba(232,163,61,0.36)', 'rgba(232,163,61,0.58)', 'rgba(245,184,90,0.85)', '#FFC56B'],
+    on: ['#F2F5F3', '#F2F5F3', '#F2F5F3', '#12100A', '#12100A'],
+  },
+  day: {
+    sea: '#DCE6E8',
+    land: '#F6F3EA',
+    landLine: '#C6D0CE',
+    ramp: ['rgba(168,101,11,0.15)', 'rgba(168,101,11,0.32)', 'rgba(168,101,11,0.55)', 'rgba(143,87,10,0.9)', '#7A4606'],
+    on: ['#0B1416', '#0B1416', '#0B1416', '#FFFFFF', '#FFFFFF'],
+  },
+} as const;
 
 // Font roles used by text. Screens read the active set with useFontSet()
 // rather than importing a family name, so a font-load failure can swap the
