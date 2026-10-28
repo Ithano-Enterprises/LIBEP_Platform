@@ -16,14 +16,14 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-function renderClose(repo: Repository, now: Date, lang: Lang = 'sw') {
+function renderClose(repo: Repository, now: Date, lang: Lang = 'sw', unit?: 't' | 'kg') {
   const onDone = jest.fn();
   const open = () => Promise.resolve(repo);
   const clock = () => now;
   render(
     <SafeAreaProvider initialMetrics={metrics}>
       <LogbookProvider open={open}>
-        <PreferencesProvider initialLang={lang}>
+        <PreferencesProvider initialLang={lang} initialUnit={unit}>
           <CloseTripScreen onDone={onDone} now={clock} />
         </PreferencesProvider>
       </LogbookProvider>
@@ -49,14 +49,14 @@ describe('CloseTripScreen', () => {
     const { now } = await withFixtures();
     expect(screen.getByTestId('arrival-time')).toHaveTextContent(formatTime(now.toISOString()));
     expect(total).toBe(17000);
-    expect(screen.getByTestId('close-total')).toHaveTextContent('17');
+    expect(screen.getByTestId('close-total')).toHaveTextContent('17,000');
     expect(screen.getByText('Kituo: Mokowe (kilichopangwa)')).toBeTruthy();
     expect(screen.getByTestId('crew-count')).toHaveTextContent(String(devOpenTrip.crewDeparted));
     expect(screen.getByText(`Imeunganishwa na maingizo ${devOpenTripEntries.length} · KE-LAM-MKW-T20-014`)).toBeTruthy();
     // kibua 8,700 kg (×2) is the largest group in the fixture
     const rows = screen.getAllByTestId(/^type-/).map((n) => n.props.testID);
     expect(rows).toEqual(['type-kibua', 'type-tewa', 'type-kolekole']);
-    expect(screen.getByTestId('type-kibua')).toHaveTextContent(/×2.*8\.7/);
+    expect(screen.getByTestId('type-kibua')).toHaveTextContent(/×2.*8,700kg/);
     expect(screen.getByText('Zaidi (+4)')).toBeTruthy();
     fireEvent.press(screen.getByTestId('types-toggle'));
     expect(screen.getAllByTestId(/^type-/)).toHaveLength(7);
@@ -151,6 +151,14 @@ describe('CloseTripScreen', () => {
     await screen.findByTestId('over-hint');
     expect(screen.getByText('Trip total passes 20 t for this boat. Check the figures.')).toBeTruthy();
     expect(screen.getByText('Submit')).toBeTruthy();
+  });
+
+  it('shows the total and by-type figures in t when the captain chose t', async () => {
+    const ctx = await openTestRepo();
+    await seedDevFixtures(ctx.db, ctx.deps);
+    renderClose(ctx.repo, ctx.deps.clock.now(), 'sw', 't');
+    expect(await screen.findByTestId('close-total')).toHaveTextContent(/^17$/);
+    expect(screen.getByTestId('type-kibua')).toHaveTextContent(/×2.*8\.7t/);
   });
 
   it('back leaves without closing', async () => {

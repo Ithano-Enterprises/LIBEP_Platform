@@ -9,7 +9,7 @@ import { CREW_RETURNED_MIN } from '../data/repository';
 import { formatDay, formatQuantity, formatTime, sumKg } from '../ui/format';
 import { HoldBox } from '../ui/HoldBox';
 import { Icon } from '../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { byType, cleanDistance, crewMismatch, parseDistance } from './closeTrip/model';
 import { SitePicker } from './closeTrip/SitePicker';
@@ -39,6 +39,7 @@ export function CloseTripScreen({
   const insets = useSafeAreaInsets();
   const { data, error, submit } = useCloseTrip(null);
   const f = useFontSet();
+  const unit = useUnit();
   const [crew, setCrew] = useState<number | null>(null);
   const [confirmCrew, setConfirmCrew] = useState(false);
   const [crewReason, setCrewReason] = useState('');
@@ -149,9 +150,9 @@ export function CloseTripScreen({
           <View style={styles.totalRow}>
             <View style={styles.totalFig}>
               <Text testID="close-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
-                {formatQuantity(total)}
+                {formatQuantity(total, unit)}
               </Text>
-              <Text style={[styles.totalUnit, f.mono, { color: c.dim }]}>t</Text>
+              <Text style={[styles.totalUnit, f.mono, { color: c.dim }]}>{unit}</Text>
             </View>
             <View style={styles.inline}>
               <Text style={[styles.estimate, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
@@ -179,8 +180,8 @@ export function CloseTripScreen({
               <View style={styles.spacer} />
               <Text style={[styles.count, f.mono, { color: c.dim }]}>×{g.n}</Text>
               <View style={styles.typeFig}>
-                <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.kg)}</Text>
-                <Text style={[styles.count, f.mono, { color: c.dim }]}>t</Text>
+                <Text style={[styles.typeValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(g.kg, unit)}</Text>
+                <Text style={[styles.count, f.mono, { color: c.dim }]}>{unit}</Text>
               </View>
               <TierChip tier="S" />
             </View>
