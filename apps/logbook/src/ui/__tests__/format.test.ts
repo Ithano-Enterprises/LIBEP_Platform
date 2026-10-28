@@ -17,10 +17,10 @@ describe('format', () => {
   });
 
   it('signs a kg difference, shown in t or kg', () => {
-    expect(formatSigned(6100 - 6400)).toBe('−0.3');
-    expect(formatSigned(2400 - 2200)).toBe('+0.2');
-    expect(formatSigned(0)).toBe('±0');
-    expect(formatSigned(20 - 15)).toBe('+0.005');
+    expect(formatSigned(6100 - 6400, 't')).toBe('−0.3');
+    expect(formatSigned(2400 - 2200, 't')).toBe('+0.2');
+    expect(formatSigned(0, 't')).toBe('±0');
+    expect(formatSigned(20 - 15, 't')).toBe('+0.005');
     expect(formatSigned(-300, 'kg')).toBe('−300');
   });
 

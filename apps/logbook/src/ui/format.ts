@@ -20,7 +20,7 @@ export function sumKg(values: number[]): number {
  * Signed difference of two kg figures, in the chosen unit (design style):
  * e.g. "+0.2", "−0.3", "±0" in t, or "+200", "−300" in kg.
  */
-export function formatSigned(kg: number, unit: 't' | 'kg' = 't'): string {
+export function formatSigned(kg: number, unit: 't' | 'kg'): string {
   const d = Math.round(kg);
   const sign = d > 0 ? '+' : d < 0 ? '−' : '±';
   return `${sign}${formatQuantity(Math.abs(d), unit)}`;

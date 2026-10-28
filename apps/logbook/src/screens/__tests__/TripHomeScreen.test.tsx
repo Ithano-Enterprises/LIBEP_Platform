@@ -110,8 +110,8 @@ describe('TripHomeScreen', () => {
     // Weighed entries: W figure, estimate and difference beside it.
     const last = devPreviousTripEntries[devPreviousTripEntries.length - 1];
     expect(last).toMatchObject({ kg: 6400, plant: 6100 });
-    expect(screen.getByText('6.1')).toBeTruthy();
-    expect(screen.getByText(/· makadirio 6\.4 · −0\.3$/)).toBeTruthy();
+    expect(screen.getByText('6,100')).toBeTruthy();
+    expect(screen.getByText(/· makadirio 6,400 · −300$/)).toBeTruthy();
     expect(screen.getAllByText('W')).toHaveLength(devPreviousTripEntries.length);
   });
 

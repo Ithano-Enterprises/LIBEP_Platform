@@ -6,7 +6,7 @@ import { formatQuantity, formatSigned, formatTime } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { formatGps } from '../logCatch/model';
 import { stateKey } from '../tripHome/model';
@@ -34,6 +34,7 @@ export function EntryDetail({
   const t = useStrings();
   const { lang } = usePreferences();
   const f = useFontSet();
+  const unit = useUnit();
   const k = stateKey[entry.sync_state];
   const s = stateStyle(k, c);
   const w = entry.plant_weight_kg;
@@ -108,9 +109,9 @@ export function EntryDetail({
           </View>
           <View style={styles.fig}>
             <Text testID="detail-estimate" style={[styles.figValue, f.monoSemiBold, { color: c.text }]}>
-              {formatQuantity(entry.quantity)}
+              {formatQuantity(entry.quantity, unit)}
             </Text>
-            <Text style={[styles.figUnit, f.mono, { color: c.dim }]}>t</Text>
+            <Text style={[styles.figUnit, f.mono, { color: c.dim }]}>{unit}</Text>
             <TierChip tier="S" size={22} />
           </View>
         </View>
@@ -127,9 +128,9 @@ export function EntryDetail({
           {w != null ? (
             <View style={styles.fig}>
               <Text testID="detail-actual" style={[styles.figValue, f.monoSemiBold, { color: c.text }]}>
-                {formatQuantity(w)}
+                {formatQuantity(w, unit)}
               </Text>
-              <Text style={[styles.figUnit, f.mono, { color: c.dim }]}>t</Text>
+              <Text style={[styles.figUnit, f.mono, { color: c.dim }]}>{unit}</Text>
               <TierChip tier="W" size={22} />
             </View>
           ) : (
@@ -146,9 +147,9 @@ export function EntryDetail({
               <Text style={[styles.lineText, f.sans, { color: c.dim }]}>{t.diffL}</Text>
               <View style={[styles.fig, styles.diffFig]}>
                 <Text testID="detail-diff" style={[styles.diffValue, f.monoSemiBold, { color: c.text }]}>
-                  {formatSigned(w - entry.quantity)}
+                  {formatSigned(w - entry.quantity, unit)}
                 </Text>
-                <Text style={[styles.diffUnit, f.mono, { color: c.dim }]}>t</Text>
+                <Text style={[styles.diffUnit, f.mono, { color: c.dim }]}>{unit}</Text>
               </View>
             </View>
           </>
@@ -179,8 +180,8 @@ export function EntryDetail({
                   </Text>
                   <Text style={[styles.linkedMeta, f.mono, { color: c.dim }]}>{formatTime(r.recorded_at)}</Text>
                   <View style={styles.linkedFig}>
-                    <Text style={[styles.linkedValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(r.quantity)}</Text>
-                    <Text style={[styles.linkedMeta, f.mono, { color: c.dim }]}>t</Text>
+                    <Text style={[styles.linkedValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(r.quantity, unit)}</Text>
+                    <Text style={[styles.linkedMeta, f.mono, { color: c.dim }]}>{unit}</Text>
                     <TierChip tier="S" size={18} />
                   </View>
                 </View>

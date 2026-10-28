@@ -16,13 +16,13 @@ const metrics = {
 };
 const speciesId = (n: string) => devSpecies.find((s) => s.local_name === n)!.id;
 
-function renderDetail(repo: Repository, catchId: string, lang: Lang = 'sw') {
+function renderDetail(repo: Repository, catchId: string, lang: Lang = 'sw', unit?: 't' | 'kg') {
   const onDone = jest.fn();
   const open = () => Promise.resolve(repo);
   render(
     <SafeAreaProvider initialMetrics={metrics}>
       <LogbookProvider open={open}>
-        <PreferencesProvider initialLang={lang}>
+        <PreferencesProvider initialLang={lang} initialUnit={unit}>
           <EntryDetailScreen catchId={catchId} onDone={onDone} />
         </PreferencesProvider>
       </LogbookProvider>
@@ -51,7 +51,7 @@ describe('EntryDetailScreen', () => {
     const { c } = await openEntry();
     expect(screen.getByText(`Ingizo ${c.short_ref}`)).toBeTruthy();
     expect(screen.getByTestId('detail-species')).toHaveTextContent('tewa');
-    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('2.4');
+    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('2,400');
     expect(screen.getByText('Haijapimwa bado')).toBeTruthy();
     expect(screen.queryByTestId('detail-actual')).toBeNull();
     expect(screen.getByText('Asili ya rekodi')).toBeTruthy();
@@ -72,11 +72,11 @@ describe('EntryDetailScreen', () => {
     fireEvent.press(screen.getByTestId('correct-save'));
 
     await waitFor(() => expect(screen.queryByTestId('correct-sheet')).toBeNull());
-    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent('2.6'));
+    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent('2,600'));
     expect(screen.getByTestId('detail-species')).toHaveTextContent('kibua');
     expect(screen.getByTestId('revision-line')).toHaveTextContent(`Marekebisho ya ${c.short_ref}`);
-    expect(screen.getByTestId('linked-0')).toHaveTextContent(/Asili.*2\.4/);
-    expect(screen.getByTestId('linked-1')).toHaveTextContent(/Marekebisho 1.*2\.6/);
+    expect(screen.getByTestId('linked-0')).toHaveTextContent(/Asili.*2,400/);
+    expect(screen.getByTestId('linked-1')).toHaveTextContent(/Marekebisho 1.*2,600/);
 
     // Append-only: the original row is unchanged, the correction is its own record.
     const h = (await repo.getCatchHistory(c.id))!;
@@ -91,7 +91,7 @@ describe('EntryDetailScreen', () => {
     fireEvent.press(screen.getByTestId('correct'));
     fireEvent.press(screen.getByTestId('quick-1000'));
     fireEvent.press(screen.getByTestId('correct-save'));
-    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent('3.6'));
+    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent('3,600'));
     const h2 = (await repo.getCatchHistory(c.id))!;
     expect(h2.corrections[1].previous_correction_id).toBe(h2.corrections[0].id);
   });
@@ -103,7 +103,7 @@ describe('EntryDetailScreen', () => {
     const c = await ctx.repo.logCatch({ speciesId: speciesId('tewa'), quantity: 15, gps: null });
     renderDetail(ctx.repo, c.id);
     await screen.findByTestId('detail-species');
-    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('0.015');
+    expect(screen.getByTestId('detail-estimate')).toHaveTextContent(/^15$/);
     fireEvent.press(screen.getByTestId('correct'));
     expect(screen.getByTestId('correct-value')).toHaveTextContent(/^15$/);
     expect(screen.getByTestId('correct-value').props.accessibilityState).toEqual({ selected: true });
@@ -140,7 +140,7 @@ describe('EntryDetailScreen', () => {
     for (const k of ['2', '0']) fireEvent.press(screen.getByTestId(`key-${k}`));
     fireEvent.press(screen.getByTestId('correct-save'));
     await waitFor(() => expect(screen.queryByTestId('correct-sheet')).toBeNull());
-    expect(await screen.findByTestId('linked-1')).toHaveTextContent(/0\.02/);
+    expect(await screen.findByTestId('linked-1')).toHaveTextContent(/20/);
     expect(screen.getByTestId('detail-species')).toHaveTextContent('Pweza Mdogo');
     const h = (await ctx.repo.getCatchHistory(c.id))!;
     expect(h.corrections[0]).toMatchObject({ species_id: null, species_local_name: 'Pweza Mdogo', quantity: 20 });
@@ -155,12 +155,23 @@ describe('EntryDetailScreen', () => {
     renderDetail(ctx.repo, e.id, 'en');
     await screen.findByTestId('detail-species');
     expect(fx).toMatchObject({ kg: 6400, plant: 6100 });
-    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('6.4');
-    expect(screen.getByTestId('detail-actual')).toHaveTextContent('6.1');
-    expect(screen.getByTestId('detail-diff')).toHaveTextContent('−0.3');
+    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('6,400');
+    expect(screen.getByTestId('detail-actual')).toHaveTextContent('6,100');
+    expect(screen.getByTestId('detail-diff')).toHaveTextContent('−300');
     expect(screen.getByText(/weighed at plant$/)).toBeTruthy();
     expect(screen.getByText('Weighed at plant. Corrections closed.')).toBeTruthy();
     expect(screen.queryByTestId('correct')).toBeNull();
+  });
+
+  it('shows S, W and the difference in t when the captain chose t', async () => {
+    const ctx = await openTestRepo();
+    await seedDevFixtures(ctx.db, ctx.deps);
+    const [prev] = await ctx.repo.listClosedTrips();
+    renderDetail(ctx.repo, prev.entries[0].id, 'en', 't');
+    await screen.findByTestId('detail-species');
+    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('6.4');
+    expect(screen.getByTestId('detail-actual')).toHaveTextContent('6.1');
+    expect(screen.getByTestId('detail-diff')).toHaveTextContent('−0.3');
   });
 
   it('an entry being checked shows the calm note', async () => {
