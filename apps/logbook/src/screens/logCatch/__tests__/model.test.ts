@@ -1,58 +1,63 @@
 import type { MenuItem } from '../../../data/types';
-import { filterMenu, formatGps, parseEntry, pressKey, quickAdd, type Key } from '../model';
+import { filterMenu, formatGps, MAX_DIGITS, OTHER_ID, otherItem, parseEntry, pressKey, QUICK_STEPS_KG, quickAdd, type Key } from '../model';
 
 const type = (keys: Key[]) => keys.reduce(pressKey, '');
 
 describe('keypad', () => {
-  it('takes digits and one decimal place only', () => {
-    expect(type(['2', '.', '4'])).toBe('2.4');
-    expect(type(['2', '.', '4', '5'])).toBe('2.4');
-    expect(type(['2', '.', '.', '4'])).toBe('2.4');
-    expect(type(['.', '5'])).toBe('0.5');
+  it('takes whole kg digits only', () => {
+    expect(type(['1', '5'])).toBe('15');
+    expect(type(['2', '4', '0', '0'])).toBe('2400');
     expect(type(['0', '3'])).toBe('3');
   });
 
-  it('caps the length and backspaces', () => {
-    expect(type(['1', '2', '3', '4', '5', '6'])).toBe('12345');
+  it('caps the length at 6 digits and backspaces', () => {
+    expect(MAX_DIGITS).toBe(6);
+    expect(type(['1', '2', '3', '4', '5', '6', '7'])).toBe('123456');
     expect(type(['1', '2', 'back'])).toBe('1');
     expect(type(['back'])).toBe('');
   });
 
-  it('quick keys add 0.5 t and 1 t without float drift', () => {
-    expect(quickAdd('', 0.5)).toBe('0.5');
-    expect(quickAdd('2.4', 0.5)).toBe('2.9');
-    expect(quickAdd('0.1', 0.2)).toBe('0.3');
-    expect(quickAdd('2.', 1)).toBe('3');
+  it('quick keys add 500 kg and 1000 kg', () => {
+    expect(QUICK_STEPS_KG).toEqual([500, 1000]);
+    expect(quickAdd('', 500)).toBe('500');
+    expect(quickAdd('15', 500)).toBe('515');
+    expect(quickAdd('2400', 1000)).toBe('3400');
   });
 
   it.each([
-    ['99999', 1],
-    ['99999', 0.5],
-    ['9999.9', 0.5],
-  ])('quick keys keep the 5-digit limit: %p + %p is left unchanged', (from, step) => {
+    ['999999', 1000],
+    ['999600', 500],
+  ])('quick keys keep the 6-digit limit: %p + %p is left unchanged', (from, step) => {
     expect(quickAdd(from, step)).toBe(from);
   });
 
   it('quick keys still add up to the limit', () => {
-    expect(quickAdd('9998', 1)).toBe('9999');
-    expect(quickAdd('9999.4', 0.5)).toBe('9999.9');
+    expect(quickAdd('998999', 1000)).toBe('999999');
   });
 
-  it('only a positive figure is a quantity', () => {
+  it('only whole kg of at least 1 is a quantity', () => {
     expect(parseEntry('')).toBeNull();
     expect(parseEntry('0')).toBeNull();
-    expect(parseEntry('0.')).toBeNull();
-    expect(parseEntry('2.4')).toBe(2.4);
-    expect(parseEntry('2.')).toBe(2);
-    expect(parseEntry('99999')).toBe(99999);
+    expect(parseEntry('15')).toBe(15);
+    expect(parseEntry('1')).toBe(1);
+    expect(parseEntry('100000')).toBe(100000);
+    expect(parseEntry('999999')).toBe(999999);
   });
 
-  it.each(['1.2.3', '2abc', '0.05', '1.25', '-1', ' 2', '123456', '1e3'])(
+  it.each(['2.4', '15.0', '1.2.3', '2abc', '-1', ' 2', '1234567', '1e3'])(
     'a figure the keypad cannot type is not a quantity: %p',
     (s) => {
       expect(parseEntry(s)).toBeNull();
     },
   );
+});
+
+describe('"Other" tile', () => {
+  it('is labelled in the chosen language, has no hold code and sorts last', () => {
+    const o = otherItem('Nyingine');
+    expect(o).toMatchObject({ id: OTHER_ID, local_name: 'Nyingine', hold_code: null, english_gloss: null });
+    expect(o.sort).toBeGreaterThan(1000);
+  });
 });
 
 describe('menu search', () => {

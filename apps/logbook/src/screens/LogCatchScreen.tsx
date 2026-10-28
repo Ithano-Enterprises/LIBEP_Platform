@@ -12,13 +12,14 @@ import { Icon } from '../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { EntrySheet } from './logCatch/EntrySheet';
 import { MenuTile } from './logCatch/MenuTile';
-import { filterMenu, parseEntry } from './logCatch/model';
+import { filterMenu, OTHER_ID, otherItem, parseEntry } from './logCatch/model';
 import { useLogCatch } from './logCatch/useLogCatch';
 
 const systemNow = () => new Date();
 
 // S3.3 Log catch, phone layout. Pick a fish from the vessel's menu, type
-// the estimate on the built-in keypad, save. Time, GPS and vessel are
+// the estimate in whole kg on the built-in keypad, save. "Other" lets the
+// captain type the local name when the fish is not on the menu. Time, GPS and vessel are
 // captured by the app. Saving returns to the trip home.
 export function LogCatchScreen({
   onDone,
@@ -39,6 +40,7 @@ export function LogCatchScreen({
   const f = useFontSet();
   const [pick, setPick] = useState<MenuItem | null>(null);
   const [value, setValue] = useState('');
+  const [otherName, setOtherName] = useState('');
   const [note, setNote] = useState('');
   const [gps, setGps] = useState<Gps | null>(null);
   const [locating, setLocating] = useState(false);
@@ -56,6 +58,7 @@ export function LogCatchScreen({
     fix.current = null; // a late fix for a closed sheet is dropped
     setPick(null);
     setValue('');
+    setOtherName('');
     setNote('');
     setSaveError(null);
   }, []);
@@ -95,6 +98,7 @@ export function LogCatchScreen({
     if (!tripOpen || pick?.id === item.id) return;
     setPick(item);
     setValue('');
+    setOtherName('');
     setNote('');
     setSaveError(null);
     // Position is read once per pick, so it is close to the catch.
@@ -112,10 +116,15 @@ export function LogCatchScreen({
   const onSave = async () => {
     const quantity = parseEntry(value);
     if (!pick || quantity == null || saving) return;
+    const other = pick.id === OTHER_ID;
+    if (other && !otherName.trim()) return;
     setSaving(true);
     try {
       const position = (await fix.current) ?? null;
-      await save({ speciesId: pick.id, quantity, gps: position, note });
+      const species = other
+        ? { speciesId: null, speciesLocalName: otherName } // as typed (contract §2)
+        : { speciesId: pick.id };
+      await save({ ...species, quantity, gps: position, note });
       closeSheet();
       onDone();
     } catch (e) {
@@ -184,6 +193,13 @@ export function LogCatchScreen({
               onPress={() => onPick(m)}
             />
           ))}
+          <MenuTile
+            testID="fish-other"
+            item={otherItem(t.other)}
+            active={pick?.id === OTHER_ID}
+            disabled={!tripOpen}
+            onPress={() => onPick(otherItem(t.other))}
+          />
         </View>
       </ScrollView>
 
@@ -207,6 +223,8 @@ export function LogCatchScreen({
                 item={pick}
                 value={value}
                 onChange={setValue}
+                otherName={otherName}
+                onOtherName={setOtherName}
                 note={note}
                 onNote={setNote}
                 time={formatTime(clock.toISOString())}

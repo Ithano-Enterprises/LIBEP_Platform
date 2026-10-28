@@ -40,6 +40,10 @@ export const sw = {
   // [TO CONFIRM: Kiswahili wording]
   backspace: 'Futa',
   search: 'Tafuta',
+  // "Other" species tile and its name field. Not in the design.
+  // [TO CONFIRM: Kiswahili]
+  other: 'Nyingine',
+  otherNamePh: 'Andika jina la samaki', // [TO CONFIRM: Kiswahili]
   estimate: 'Makadirio',
   addNote: 'Ongeza maelezo',
   notePh: 'Maelezo mafupi',
@@ -115,6 +119,8 @@ export const en: Strings = {
   noVessel: 'No vessel linked to this device.',
   backspace: 'Backspace',
   search: 'Search',
+  other: 'Other',
+  otherNamePh: 'Type the fish name',
   estimate: 'Estimate',
   addNote: 'Add note',
   notePh: 'Short note',

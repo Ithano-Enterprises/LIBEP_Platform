@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useLogbook } from '../../data/LogbookProvider';
+import type { SpeciesChoice } from '../../data/repository';
 import type { CatchRecord, DeviceProfile, Gps, MenuItem, TripStart } from '../../data/types';
 
-export type CatchInput = { speciesId: string; quantity: number; gps: Gps | null; note: string };
+export type CatchInput = SpeciesChoice & { quantity: number; gps: Gps | null; note: string };
 
 export type LogCatchData = { profile: DeviceProfile | null; openTrip: TripStart | null; menu: MenuItem[] };
 

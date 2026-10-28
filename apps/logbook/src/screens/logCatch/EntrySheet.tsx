@@ -9,17 +9,20 @@ import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/prefe
 import { TierChip } from '../../ui/TierChip';
 import { AutoStrip } from './AutoStrip';
 import { Keypad } from './Keypad';
-import { parseEntry } from './model';
+import { OTHER_ID, parseEntry } from './model';
 
 /** Longest note, as the design. */
 const NOTE_MAX = 80;
 
-// Entry sheet for the picked fish: figure in t (estimate, S), keypad,
-// optional note, the locked auto strip, and Save.
+// Entry sheet for the picked fish: figure in whole kg (estimate, S), keypad,
+// optional note, the locked auto strip, and Save. For "Other" the captain
+// types the local name, kept exactly as typed.
 export function EntrySheet({
   item,
   value,
   onChange,
+  otherName = '',
+  onOtherName,
   note,
   onNote,
   time,
@@ -32,6 +35,9 @@ export function EntrySheet({
   item: MenuItem;
   value: string;
   onChange: (v: string) => void;
+  /** The typed local name, when item is the "Other" tile. */
+  otherName?: string;
+  onOtherName?: (v: string) => void;
   note: string;
   onNote: (v: string) => void;
   time: string;
@@ -46,26 +52,40 @@ export function EntrySheet({
   const { lang } = usePreferences();
   const [noteOpen, setNoteOpen] = useState(note.length > 0);
   const f = useFontSet();
-  const valid = parseEntry(value) != null && !saving;
+  const other = item.id === OTHER_ID;
+  const valid = parseEntry(value) != null && (!other || otherName.trim().length > 0) && !saving;
 
   return (
     <View testID="entry-sheet" style={styles.sheet}>
       <View style={styles.head}>
         <View style={styles.what}>
           {item.hold_code ? <HoldBox code={item.hold_code} size={26} /> : null}
-          <View style={styles.names}>
-            <Text style={[styles.name, f.sansSemiBold, { color: c.text }]}>{item.local_name}</Text>
-            {lang === 'en' && item.english_gloss ? (
-              <Text style={[styles.gloss, f.sans, { color: c.dim }]}>{item.english_gloss}</Text>
-            ) : null}
-          </View>
+          {other ? (
+            <TextInput
+              testID="other-name"
+              value={otherName}
+              onChangeText={onOtherName}
+              placeholder={t.otherNamePh}
+              placeholderTextColor={c.dim}
+              accessibilityLabel={t.otherNamePh}
+              autoCorrect={false}
+              style={[styles.otherName, f.sansSemiBold, { backgroundColor: c.bg, borderColor: c.border, color: c.text }]}
+            />
+          ) : (
+            <View style={styles.names}>
+              <Text style={[styles.name, f.sansSemiBold, { color: c.text }]}>{item.local_name}</Text>
+              {lang === 'en' && item.english_gloss ? (
+                <Text style={[styles.gloss, f.sans, { color: c.dim }]}>{item.english_gloss}</Text>
+              ) : null}
+            </View>
+          )}
         </View>
         <View style={styles.figureCol}>
           <View style={styles.figure}>
             <Text testID="entry-value" style={[styles.value, f.monoSemiBold, { color: c.text }]}>
               {value || '0'}
             </Text>
-            <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
+            <Text style={[styles.unit, f.mono, { color: c.dim }]}>kg</Text>
           </View>
           <View style={styles.estimate}>
             <Text style={[styles.estimateText, f.sansMedium, { color: c.dim }]}>{t.estimate}</Text>
@@ -125,6 +145,15 @@ const styles = StyleSheet.create({
   names: { gap: 1, flexShrink: 1 },
   name: { fontSize: 20, lineHeight: 23 },
   gloss: { fontSize: 13 },
+  otherName: {
+    flex: 1,
+    minWidth: 140,
+    height: 56,
+    borderRadius: radius,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 18,
+  },
   figureCol: { alignItems: 'flex-end', gap: 6 },
   figure: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
   value: { fontSize: 32, lineHeight: 34, fontVariant: ['tabular-nums'] },

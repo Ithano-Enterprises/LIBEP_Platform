@@ -13,8 +13,10 @@ export function MenuTile({
   active,
   disabled,
   onPress,
+  testID,
 }: {
   item: MenuItem;
+  testID?: string;
   active: boolean;
   disabled?: boolean;
   onPress: () => void;
@@ -24,7 +26,7 @@ export function MenuTile({
   const f = useFontSet();
   return (
     <Pressable
-      testID={`fish-${item.local_name}`}
+      testID={testID ?? `fish-${item.local_name}`}
       accessibilityRole="button"
       accessibilityState={{ selected: active, disabled }}
       disabled={disabled}

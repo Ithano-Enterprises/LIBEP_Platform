@@ -45,7 +45,7 @@ function renderLog(
 async function withTrip(opts: { fix?: Gps | null; lang?: Lang; mode?: Mode } = {}) {
   const ctx = await openTestRepo();
   await seedDevReference(ctx.db);
-  await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+  await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
   const locator = { getFix: jest.fn(async () => (opts.fix === undefined ? FIX : opts.fix)) };
   const onDone = renderLog(ctx.repo, ctx.deps.clock.now(), locator, opts);
   await screen.findByTestId('fish-tewa');
@@ -57,7 +57,7 @@ const tiles = () => screen.getAllByTestId(/^fish-/).map((n) => n.props.testID.re
 describe('LogCatchScreen menu', () => {
   it('shows the menu for the vessel class with hold codes, search not focused', async () => {
     await withTrip();
-    expect(tiles()).toEqual(devMenus[20]);
+    expect(tiles()).toEqual([...devMenus[20], 'other']);
     expect(screen.getByText('Menyu: 20 t')).toBeTruthy();
     expect(screen.getAllByText(devHoldCodes.changu).length).toBeGreaterThan(0);
     expect(screen.getByTestId('search').props.autoFocus).toBeFalsy();
@@ -68,9 +68,9 @@ describe('LogCatchScreen menu', () => {
     await withTrip({ lang: 'en' });
     expect(screen.getByText('frigate tuna')).toBeTruthy();
     fireEvent.changeText(screen.getByTestId('search'), 'tuna');
-    expect(tiles()).toEqual(['kibua']);
+    expect(tiles()).toEqual(['kibua', 'other']);
     fireEvent.changeText(screen.getByTestId('search'), 'TEW');
-    expect(tiles()).toEqual(['tewa']);
+    expect(tiles()).toEqual(['tewa', 'other']);
   });
 });
 
@@ -80,14 +80,16 @@ describe('LogCatchScreen entry sheet', () => {
     fireEvent.press(screen.getByTestId('fish-kibua'));
     expect(screen.getByTestId('entry-sheet')).toBeTruthy();
     expect(screen.getByTestId('save')).toBeDisabled();
-    for (const k of ['2', '.', '4', '5']) fireEvent.press(screen.getByTestId(`key-${k}`));
-    expect(screen.getByTestId('entry-value')).toHaveTextContent('2.4');
-    fireEvent.press(screen.getByTestId('quick-0.5'));
-    expect(screen.getByTestId('entry-value')).toHaveTextContent('2.9');
-    fireEvent.press(screen.getByTestId('quick-1'));
-    expect(screen.getByTestId('entry-value')).toHaveTextContent('3.9');
+    expect(screen.queryByTestId('key-.')).toBeNull();
+    expect(screen.getByText('kg')).toBeTruthy();
+    for (const k of ['1', '5']) fireEvent.press(screen.getByTestId(`key-${k}`));
+    expect(screen.getByTestId('entry-value')).toHaveTextContent('15');
+    fireEvent.press(screen.getByTestId('quick-500'));
+    expect(screen.getByTestId('entry-value')).toHaveTextContent('515');
+    fireEvent.press(screen.getByTestId('quick-1000'));
+    expect(screen.getByTestId('entry-value')).toHaveTextContent('1515');
     fireEvent.press(screen.getByTestId('key-back'));
-    expect(screen.getByTestId('entry-value')).toHaveTextContent('3.');
+    expect(screen.getByTestId('entry-value')).toHaveTextContent('151');
     expect(screen.getByText('Makadirio')).toBeTruthy();
     expect(screen.getByText('-- °C')).toBeTruthy();
     expect(screen.getByText('kihisi kinasubiriwa')).toBeTruthy();
@@ -97,10 +99,11 @@ describe('LogCatchScreen entry sheet', () => {
     expect(screen.getByTestId('save')).not.toBeDisabled();
   });
 
-  it('Hifadhi saves one tier-S catch with GPS and returns', async () => {
+  it('Hifadhi saves one tier-S catch of 15 kg with GPS and returns', async () => {
     const { repo, onDone, locator } = await withTrip();
     fireEvent.press(screen.getByTestId('fish-tewa'));
-    fireEvent.press(screen.getByTestId('key-2'));
+    fireEvent.press(screen.getByTestId('key-1'));
+    fireEvent.press(screen.getByTestId('key-5'));
     fireEvent.press(screen.getByTestId('save'));
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
     expect(locator.getFix).toHaveBeenCalledTimes(1);
@@ -108,8 +111,8 @@ describe('LogCatchScreen entry sheet', () => {
     const [e] = await repo.listTripEntries(trip.trip_id);
     expect(e).toMatchObject({
       species_local_name: 'tewa',
-      quantity: 2,
-      unit: 't',
+      quantity: 15,
+      unit: 'kg',
       tier: 'S',
       hold_code: 'A',
       latitude: FIX.latitude,
@@ -117,6 +120,38 @@ describe('LogCatchScreen entry sheet', () => {
       gps_accuracy_m: 15,
       note: null,
     });
+  });
+
+  it('"Other" saves the name exactly as typed, with no species id', async () => {
+    const { repo, onDone } = await withTrip();
+    fireEvent.press(screen.getByTestId('fish-other'));
+    expect(screen.getByText('Nyingine')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('key-1'));
+    fireEvent.press(screen.getByTestId('key-5'));
+    // A figure alone is not enough: the name is needed too.
+    expect(screen.getByTestId('save')).toBeDisabled();
+    fireEvent.changeText(screen.getByTestId('other-name'), '   ');
+    expect(screen.getByTestId('save')).toBeDisabled();
+    fireEvent.changeText(screen.getByTestId('other-name'), 'Pweza Mdogo');
+    expect(screen.getByTestId('save')).not.toBeDisabled();
+    fireEvent.press(screen.getByTestId('save'));
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    const [e] = await repo.listTripEntries((await repo.getOpenTrip())!.trip_id);
+    expect(e).toMatchObject({
+      species_id: null,
+      species_local_name: 'Pweza Mdogo',
+      hold_code: null,
+      quantity: 15,
+      unit: 'kg',
+    });
+  });
+
+  it('"Other" is labelled in English too', async () => {
+    await withTrip({ lang: 'en' });
+    expect(screen.getByText('Other')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('fish-other'));
+    expect(screen.getByTestId('other-name').props.placeholder).toBe(en.otherNamePh);
+    await waitFor(() => expect(screen.getByTestId('auto-gps')).toHaveTextContent('2.27S 40.93E ±15 m'));
   });
 
   it('no GPS fix is stored as null, and a note is kept', async () => {

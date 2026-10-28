@@ -5,7 +5,7 @@ import { LogbookProvider } from '../../data/LogbookProvider';
 import { devOpenTripEntries } from '../../dev/fixtures/reference';
 import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
 import { openTestRepo } from '../../test/sqlite';
-import { formatTime, sumTonnes } from '../../ui/format';
+import { formatTime, sumKg } from '../../ui/format';
 import { PreferencesProvider } from '../../ui/preferences';
 import { AppScreens } from '../AppScreens';
 
@@ -55,7 +55,8 @@ describe('S2.1 -> S3.3 -> S2.1', () => {
     const open = () => Promise.resolve(ctx.repo);
     const clock = () => now;
     const locator = { getFix: jest.fn(async () => ({ latitude: -2.27, longitude: 40.93, gps_accuracy_m: 12 })) };
-    const before = sumTonnes(devOpenTripEntries.map((e) => e.t));
+    const before = sumKg(devOpenTripEntries.map((e) => e.kg));
+    expect(before).toBe(17000);
     render(
       <SafeAreaProvider initialMetrics={metrics}>
         <LogbookProvider open={open}>
@@ -67,16 +68,18 @@ describe('S2.1 -> S3.3 -> S2.1', () => {
     );
 
     await screen.findByText('Rekodi samaki');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(`${before.toFixed(1)} t`);
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17 t');
     fireEvent.press(screen.getByTestId('primary'));
     fireEvent.press(await screen.findByTestId('fish-tewa'));
-    fireEvent.press(screen.getByTestId('key-3'));
+    fireEvent.press(screen.getByTestId('key-1'));
+    fireEvent.press(screen.getByTestId('key-5'));
     fireEvent.press(screen.getByTestId('save'));
 
     await screen.findByTestId('trip-total');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(`${sumTonnes([before, 3]).toFixed(1)} t`);
+    // A 15 kg catch is not lost to rounding: 17,015 kg.
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17.015 t');
     const entries = await ctx.repo.listTripEntries((await ctx.repo.getOpenTrip())!.trip_id);
-    expect(entries[0]).toMatchObject({ species_local_name: 'tewa', quantity: 3, latitude: -2.27 });
+    expect(entries[0]).toMatchObject({ species_local_name: 'tewa', quantity: 15, unit: 'kg', latitude: -2.27 });
     expect(screen.getAllByTestId(/^entry-/)[0].props.testID).toBe(`entry-${entries[0].id}`);
   });
 });
