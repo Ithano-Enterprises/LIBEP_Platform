@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatQuantity } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { heatColours } from './heat';
 import { formatCoord, heatStep, metricValue, type Metric, type Spot } from './model';
@@ -27,6 +27,7 @@ export function TopSpots({
   const t = useStrings();
   const { mode } = usePreferences();
   const f = useFontSet();
+  const unit = useUnit();
   const heat = heatColours(mode);
   const values = ranked.map((s) => metricValue(s, metric));
   const min = Math.min(...values);
@@ -62,16 +63,16 @@ export function TopSpots({
               </Text>
               <View style={styles.secondary}>
                 <Text style={[styles.secondaryText, f.mono, { color: c.dim }]}>
-                  {trips ? `${formatQuantity(s.kg)} t` : `${s.trips} ${t.tripsWord}`}
+                  {trips ? `${formatQuantity(s.kg, unit)} ${unit}` : `${s.trips} ${t.tripsWord}`}
                 </Text>
                 {trips ? <TierChip tier="S" size={16} /> : null}
               </View>
             </View>
             <View style={styles.primary}>
               <Text testID={`spot-value-${s.key}`} style={[styles.value, f.monoSemiBold, { color: c.text }]}>
-                {trips ? String(s.trips) : formatQuantity(s.kg)}
+                {trips ? String(s.trips) : formatQuantity(s.kg, unit)}
               </Text>
-              <Text style={[styles.unit, f.mono, { color: c.dim }]}>{trips ? t.tripsWord : 't'}</Text>
+              <Text style={[styles.unit, f.mono, { color: c.dim }]}>{trips ? t.tripsWord : unit}</Text>
               {trips ? null : <TierChip tier="S" />}
             </View>
             <Icon name="chevR" size={18} strokeWidth={2} color={c.dim} />

@@ -6,7 +6,7 @@ import { mapPalettes, radius } from '../../theme/tokens';
 import { formatQuantity } from '../../ui/format';
 import { Icon, type IconName } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { CELL_DRAW, HOME_PORT, LAND, PLACES, project, VIEW } from './basemap';
 import { heatColours } from './heat';
 import { heatStep, metricValue, type Metric, type Spot } from './model';
@@ -39,6 +39,7 @@ export function GroundsMap({
   const t = useStrings();
   const { mode } = usePreferences();
   const f = useFontSet();
+  const unit = useUnit();
   const map = mapPalettes[mode];
   const heat = heatColours(mode);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -55,7 +56,7 @@ export function GroundsMap({
   const values = spots.map((s) => metricValue(s, metric));
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;
-  const label = (v: number) => (metric === 'trips' ? String(v) : formatQuantity(v));
+  const label = (v: number) => (metric === 'trips' ? String(v) : formatQuantity(v, unit));
   const blk = CELL_DRAW * k;
 
   const zoom = (d: number) =>

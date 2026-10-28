@@ -7,7 +7,7 @@ import { radius } from '../theme/tokens';
 import { BackButton } from '../ui/BackButton';
 import { formatQuantity } from '../ui/format';
 import { Icon, type IconName } from '../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { ExcludedSheet } from './grounds/ExcludedSheet';
 import { GroundsMap } from './grounds/GroundsMap';
@@ -28,6 +28,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
   const insets = useSafeAreaInsets();
   const { data, error } = useGrounds();
   const f = useFontSet();
+  const unit = useUnit();
   const [metric, setMetric] = useState<Metric>('trips');
   const [selected, setSelected] = useState<string | null>(null);
   const [full, setFull] = useState(false);
@@ -83,7 +84,7 @@ export function GroundsScreen({ onDone, now = systemNow }: { onDone: () => void;
         {t.tripsN.replace('{n}', String(grounds.tripCount))} · {t.days90} ·
       </Text>
       <Text testID="grounds-total" style={[styles.total, f.monoSemiBold, { color: c.text }]}>
-        {formatQuantity(grounds.totalKg)} t
+        {formatQuantity(grounds.totalKg, unit)} {unit}
       </Text>
       <TierChip tier="S" />
     </View>

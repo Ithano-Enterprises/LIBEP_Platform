@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { radius } from '../../theme/tokens';
 import { formatDay, formatQuantity, formatTime } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import type { Excluded } from './model';
 
@@ -16,6 +16,7 @@ export function ExcludedSheet({ excluded, onClose }: { excluded: Excluded[]; onC
   const { lang } = usePreferences();
   const insets = useSafeAreaInsets();
   const f = useFontSet();
+  const unit = useUnit();
   const noGps = excluded.some((e) => e.reason === 'no_gps');
   const afterClose = excluded.some((e) => e.reason === 'after_close');
   return (
@@ -39,8 +40,8 @@ export function ExcludedSheet({ excluded, onClose }: { excluded: Excluded[]; onC
                   {reason === 'no_gps' ? t.exNoGps : t.exPort}
                 </Text>
               </View>
-              <Text style={[styles.value, f.monoSemiBold, { color: c.text }]}>{formatQuantity(x.quantity)}</Text>
-              <Text style={[styles.meta, f.mono, { color: c.dim }]}>t</Text>
+              <Text style={[styles.value, f.monoSemiBold, { color: c.text }]}>{formatQuantity(x.quantity, unit)}</Text>
+              <Text style={[styles.meta, f.mono, { color: c.dim }]}>{unit}</Text>
               <TierChip tier="S" />
             </View>
           ))}

@@ -23,14 +23,14 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-function renderGrounds(repo: Repository, now: Date, opts: { lang?: Lang; mode?: Mode } = {}) {
+function renderGrounds(repo: Repository, now: Date, opts: { lang?: Lang; mode?: Mode; unit?: 't' | 'kg' } = {}) {
   const onDone = jest.fn();
   const open = () => Promise.resolve(repo);
   const clock = () => now;
   render(
     <SafeAreaProvider initialMetrics={metrics}>
       <LogbookProvider open={open}>
-        <PreferencesProvider initialLang={opts.lang ?? 'sw'} initialMode={opts.mode ?? 'night'}>
+        <PreferencesProvider initialLang={opts.lang ?? 'sw'} initialMode={opts.mode ?? 'night'} initialUnit={opts.unit}>
           <GroundsScreen onDone={onDone} now={clock} />
         </PreferencesProvider>
       </LogbookProvider>
@@ -39,7 +39,7 @@ function renderGrounds(repo: Repository, now: Date, opts: { lang?: Lang; mode?: 
   return onDone;
 }
 
-async function withHistory(opts: { lang?: Lang; mode?: Mode } = {}) {
+async function withHistory(opts: { lang?: Lang; mode?: Mode; unit?: 't' | 'kg' } = {}) {
   const ctx = await openTestRepo();
   await seedDevFixtures(ctx.db, ctx.deps, { history: true });
   const now = ctx.deps.clock.now();
@@ -66,7 +66,7 @@ describe('GroundsScreen', () => {
   it('shows the trips, total S, one cell per spot, the legend and the calm lines', async () => {
     const { expected } = await withHistory();
     expect(screen.getByText(`Safari ${expected.tripCount} · siku 90 ·`)).toBeTruthy();
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(expected.totalKg)} t`);
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(expected.totalKg, 'kg')} kg`);
     expect(screen.getAllByTestId(/^cell-/)).toHaveLength(expected.spots.length);
     expect(screen.getByTestId('legend')).toHaveTextContent(/Safari.*→.*safari/);
     expect(screen.getByText('Ramani ya mchoro — si kwa kipimo')).toBeTruthy();
@@ -91,7 +91,7 @@ describe('GroundsScreen', () => {
     fireEvent.press(screen.getByTestId('metric-tonnes'));
     expect(keys()).toEqual(byT.map((s) => s.key));
     expect(screen.getByText('kwa samaki wengi')).toBeTruthy();
-    expect(screen.getByTestId(`spot-value-${byT[0].key}`)).toHaveTextContent(formatQuantity(byT[0].kg));
+    expect(screen.getByTestId(`spot-value-${byT[0].key}`)).toHaveTextContent(formatQuantity(byT[0].kg, 'kg'));
   });
 
   it('tapping a row selects its cell', async () => {
@@ -101,6 +101,15 @@ describe('GroundsScreen', () => {
     expect(screen.getByTestId(`cell-${top.key}`).props.accessibilityState.selected).toBe(true);
     // Selected cells carry their number, never colour alone.
     expect(within(screen.getByTestId(`cell-${top.key}`)).getByText(String(top.trips))).toBeTruthy();
+  });
+
+  it('shows the total and spot figures in t when the captain chose t', async () => {
+    const { expected } = await withHistory({ unit: 't' });
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(expected.totalKg, 't')} t`);
+    fireEvent.press(screen.getByTestId('grounds-expand'));
+    fireEvent.press(screen.getByTestId('metric-tonnes'));
+    const top = rankSpots(expected.spots, 'tonnes')[0];
+    expect(screen.getByTestId(`spot-value-${top.key}`)).toHaveTextContent(formatQuantity(top.kg, 't'));
   });
 
   it('excluded entries: row and sheet with the reason; nothing to edit', async () => {
