@@ -20,10 +20,11 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-async function tablet() {
+async function tablet(unit?: 't' | 'kg') {
   setWindow(TABLET);
   const ctx = await openTestRepo();
   await seedDevFixtures(ctx.db, ctx.deps);
+  if (unit) await ctx.repo.setPreference('unit', unit);
   const now = ctx.deps.clock.now();
   const open = () => Promise.resolve(ctx.repo);
   const clock = () => now;
@@ -103,10 +104,18 @@ describe('tablet (1280×800)', () => {
     expect(newest).toMatchObject({ species_id: null, species_local_name: 'kaa', quantity: 40 });
   });
 
-  it('S4: total in t from stored kg; a crew mismatch is confirmed in the footer', async () => {
-    const { repo, trip } = await tablet();
+  it('S2.1 and S4 follow the unit preference: t when the captain chose t', async () => {
+    await tablet('t');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17 t');
     fireEvent.press(screen.getByTestId('close-trip'));
-    expect(await screen.findByTestId('close-total')).toHaveTextContent('17');
+    expect(await screen.findByTestId('close-total')).toHaveTextContent(/^17$/);
+  });
+
+  it('S4: total in kg by default; a crew mismatch is confirmed in the footer', async () => {
+    const { repo, trip } = await tablet();
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17,000 kg');
+    fireEvent.press(screen.getByTestId('close-trip'));
+    expect(await screen.findByTestId('close-total')).toHaveTextContent('17,000');
     fireEvent.press(screen.getByTestId('crew-minus'));
     fireEvent.press(screen.getByTestId('submit'));
     expect(screen.getByTestId('crew-mismatch')).toBeTruthy();
