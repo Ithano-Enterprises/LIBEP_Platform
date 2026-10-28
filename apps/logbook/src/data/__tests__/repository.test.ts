@@ -301,12 +301,15 @@ describe('writes are atomic', () => {
 });
 
 describe('preferences', () => {
-  it('default to Kiswahili, Night and tonnes, and persist changes', async () => {
+  it('default to Kiswahili, Night and kg, and persist changes', async () => {
     const { repo } = await openTestRepo();
-    expect(await repo.getPreferences()).toEqual({ lang: 'sw', mode: 'night', unit: 't' });
+    expect(await repo.getPreferences()).toEqual({ lang: 'sw', mode: 'night', unit: 'kg' });
     await repo.setPreference('lang', 'en');
     await repo.setPreference('mode', 'day');
     await repo.setPreference('lang', 'sw');
-    expect(await repo.getPreferences()).toEqual({ lang: 'sw', mode: 'day', unit: 't' });
+    expect(await repo.getPreferences()).toEqual({ lang: 'sw', mode: 'day', unit: 'kg' });
+    // t stays a view option the captain can switch to.
+    await repo.setPreference('unit', 't');
+    expect((await repo.getPreferences()).unit).toBe('t');
   });
 });

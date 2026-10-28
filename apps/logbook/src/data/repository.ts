@@ -50,7 +50,8 @@ export class DataError extends Error {
   }
 }
 
-export const DEFAULT_PREFERENCES: Preferences = { lang: 'sw', mode: 'night', unit: 't' };
+/** Quantities show in kg by default, the unit the captain enters; t is a view option. */
+export const DEFAULT_PREFERENCES: Preferences = { lang: 'sw', mode: 'night', unit: 'kg' };
 
 /** Quantity in whole kg, at least 1 (contract §2). */
 export function isValidQuantity(q: number): boolean {
