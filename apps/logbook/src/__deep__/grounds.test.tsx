@@ -36,22 +36,22 @@ function gc(trip: string, days: number, pos: { latitude: number; longitude: numb
     recorded_at: at(days),
     sync_state: 'sent',
     trip_closed_at: at(days - 0.25),
-    plant_weight_t: null,
+    plant_weight_kg: null,
     ...extra,
   };
 }
 
 // t1 −5 d, t2 −20 d, t3 −60 d (all Kaskazi), t4 −200 d (Kusi).
 const CATCHES: GroundsCatch[] = [
-  gc('t1', 5, A, 'tewa', 1.0),
-  gc('t1', 5, A, 'nguru', 2.0),
-  gc('t1', 5, null, 'tafi', 0.7), // no GPS
-  gc('t2', 20, A, 'tewa', 1.0),
-  gc('t2', 20, B, 'kibua', 10.0),
-  gc('t2', 20, A, 'tewa', 4.0, { trip_closed_at: at(21) }), // saved after the trip closed
-  gc('t3', 60, B, 'kibua', 5.0),
-  gc('t3', 60, C, 'tewa', 0.5),
-  gc('t4', 200, C, 'tewa', 3.0),
+  gc('t1', 5, A, 'tewa', 1000),
+  gc('t1', 5, A, 'nguru', 2000),
+  gc('t1', 5, null, 'tafi', 700), // no GPS
+  gc('t2', 20, A, 'tewa', 1000),
+  gc('t2', 20, B, 'kibua', 10000),
+  gc('t2', 20, A, 'tewa', 4000, { trip_closed_at: at(21) }), // saved after the trip closed
+  gc('t3', 60, B, 'kibua', 5000),
+  gc('t3', 60, C, 'tewa', 500),
+  gc('t4', 200, C, 'tewa', 3000),
 ];
 
 const grounds = (f: Partial<Filters>) => buildGrounds(CATCHES, { now: NOW, range: '90', species: [], season: 'all', ...f });
@@ -68,45 +68,45 @@ describe('grounds model', () => {
   });
 
   it.each([
-    ['30', 14.0, 2, { '-227:4093': [2, 4.0], '-230:4100': [1, 10.0] }],
-    ['90', 19.5, 3, { '-227:4093': [2, 4.0], '-230:4100': [2, 15.0], '-220:4110': [1, 0.5] }],
-    ['season', 19.5, 3, { '-227:4093': [2, 4.0], '-230:4100': [2, 15.0], '-220:4110': [1, 0.5] }],
-    ['all', 22.5, 4, { '-227:4093': [2, 4.0], '-230:4100': [2, 15.0], '-220:4110': [2, 3.5] }],
-  ] as const)('range %s: total %p over %p trips, per-spot trips and tonnes', (range, total, trips, spots) => {
+    ['30', 14000, 2, { '-227:4093': [2, 4000], '-230:4100': [1, 10000] }],
+    ['90', 19500, 3, { '-227:4093': [2, 4000], '-230:4100': [2, 15000], '-220:4110': [1, 500] }],
+    ['season', 19500, 3, { '-227:4093': [2, 4000], '-230:4100': [2, 15000], '-220:4110': [1, 500] }],
+    ['all', 22500, 4, { '-227:4093': [2, 4000], '-230:4100': [2, 15000], '-220:4110': [2, 3500] }],
+  ] as const)('range %s: total %p kg over %p trips, per-spot trips and kg', (range, total, trips, spots) => {
     const g = grounds({ range });
-    expect(g.totalT).toBe(total);
+    expect(g.totalKg).toBe(total);
     expect(g.tripCount).toBe(trips);
     const k = byKey(g);
     expect(Object.keys(k).sort()).toEqual(Object.keys(spots).sort());
-    for (const [key, [tr, t]] of Object.entries(spots)) expect([k[key].trips, k[key].t]).toEqual([tr, t]);
+    for (const [key, [tr, kg]] of Object.entries(spots)) expect([k[key].trips, k[key].kg]).toEqual([tr, kg]);
   });
 
   it('season filter: Kaskazi and Kusi split the catches', () => {
-    expect(grounds({ range: 'all', season: 'kaskazi' }).totalT).toBe(19.5);
-    expect(grounds({ range: 'all', season: 'kusi' }).totalT).toBe(3.0);
+    expect(grounds({ range: 'all', season: 'kaskazi' }).totalKg).toBe(19500);
+    expect(grounds({ range: 'all', season: 'kusi' }).totalKg).toBe(3000);
     expect(grounds({ range: '90', season: 'kusi' }).spots).toHaveLength(0);
   });
 
   it('species filter keeps only those species, in spots and in the excluded list', () => {
     const g = grounds({ range: '90', species: [sid('kibua')] });
     expect(g.spots.map((s) => s.bySpecies.map((x) => x.name))).toEqual([['kibua']]);
-    expect(g.totalT).toBe(15.0);
+    expect(g.totalKg).toBe(15000);
     expect(g.excluded).toHaveLength(0);
     const g2 = grounds({ range: 'all', species: [sid('tewa'), sid('tafi')] });
-    expect(g2.totalT).toBe(5.5); // tewa 1 + 1 + 0.5 + 3; the after-close tewa is off the map
+    expect(g2.totalKg).toBe(5500); // tewa 1000 + 1000 + 500 + 3000; the after-close tewa is off the map
     expect(g2.excluded).toHaveLength(2);
   });
 
   it.each(['30', '90', 'season', 'all'] as const)('range %s: spot totals add up to the grand total and to the catches on the map', (range) => {
     for (const species of [[], [sid('tewa')], [sid('kibua'), sid('nguru')]]) {
       const g = grounds({ range, species });
-      const sumSpots = Math.round(g.spots.reduce((a, s) => a + s.t * 10, 0)) / 10;
-      expect(sumSpots).toBe(g.totalT);
+      const sumSpots = g.spots.reduce((a, s) => a + s.kg, 0);
+      expect(sumSpots).toBe(g.totalKg);
       const onMap = new Set(g.spots.flatMap((s) => s.catchIds));
-      const sumCatches = Math.round(CATCHES.filter((c) => onMap.has(c.id)).reduce((a, c) => a + c.quantity * 10, 0)) / 10;
-      expect(sumCatches).toBe(g.totalT);
+      const sumCatches = CATCHES.filter((c) => onMap.has(c.id)).reduce((a, c) => a + c.quantity, 0);
+      expect(sumCatches).toBe(g.totalKg);
       for (const s of g.spots) {
-        expect(Math.round(s.bySpecies.reduce((a, x) => a + x.t * 10, 0)) / 10).toBe(s.t);
+        expect(s.bySpecies.reduce((a, x) => a + x.kg, 0)).toBe(s.kg);
         expect(spotEntries(CATCHES, s).map((c) => c.id).sort()).toEqual([...s.catchIds].sort());
       }
     }
@@ -114,8 +114,23 @@ describe('grounds model', () => {
 
   it('the metric toggle reorders: by trips then by tonnes', () => {
     const g = grounds({ range: '30' });
-    expect(rankSpots(g.spots, 'trips').map((s) => s.t)).toEqual([4.0, 10.0]);
-    expect(rankSpots(g.spots, 'tonnes').map((s) => s.t)).toEqual([10.0, 4.0]);
+    expect(rankSpots(g.spots, 'trips').map((s) => s.kg)).toEqual([4000, 10000]);
+    expect(rankSpots(g.spots, 'tonnes').map((s) => s.kg)).toEqual([10000, 4000]);
+  });
+
+  it('"Other" catches stay apart by typed name and are not dropped by the menu filters', () => {
+    const other = (name: string, q: number) => gc('t1', 5, A, 'tewa', q, { species_id: null, species_local_name: name });
+    const all = [...CATCHES, other('kaa', 15), other('kaa', 20), other('pweza mdogo', 40)];
+    const g = buildGrounds(all, { now: NOW, range: '90', species: [], season: 'all' });
+    const a = g.spots.find((s) => s.catchIds.includes(all[all.length - 1].id))!;
+    expect(a.bySpecies.filter((x) => x.species_id === null).map((x) => [x.name, x.kg])).toEqual([
+      ['pweza mdogo', 40],
+      ['kaa', 35],
+    ]);
+    expect(g.totalKg).toBe(19500 + 75);
+    // Filtering by a menu fish leaves "Other" out; its own key keeps it.
+    expect(buildGrounds(all, { now: NOW, range: '90', species: [sid('tewa')], season: 'all' }).spots.flatMap((s) => s.bySpecies).some((x) => x.species_id === null)).toBe(false);
+    expect(buildGrounds(all, { now: NOW, range: '90', species: ['other:kaa'], season: 'all' }).totalKg).toBe(35);
   });
 });
 
@@ -129,13 +144,13 @@ async function history(trips: { daysAgo: number; catches: [string, number, { lat
   for (const t of sorted) {
     ctx.deps.tick((maxDays - t.daysAgo) * DAY_MS - shift);
     shift = (maxDays - t.daysAgo) * DAY_MS;
-    const s = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const s = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     for (const [species, q, pos] of t.catches) {
       ctx.deps.tick(60_000);
       shift += 60_000;
       await ctx.repo.logCatch({ speciesId: sid(species), quantity: q, gps: pos && { ...pos, gps_accuracy_m: 10 } });
     }
-    await ctx.repo.closeTrip({ tripId: s.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null });
+    await ctx.repo.closeTrip({ tripId: s.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null });
   }
   ctx.deps.tick(60_000);
   return ctx;
@@ -149,15 +164,15 @@ describe('My grounds screen', () => {
   // "my" map ("Ni wewe tu unayeona ramani hii").
   // [TO CONFIRM: can a device change captain in Phase 1]
   it('own data only: catches logged on this device by another captain are not on my map', async () => {
-    const ctx = await history([{ daysAgo: 3, catches: [['tewa', 1, A]] }]);
+    const ctx = await history([{ daysAgo: 3, catches: [['tewa', 1000, A]] }]);
     // The device is handed to another captain for one trip.
     const other = '9a9a9a9a-0000-4000-8000-000000000001';
     await ctx.db.runAsync("INSERT INTO captains (id, display_name) VALUES (?, 'Other')", [other]);
     const mine = (await ctx.db.getFirstAsync<{ captain_id: string }>('SELECT captain_id FROM device_profile', []))!.captain_id;
     await ctx.db.runAsync('UPDATE device_profile SET captain_id = ?', [other]);
-    const s = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const s = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     await ctx.repo.logCatch({ speciesId: sid('kibua'), quantity: 9, gps: { ...B, gps_accuracy_m: 5 } });
-    await ctx.repo.closeTrip({ tripId: s.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null });
+    await ctx.repo.closeTrip({ tripId: s.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null });
     await ctx.db.runAsync('UPDATE device_profile SET captain_id = ?', [mine]);
     const catches = await ctx.repo.listGroundsCatches();
     expect(catches.map((c) => c.species_local_name)).toEqual(['tewa']);
@@ -165,8 +180,8 @@ describe('My grounds screen', () => {
 
   it('empty state below 3 trips ("2 / 3"); the map appears at 3', async () => {
     const ctx = await history([
-      { daysAgo: 10, catches: [['tewa', 1, A]] },
-      { daysAgo: 5, catches: [['nguru', 2, B]] },
+      { daysAgo: 10, catches: [['tewa', 1000, A]] },
+      { daysAgo: 5, catches: [['nguru', 2000, B]] },
     ]);
     const r = mountApp(ctx);
     press(await (async () => (await screen.findByTestId('open-grounds'), 'open-grounds'))());
@@ -178,7 +193,7 @@ describe('My grounds screen', () => {
     await screen.findByTestId('primary');
     r.unmount();
 
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     await ctx.repo.logCatch({ speciesId: sid('kibua'), quantity: 1, gps: { ...C, gps_accuracy_m: 5 } });
     mountApp(ctx);
     press(await (async () => (await screen.findByTestId('open-grounds'), 'open-grounds'))());
@@ -188,9 +203,9 @@ describe('My grounds screen', () => {
 
   it('metric toggle reorders the top spots on screen', async () => {
     const ctx = await history([
-      { daysAgo: 12, catches: [['tewa', 0.5, A]] },
-      { daysAgo: 8, catches: [['tewa', 0.5, A]] },
-      { daysAgo: 4, catches: [['kibua', 9, B]] },
+      { daysAgo: 12, catches: [['tewa', 500, A]] },
+      { daysAgo: 8, catches: [['tewa', 500, A]] },
+      { daysAgo: 4, catches: [['kibua', 9000, B]] },
     ]);
     mountApp(ctx);
     press(await (async () => (await screen.findByTestId('open-grounds'), 'open-grounds'))());
@@ -200,21 +215,21 @@ describe('My grounds screen', () => {
     expect(byTrips).toEqual(['spot--227:4093', 'spot--230:4100']);
     press('metric-tonnes');
     expect(spotOrder()).toEqual(['spot--230:4100', 'spot--227:4093']);
-    expect(screen.getByTestId('spot-value--230:4100')).toHaveTextContent(/9\.0/);
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent('10.0 t');
+    expect(screen.getByTestId('spot-value--230:4100')).toHaveTextContent(/^9$/);
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent('10 t');
   });
 
   it('filters change the totals: range, species and season through the sheet', async () => {
     const ctx = await history([
-      { daysAgo: 200, catches: [['tewa', 3, C]] },
-      { daysAgo: 60, catches: [['kibua', 5, B], ['tewa', 0.5, C]] },
-      { daysAgo: 20, catches: [['tewa', 1, A], ['kibua', 10, B]] },
-      { daysAgo: 5, catches: [['tewa', 1, A], ['nguru', 2, A], ['tafi', 0.7, null]] },
+      { daysAgo: 200, catches: [['tewa', 3000, C]] },
+      { daysAgo: 60, catches: [['kibua', 5000, B], ['tewa', 500, C]] },
+      { daysAgo: 20, catches: [['tewa', 1000, A], ['kibua', 10000, B]] },
+      { daysAgo: 5, catches: [['tewa', 1000, A], ['nguru', 2000, A], ['tafi', 700, null]] },
     ]);
     mountApp(ctx);
     press(await (async () => (await screen.findByTestId('open-grounds'), 'open-grounds'))());
     await screen.findByTestId('grounds-panel');
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^19\.5 t$/); // default 90 days
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^19\.5 t$/); // default 90 days, 19,500 kg
     expect(screen.getByTestId('grounds-excluded')).toHaveTextContent(sw.excludedN.replace('{n}', '1'));
 
     press('chip-range');
@@ -227,30 +242,30 @@ describe('My grounds screen', () => {
     await screen.findByTestId('flt-sheet');
     press('flt-range-30');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^14\.0 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^14 t$/));
 
     press('chip-species');
     await screen.findByTestId('flt-sheet');
     press('flt-range-all');
     press('flt-species-kibua');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^15\.0 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^15 t$/));
     expect(screen.queryByTestId('grounds-excluded')).toBeNull();
 
-    // The store's clock runs from 1 Jan: only the oldest trip (tewa 3 t) is in Kaskazi.
+    // The store's clock runs from 1 Jan: only the oldest trip (tewa 3,000 kg) is in Kaskazi.
     press('chip-season');
     await screen.findByTestId('flt-sheet');
     press('flt-species-all');
     press('flt-season-kaskazi');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^3\.0 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^3 t$/));
   });
 
   it('the filter sheet shows a live count before applying, and closing it changes nothing', async () => {
     const ctx = await history([
-      { daysAgo: 200, catches: [['tewa', 3, C]] },
-      { daysAgo: 60, catches: [['kibua', 5, B]] },
-      { daysAgo: 20, catches: [['tewa', 1, A]] },
+      { daysAgo: 200, catches: [['tewa', 3000, C]] },
+      { daysAgo: 60, catches: [['kibua', 5000, B]] },
+      { daysAgo: 20, catches: [['tewa', 1000, A]] },
     ]);
     mountApp(ctx);
     press(await (async () => (await screen.findByTestId('open-grounds'), 'open-grounds'))());

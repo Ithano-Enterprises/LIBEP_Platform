@@ -1,5 +1,5 @@
 import { defaultDeps } from '../data/open';
-import { createRepository, ensureDevice, isValidCrew, isValidQuantity, type RepoDeps } from '../data/repository';
+import { createRepository, CREW_RETURNED_MIN, ensureDevice, isValidCrew, isValidQuantity, type RepoDeps } from '../data/repository';
 import { migrate } from '../data/schema';
 import type { SqlDb } from '../data/sql';
 import { devLandingSite } from '../dev/fixtures/reference';
@@ -30,17 +30,17 @@ async function storeWith(deps: RepoDeps, db: SqlDb = openTestDb()) {
 
 /** One trip with catches, a correction chain and a close. */
 async function fullTrip(repo: ReturnType<typeof createRepository>, tick: (ms: number) => void) {
-  const trip = await repo.startTrip({ crewCount: 4, departureAt: new Date('2026-01-01T03:00:00Z') });
+  const trip = await repo.startTrip({ crewDeparted: 4, departureAt: new Date('2026-01-01T03:00:00Z') });
   tick(MIN);
-  const a = await repo.logCatch({ speciesId: sid('tewa'), quantity: 2.4, gps: { latitude: -2.27, longitude: 40.93, gps_accuracy_m: 9 } });
+  const a = await repo.logCatch({ speciesId: sid('tewa'), quantity: 2400, gps: { latitude: -2.27, longitude: 40.93, gps_accuracy_m: 9 } });
   tick(MIN);
-  const b = await repo.logCatch({ speciesId: sid('nguru'), quantity: 1.1, gps: null, note: ' net 2 ' });
+  const b = await repo.logCatch({ speciesId: sid('nguru'), quantity: 1100, gps: null, note: ' net 2 ' });
   tick(MIN);
-  const c1 = await repo.correctCatch({ catchId: a.id, previousCorrectionId: null, quantity: 2.0 });
+  const c1 = await repo.correctCatch({ catchId: a.id, previousCorrectionId: null, quantity: 2000 });
   tick(MIN);
   const c2 = await repo.correctCatch({ catchId: a.id, previousCorrectionId: c1.id, speciesId: sid('kibua') });
   tick(MIN);
-  const close = await repo.closeTrip({ tripId: trip.trip_id, arrivalAt: new Date('2026-01-01T09:00:00Z'), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: 12.5 });
+  const close = await repo.closeTrip({ tripId: trip.trip_id, arrivalAt: new Date('2026-01-01T09:00:00Z'), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: 12.5 });
   return { trip, a, b, c1, c2, close };
 }
 
@@ -149,7 +149,7 @@ describe('append-only ledger', () => {
       expect(triggers).toEqual(expect.arrayContaining([{ name: `${t}_no_update`, tbl_name: t }, { name: `${t}_no_delete`, tbl_name: t }]));
     }
     // sync_state (migration 3 columns) must stay writable: it is the only mutable record bookkeeping.
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     await expect(ctx.db.runAsync("UPDATE sync_state SET attempts = attempts + 1, last_error = 'x'", [])).resolves.toBeDefined();
   });
 
@@ -179,7 +179,7 @@ describe('append-only ledger', () => {
 describe('corrections', () => {
   it('the chain is read in link order even when the clock went backwards between corrections', async () => {
     const ctx = await seeded();
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const c = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 5, gps: null });
     ctx.deps.tick(10 * MIN);
     const c1 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 4 });
@@ -200,7 +200,7 @@ describe('corrections', () => {
 
   it('a stale or forked correction is refused and nothing is written', async () => {
     const ctx = await seeded();
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const c = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 5, gps: null });
     const c1 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 4 });
     await expect(ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 3 })).rejects.toMatchObject({ code: 'stale_correction' });
@@ -211,8 +211,8 @@ describe('corrections', () => {
     // The schema blocks a fork even if the repository check were skipped.
     await expect(
       ctx.db.runAsync(
-        `INSERT INTO catch_corrections (id, device_id, recorded_at, catch_id, previous_correction_id, species_id, quantity, unit)
-         VALUES ('f0000000-0000-4000-8000-000000000001', 'd', '2026-01-01T00:00:00Z', ?, NULL, ?, 1, 't')`,
+        `INSERT INTO catch_corrections (id, device_id, recorded_at, catch_id, previous_correction_id, species_id, species_local_name, quantity, unit)
+         VALUES ('f0000000-0000-4000-8000-000000000001', 'd', '2026-01-01T00:00:00Z', ?, NULL, ?, 'tewa', 1, 'kg')`,
         [c.id, sid('tewa')],
       ),
     ).rejects.toThrow(/UNIQUE/);
@@ -220,20 +220,20 @@ describe('corrections', () => {
 
   it('totals use the latest revision: trip home list, close total and by-species', async () => {
     const ctx = await seeded();
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
-    const a = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 18, gps: null });
-    await ctx.repo.logCatch({ speciesId: sid('tafi'), quantity: 0.3, gps: null });
-    const c1 = await ctx.repo.correctCatch({ catchId: a.id, previousCorrectionId: null, quantity: 1.8 });
-    await ctx.repo.correctCatch({ catchId: a.id, previousCorrectionId: c1.id, quantity: 1.9 });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const a = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 18000, gps: null });
+    await ctx.repo.logCatch({ speciesId: sid('tafi'), quantity: 15, gps: null });
+    const c1 = await ctx.repo.correctCatch({ catchId: a.id, previousCorrectionId: null, quantity: 1800 });
+    await ctx.repo.correctCatch({ catchId: a.id, previousCorrectionId: c1.id, quantity: 1900 });
     const entries = await ctx.repo.listTripEntries(trip.trip_id);
-    expect(entries.map((e) => e.quantity).sort()).toEqual([0.3, 1.9]);
-    const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null });
-    expect(close.total_quantity).toBe(2.2);
+    expect(entries.map((e) => e.quantity).sort((x, y) => x - y)).toEqual([15, 1900]);
+    const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null });
+    expect(close).toMatchObject({ total_quantity: 1915, unit: 'kg' });
   });
 
   it('corrections are refused once the plant has weighed the catch (t or kg)', async () => {
     const ctx = await seeded();
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const a = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 2, gps: null });
     const b = await ctx.repo.logCatch({ speciesId: sid('tafi'), quantity: 1, gps: null });
     await ctx.repo.applyPlantWeighing({ id: '21111111-1111-4111-8111-111111111111', trip_id: trip.trip_id, species_id: sid('tewa'), catch_id: a.id, weight: 2.1, unit: 't', weighed_at: ctx.deps.clock.now().toISOString() });
@@ -242,15 +242,16 @@ describe('corrections', () => {
       await expect(ctx.repo.correctCatch({ catchId: id, previousCorrectionId: null, quantity: 3 })).rejects.toMatchObject({ code: 'corrections_closed' });
     }
     expect(await count(ctx.db, 'catch_corrections')).toBe(0);
-    expect((await ctx.repo.getEntry(b.id))!.plant_weight_t).toBe(0.95);
+    expect((await ctx.repo.getEntry(a.id))!.plant_weight_kg).toBe(2100);
+    expect((await ctx.repo.getEntry(b.id))!.plant_weight_kg).toBe(950);
   });
 });
 
 describe('trips', () => {
   it('only one trip can be open (sequential calls)', async () => {
     const ctx = await seeded();
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
-    await expect(ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() })).rejects.toMatchObject({ code: 'trip_already_open' });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    await expect(ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() })).rejects.toMatchObject({ code: 'trip_already_open' });
     expect(await count(ctx.db, 'trip_starts', 'trip_id NOT IN (SELECT trip_id FROM trip_closes)')).toBe(1);
   });
 
@@ -272,8 +273,8 @@ describe('trips', () => {
     const deps = testDeps();
     const { repo } = await storeWith(deps, db);
     const results = await Promise.allSettled([
-      repo.startTrip({ crewCount: 4, departureAt: deps.clock.now() }),
-      repo.startTrip({ crewCount: 4, departureAt: deps.clock.now() }),
+      repo.startTrip({ crewDeparted: 4, departureAt: deps.clock.now() }),
+      repo.startTrip({ crewDeparted: 4, departureAt: deps.clock.now() }),
     ]);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect(await count(db, 'trip_starts', 'trip_id NOT IN (SELECT trip_id FROM trip_closes)')).toBe(1);
@@ -282,8 +283,8 @@ describe('trips', () => {
   it('a catch needs an open trip; a closed trip cannot be closed again', async () => {
     const ctx = await seeded();
     await expect(ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 1, gps: null })).rejects.toMatchObject({ code: 'no_open_trip' });
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
-    const input = { tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null };
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const input = { tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null };
     await ctx.repo.closeTrip(input);
     await expect(ctx.repo.closeTrip(input)).rejects.toMatchObject({ code: 'no_open_trip' });
     await expect(ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 1, gps: null })).rejects.toMatchObject({ code: 'no_open_trip' });
@@ -291,42 +292,68 @@ describe('trips', () => {
 
   it('a trip with zero catches can be closed: total 0, no catch ids', async () => {
     const ctx = await seeded();
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
-    const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null });
     expect(close.total_quantity).toBe(0);
     expect(close.catch_ids).toEqual([]);
     expect(await ctx.repo.getOpenTrip()).toBeNull();
     expect((await ctx.repo.getTripClose(trip.trip_id))!.catch_ids).toEqual([]);
   });
 
+  // crew_departed 1-24, crew_returned 0-24 [TO CONFIRM: crew limit 24].
   it.each([
-    [0, false], [1, true], [24, true], [25, false], [-1, false], [1.5, false], [NaN, false],
-  ])('crew %p valid=%p at start and close, and in the schema', async (crew, valid) => {
-    expect(isValidCrew(crew)).toBe(valid);
+    [0, false, true], [1, true, true], [24, true, true], [25, false, false], [-1, false, false], [1.5, false, false], [NaN, false, false],
+  ])('crew %p: departed valid=%p, returned valid=%p', async (crew, departedOk, returnedOk) => {
+    expect(isValidCrew(crew)).toBe(departedOk);
+    expect(isValidCrew(crew, CREW_RETURNED_MIN)).toBe(returnedOk);
     const ctx = await seeded();
-    const start = ctx.repo.startTrip({ crewCount: crew, departureAt: ctx.deps.clock.now() });
-    if (!valid) {
-      await expect(start).rejects.toMatchObject({ code: 'invalid_crew' });
-      const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
-      await expect(
-        ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: crew, landingSiteId: devLandingSite.id, distanceKm: null }),
-      ).rejects.toMatchObject({ code: 'invalid_crew' });
-    } else {
-      const trip = await start;
-      const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: crew, landingSiteId: devLandingSite.id, distanceKm: null });
-      expect(close.crew_count).toBe(crew);
-    }
+    const start = ctx.repo.startTrip({ crewDeparted: crew, departureAt: ctx.deps.clock.now() });
+    if (departedOk) await start;
+    else await expect(start).rejects.toMatchObject({ code: 'invalid_crew' });
+    const trip = (await ctx.repo.getOpenTrip()) ?? (await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() }));
+    const close = ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: crew, landingSiteId: devLandingSite.id, distanceKm: null });
+    if (returnedOk) await expect(close).resolves.toMatchObject({ crew_returned: crew });
+    else await expect(close).rejects.toMatchObject({ code: 'invalid_crew' });
+  });
+
+  it('a crew mismatch keeps the optional reason and never blocks the close; equal counts drop it', async () => {
+    const ctx = await seeded();
+    const t1 = await ctx.repo.startTrip({ crewDeparted: 5, departureAt: ctx.deps.clock.now() });
+    const c1 = await ctx.repo.closeTrip({ tripId: t1.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, crewChangeReason: ' one stayed at Lamu ', landingSiteId: devLandingSite.id, distanceKm: null });
+    expect(c1).toMatchObject({ crew_returned: 4, crew_change_reason: 'one stayed at Lamu' });
+    const t2 = await ctx.repo.startTrip({ crewDeparted: 5, departureAt: ctx.deps.clock.now() });
+    const c2 = await ctx.repo.closeTrip({ tripId: t2.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 0, landingSiteId: devLandingSite.id, distanceKm: null });
+    expect(c2).toMatchObject({ crew_returned: 0, crew_change_reason: null });
+    const t3 = await ctx.repo.startTrip({ crewDeparted: 5, departureAt: ctx.deps.clock.now() });
+    const c3 = await ctx.repo.closeTrip({ tripId: t3.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 5, crewChangeReason: 'ignored', landingSiteId: devLandingSite.id, distanceKm: null });
+    expect(c3.crew_change_reason).toBeNull();
+    // Both headcounts are stored where they were counted, never as one crew_count.
+    const cols = (await ctx.db.getAllAsync<{ name: string }>("SELECT name FROM pragma_table_info('trip_closes')", [])).map((r) => r.name);
+    expect(cols).toEqual(expect.arrayContaining(['crew_returned', 'crew_change_reason']));
+    expect(cols).not.toContain('crew_count');
+  });
+
+  it('one UUID per trip: trip_id is the trip_start id, and the schema refuses another', async () => {
+    const ctx = await seeded();
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    expect(trip.trip_id).toBe(trip.id);
+    const row = { ...trip, id: 'a0000000-0000-4000-8000-000000000001', trip_id: 'b0000000-0000-4000-8000-000000000001' } as Record<string, unknown>;
+    const cols = Object.keys(row);
+    await expect(
+      ctx.db.runAsync(`INSERT INTO trip_starts (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, cols.map((k) => row[k] as string | number | null)),
+    ).rejects.toThrow(/CHECK/);
   });
 });
 
 describe('quantity edge values', () => {
+  // Whole kg, at least 1.
   it.each([
-    [0, false], [0.05, false], [0.1, true], [0.3, true], [99.9, true], [100, true], [100.1, true], [250, true],
-    [-1, false], [NaN, false], [Infinity, false], [1.25, false],
+    [0, false], [0.5, false], [1, true], [15, true], [999, true], [20000, true], [100001, true], [250000, true],
+    [-1, false], [NaN, false], [Infinity, false], [1.5, false], [2.4, false],
   ])('quantity %p valid=%p for a catch and a correction', async (q, valid) => {
     expect(isValidQuantity(q)).toBe(valid);
     const ctx = await seeded();
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const save = ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: q, gps: null });
     if (valid) {
       expect((await save).quantity).toBe(q);
@@ -342,19 +369,27 @@ describe('quantity edge values', () => {
 
   it('the schema refuses quantity 0 even past the repository', async () => {
     const ctx = await seeded();
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const c = (await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 1, gps: null })) as unknown as Record<string, unknown>;
     const row: Record<string, unknown> = { ...c, id: 'e0000000-0000-4000-8000-000000000001', quantity: 0, trip_id: trip.trip_id };
     const cols = Object.keys(row);
     await expect(
       ctx.db.runAsync(`INSERT INTO catches (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, cols.map((k) => row[k] as string | number | null)),
     ).rejects.toThrow(/CHECK/);
+    // ...and a fraction of a kg, and a unit other than kg.
+    for (const [quantity, unit] of [[1.5, 'kg'], [15, 't']] as const) {
+      const bad: Record<string, unknown> = { ...row, id: `e000000${quantity === 1.5 ? 2 : 3}-0000-4000-8000-000000000001`, quantity, unit };
+      await expect(
+        ctx.db.runAsync(`INSERT INTO catches (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, cols.map((k) => bad[k] as string | number | null)),
+      ).rejects.toThrow(/CHECK/);
+    }
   });
 
-  it('the keypad can never produce "1.2.3": a second dot is ignored', () => {
+  it('the keypad builds whole kg only: there is no decimal key', () => {
     let v = '';
-    for (const k of ['1', '.', '2', '.', '3'] as Key[]) v = pressKey(v, k);
-    expect(v).toBe('1.2');
+    for (const k of ['1', '5'] as Key[]) v = pressKey(v, k);
+    expect(v).toBe('15');
+    expect(parseEntry(v)).toBe(15);
   });
 
   it.each(['', '.', '0', '0.', '0.0', '-1'])('parseEntry(%p) is null', (s) => {
@@ -369,7 +404,7 @@ describe('quantity edge values', () => {
   });
 
   it('every figure the keypad produces that parseEntry accepts is a valid quantity', () => {
-    const keys: Key[] = ['0', '1', '5', '9', '.', 'back'];
+    const keys: Key[] = ['0', '1', '5', '9', 'back'];
     const seen = new Set<string>(['']);
     let frontier = [''];
     for (let depth = 0; depth < 6; depth++) {
@@ -387,5 +422,35 @@ describe('quantity edge values', () => {
       const q = parseEntry(v);
       if (q != null) expect([v, isValidQuantity(q)]).toEqual([v, true]);
     }
+  });
+});
+
+describe('"Other" species', () => {
+  it('stores the local name exactly as typed with species_id null; the schema still needs the name', async () => {
+    const ctx = await seeded();
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const c = await ctx.repo.logCatch({ speciesId: null, speciesLocalName: 'Kaa  wa mawe ', quantity: 15, gps: null });
+    expect(c).toMatchObject({ species_id: null, species_local_name: 'Kaa  wa mawe ', hold_code: null, quantity: 15, unit: 'kg' });
+    await expect(ctx.repo.logCatch({ speciesId: null, speciesLocalName: '  ', quantity: 15, gps: null })).rejects.toMatchObject({ code: 'invalid_species_name' });
+    const row: Record<string, unknown> = { ...(c as unknown as Record<string, unknown>), id: 'e0000000-0000-4000-8000-000000000009', species_local_name: null, trip_id: trip.trip_id };
+    const cols = Object.keys(row);
+    await expect(
+      ctx.db.runAsync(`INSERT INTO catches (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, cols.map((k) => row[k] as string | number | null)),
+    ).rejects.toThrow(/NOT NULL/);
+  });
+
+  it('corrections may carry species_id null; the effective view follows the head, not the original', async () => {
+    const ctx = await seeded();
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const c = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 15, gps: null });
+    const c1 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, speciesId: null, speciesLocalName: 'kaa' });
+    expect(c1).toMatchObject({ species_id: null, species_local_name: 'kaa', hold_code: null, quantity: 15 });
+    expect(await ctx.repo.getEntry(c.id)).toMatchObject({ species_id: null, species_local_name: 'kaa' });
+    // A later quantity correction keeps the typed name.
+    const c2 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: c1.id, quantity: 20 });
+    expect(c2).toMatchObject({ species_id: null, species_local_name: 'kaa', quantity: 20 });
+    // And back to a menu species.
+    await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: c2.id, speciesId: sid('nguru') });
+    expect(await ctx.repo.getEntry(c.id)).toMatchObject({ species_id: sid('nguru'), species_local_name: 'nguru', hold_code: 'B', quantity: 20 });
   });
 });

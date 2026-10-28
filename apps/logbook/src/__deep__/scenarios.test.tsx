@@ -3,6 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { createMockTransport } from '../data/sync/mockTransport';
 import { strings } from '../i18n/strings';
 import { palettes } from '../theme/tokens';
+import { formatQuantity } from '../ui/format';
 import {
   clearKeys,
   count,
@@ -62,15 +63,15 @@ describe('1a normal day', () => {
 
     await startTripUI(1);
     const trip = (await ctx.repo.getOpenTrip())!;
-    expect(trip.crew_count).toBe(5);
+    expect(trip).toMatchObject({ crew_departed: 5, trip_id: trip.id });
 
     const catches: [string, string][] = [
-      ['tewa', '2.4'],
-      ['nguru', '1.2'],
-      ['kibua', '18'],
-      ['tafi', '0.5'],
-      ['changu', '3'],
-      ['mzia', '0.8'],
+      ['tewa', '2400'],
+      ['nguru', '1200'],
+      ['kibua', '18000'],
+      ['tafi', '15'],
+      ['changu', '3000'],
+      ['mzia', '800'],
     ];
     press('primary');
     for (const [i, [fish, t]] of catches.entries()) {
@@ -80,33 +81,33 @@ describe('1a normal day', () => {
     }
     press('view-list');
     await screen.findByTestId('trip-total');
-    // 2.4 + 1.2 + 18 + 0.5 + 3 + 0.8 = 25.9
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('25.9 t'));
+    // 2400 + 1200 + 18000 + 15 + 3000 + 800 = 25,415 kg: the 15 kg is not lost.
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('25.415 t'));
     expect(await count(ctx.db, 'catches', 'trip_id = ?', [trip.trip_id])).toBe(6);
 
-    // Correction 18 → 1.8.
+    // Correction 18,000 kg → 1,800 kg.
     const kibua = (await ctx.repo.listTripEntries(trip.trip_id)).find((e) => e.species_local_name === 'kibua')!;
     press(`entry-${kibua.id}`);
     await screen.findByTestId('detail-species');
     press('correct');
     await screen.findByTestId('correct-sheet');
     clearKeys();
-    typeKeys('1.8');
+    typeKeys('1800');
     press('correct-save');
     await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent(esc('1.8')));
     press('back');
     await screen.findByTestId('trip-total');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('9.7 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('9.215 t'));
 
     // Close.
     ctx.deps.tick(2 * 60 * MIN);
     press('close-trip');
     await screen.findByTestId('close-total');
-    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('9.7'));
+    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('9.215'));
     press('submit');
     await screen.findByTestId('read-only');
     const close = (await ctx.repo.getTripClose(trip.trip_id))!;
-    expect(close.total_quantity).toBe(9.7);
+    expect(close).toMatchObject({ total_quantity: 9215, unit: 'kg', crew_returned: 5, crew_change_reason: null });
     expect(close.catch_ids).toHaveLength(6);
     press('back');
     await screen.findByText(sw.startToLog);
@@ -130,7 +131,7 @@ describe('1a normal day', () => {
       ],
     });
     await expect(
-      ctx.repo.correctCatch({ catchId: tewa.id, previousCorrectionId: null, quantity: 2.0 }),
+      ctx.repo.correctCatch({ catchId: tewa.id, previousCorrectionId: null, quantity: 2000 }),
     ).rejects.toMatchObject({ code: 'corrections_closed' });
 
     // App reopened: the weighed entry shows W and no Sahihisha.
@@ -203,7 +204,7 @@ describe('1c double taps', () => {
     press('primary');
     await screen.findByTestId('fish-tewa');
     press('fish-tewa');
-    typeKeys('2.4');
+    typeKeys('2400');
     press('save');
     press('save');
     await screen.findByTestId('confirm-card');
@@ -219,7 +220,7 @@ describe('1c double taps', () => {
     press('primary');
     await screen.findByTestId('fish-tewa');
     press('fish-tewa');
-    typeKeys('2.4');
+    typeKeys('2400');
     expect(await doubleTap('save')).toEqual([]);
     await screen.findByTestId('confirm-card');
     expect(screen.queryByText(/transaction|SQLITE|constraint/i)).toBeNull();
@@ -273,7 +274,7 @@ describe('1d app killed mid-trip', () => {
     await screen.findByTestId('trip-total');
     const trip = (await ctx.repo.getOpenTrip())!;
 
-    for (const [fish, t] of [['tewa', '2.4'], ['nguru', '1.2'], ['kibua', '3']] as const) {
+    for (const [fish, t] of [['tewa', '2400'], ['nguru', '1200'], ['kibua', '3000']] as const) {
       ctx.deps.tick(15 * MIN);
       await logCatchUI(fish, t);
       await restart();
@@ -294,7 +295,7 @@ describe('1d app killed mid-trip', () => {
     await screen.findByTestId('detail-species');
     press('correct');
     clearKeys();
-    typeKeys('2.1');
+    typeKeys('2100');
     press('correct-save');
     await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent(esc('2.1')));
     await restart();
@@ -342,7 +343,7 @@ describe('1e offline the whole trip, sync next morning, second trip same day', (
     const trip1 = (await ctx.repo.getOpenTrip())!;
     const offline = createMockTransport(Array(20).fill('offline'));
     const q1 = ctx.repo.syncQueue(offline.transport);
-    for (const [fish, t] of [['tewa', '2'], ['nguru', '1.5'], ['tafi', '0.7']] as const) {
+    for (const [fish, t] of [['tewa', '2000'], ['nguru', '1500'], ['tafi', '700']] as const) {
       ctx.deps.tick(30 * MIN);
       await logCatchUI(fish, t);
       const o = await q1.runOnce();
@@ -369,12 +370,12 @@ describe('1e offline the whole trip, sync next morning, second trip same day', (
     await startTripUI();
     const trip2 = (await ctx.repo.getOpenTrip())!;
     expect(trip2.trip_id).not.toBe(trip1.trip_id);
-    await logCatchUI('kibua', '4');
+    await logCatchUI('kibua', '4000');
     // Trip 2's total does not include trip 1.
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('4.0 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('4 t'));
     press('close-trip');
     await screen.findByTestId('close-total');
-    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('4.0'));
+    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('4'));
     press('submit');
     await screen.findByTestId('read-only');
     await drain(q);
@@ -386,16 +387,16 @@ describe('1e offline the whole trip, sync next morning, second trip same day', (
 describe('1f very long trip', () => {
   it('200 catches: list, total and close summary stay correct and render in reasonable time', async () => {
     const ctx = await seeded();
-    const trip = await ctx.repo.startTrip({ crewCount: 6, departureAt: ctx.deps.clock.now() });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 6, departureAt: ctx.deps.clock.now() });
     const menu = ['changu', 'tafi', 'tewa', 'nguru', 'kibua', 'mzia', 'kolekole'];
-    let tenths = 0;
+    let kg = 0;
     for (let i = 0; i < 200; i++) {
       ctx.deps.tick(MIN);
-      const q = ((i % 30) + 1) / 10; // 0.1 … 3.0
-      tenths += Math.round(q * 10);
+      const q = ((i % 30) + 1) * 100; // 100 … 3,000 kg
+      kg += q;
       await ctx.repo.logCatch({ speciesId: sid(menu[i % menu.length]), quantity: q, gps: { latitude: -2.2 - (i % 9) / 100, longitude: 41 + (i % 7) / 100, gps_accuracy_m: 10 } });
     }
-    const total = (tenths / 10).toFixed(1);
+    const total = formatQuantity(kg);
 
     const t0 = Date.now();
     mountApp(ctx);
@@ -406,14 +407,14 @@ describe('1f very long trip', () => {
     expect(homeMs).toBeLessThan(8000);
 
     // One more through the UI on top of 200.
-    await logCatchUI('tewa', '1');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc(`${(tenths / 10 + 1).toFixed(1)} t`));
+    await logCatchUI('tewa', '15');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc(`${formatQuantity(kg + 15)} t`));
 
     const t1 = Date.now();
     press('close-trip');
     await screen.findByTestId('close-total');
     expect(Date.now() - t1).toBeLessThan(8000);
-    expect(screen.getByTestId('close-total')).toHaveTextContent(esc((tenths / 10 + 1).toFixed(1)));
+    expect(screen.getByTestId('close-total')).toHaveTextContent(esc(formatQuantity(kg + 15)));
     // Top 3 by type, then "Zaidi (+4)".
     expect(screen.getAllByTestId(/^type-/)).toHaveLength(3);
     expect(screen.getByTestId('types-toggle')).toHaveTextContent(`${sw.more} (+4)`);
@@ -423,7 +424,7 @@ describe('1f very long trip', () => {
     await screen.findByTestId('read-only');
     const close = (await ctx.repo.getTripClose(trip.trip_id))!;
     expect(close.catch_ids).toHaveLength(201);
-    expect(close.total_quantity).toBe(tenths / 10 + 1);
+    expect(close.total_quantity).toBe(kg + 15);
   });
 });
 
@@ -448,7 +449,7 @@ describe('1g languages and modes all the way through', () => {
       expect(screen.getByTestId('search').props.placeholder).toBe(t.search);
       // Fish names stay the local name in both languages.
       expect(screen.getByTestId('fish-tewa')).toHaveTextContent(/tewa/);
-      await saveCatchUI('tewa', '2');
+      await saveCatchUI('tewa', '2000');
       expect(screen.getByText(t.savedTitle)).toBeTruthy();
       press('view-list');
       await screen.findByTestId('trip-total');
@@ -474,7 +475,7 @@ describe('1g languages and modes all the way through', () => {
     mountApp(ctx);
     await screen.findByText(sw.startToLog);
     await startTripUI();
-    await logCatchUI('tewa', '2.5');
+    await logCatchUI('tewa', '2500');
     const before = await ledgerSnapshot(ctx.db);
     press('toggle-lang');
     press('toggle-mode');
@@ -484,5 +485,60 @@ describe('1g languages and modes all the way through', () => {
     expect(await ledgerSnapshot(ctx.db)).toEqual(before);
     fireEvent.press(screen.getByTestId('toggle-lang'));
     await screen.findByText(sw.trip);
+  });
+});
+
+describe('1h whole kg, "Other" and a crew mismatch', () => {
+  it('a 15 kg catch and an "Other" catch are kept to the kg; a crew mismatch is confirmed and sent', async () => {
+    const ctx = await seeded();
+    mountApp(ctx);
+    await screen.findByText(sw.startToLog);
+    await startTripUI(1); // 5 crew departed
+    const trip = (await ctx.repo.getOpenTrip())!;
+
+    press('primary');
+    await saveCatchUI('tewa', '15');
+    await logAnother();
+    press('fish-other');
+    await screen.findByTestId('other-name');
+    fireEvent.changeText(screen.getByTestId('other-name'), 'Kaa wa mawe');
+    typeKeys('40');
+    press('save');
+    await screen.findByTestId('confirm-card');
+    press('view-list');
+    await screen.findByTestId('trip-total');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('0.055 t'));
+    expect(screen.getByText('Kaa wa mawe')).toBeTruthy();
+
+    // 5 left, 4 came back: confirm, give a reason, close.
+    press('close-trip');
+    await screen.findByTestId('close-total');
+    expect(screen.getByTestId('type-Kaa wa mawe')).toBeTruthy();
+    press('crew-minus');
+    press('submit');
+    await screen.findByTestId('crew-mismatch');
+    expect(await ctx.repo.getTripClose(trip.trip_id)).toBeNull();
+    fireEvent.changeText(screen.getByTestId('crew-reason'), 'mmoja alibaki Faza');
+    press('crew-confirm');
+    await screen.findByTestId('read-only');
+
+    const mock = createMockTransport();
+    await drain(ctx.repo.syncQueue(mock.transport));
+    const sent = mock.batches.flatMap((b) => b.records).filter((r) => r.data.trip_id === trip.trip_id);
+    const start = sent.find((r) => r.kind === 'trip_start')!.data;
+    expect(start).toMatchObject({ id: trip.id, trip_id: trip.id, crew_departed: 5 });
+    const catches = sent.filter((r) => r.kind === 'catch').map((r) => r.data);
+    expect(catches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ species_id: sid('tewa'), quantity: '15', unit: 'kg' }),
+        expect.objectContaining({ species_id: null, species_local_name: 'Kaa wa mawe', quantity: '40', unit: 'kg' }),
+      ]),
+    );
+    expect(sent.find((r) => r.kind === 'trip_close')!.data).toMatchObject({
+      crew_returned: 4,
+      crew_change_reason: 'mmoja alibaki Faza',
+      total_quantity: '55',
+      unit: 'kg',
+    });
   });
 });

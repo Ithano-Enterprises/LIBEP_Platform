@@ -12,23 +12,23 @@ import { count, drain, LEDGER_TABLES, ledgerSnapshot, seeded, sid } from './help
 
 const MIN = 60_000;
 
-/** A store with nothing sent yet: one closed trip, 3 catches, a correction chain of 2. */
+/** A store with nothing sent yet: one closed trip, 3 catches (one of 15 kg), a correction chain of 2. */
 async function store() {
   const ctx = await seeded();
   // The dev seed's previous trip: mark it acked so only new records queue.
   await ctx.db.runAsync("UPDATE sync_state SET state = 'sent'", []);
-  const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+  const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
   const catches = [];
-  for (const [f, q] of [['tewa', 2], ['nguru', 1.5], ['tafi', 0.4]] as const) {
+  for (const [f, q] of [['tewa', 2000], ['nguru', 1500], ['tafi', 15]] as const) {
     ctx.deps.tick(10 * MIN);
     catches.push(await ctx.repo.logCatch({ speciesId: sid(f), quantity: q, gps: null }));
   }
   ctx.deps.tick(MIN);
-  const c1 = await ctx.repo.correctCatch({ catchId: catches[0].id, previousCorrectionId: null, quantity: 2.2 });
+  const c1 = await ctx.repo.correctCatch({ catchId: catches[0].id, previousCorrectionId: null, quantity: 2200 });
   ctx.deps.tick(MIN);
-  const c2 = await ctx.repo.correctCatch({ catchId: catches[0].id, previousCorrectionId: c1.id, quantity: 2.3 });
+  const c2 = await ctx.repo.correctCatch({ catchId: catches[0].id, previousCorrectionId: c1.id, quantity: 2300 });
   ctx.deps.tick(MIN);
-  const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null });
+  const close = await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null });
   const ids = [trip.id, ...catches.map((c) => c.id), c1.id, c2.id, close.id];
   return { ...ctx, trip, catches, c1, c2, close, ids };
 }
@@ -130,7 +130,7 @@ describe('server answers', () => {
     for (const id of ctx.ids.filter((x) => x !== ctx.catches[1].id)) expect(await ctx.repo.getSyncState(id)).toBe('sent');
     expect(await ctx.repo.getSyncState(ctx.catches[1].id)).toBe('waiting');
     expect(await ledgerSnapshot(ctx.db)).toEqual(before);
-    expect(await ctx.repo.getEntry(ctx.catches[1].id)).toMatchObject({ quantity: 1.5, species_local_name: 'nguru' });
+    expect(await ctx.repo.getEntry(ctx.catches[1].id)).toMatchObject({ quantity: 1500, species_local_name: 'nguru' });
   });
 
   it('422 naming a record: held, the rest still sent; nothing deleted', async () => {
@@ -182,7 +182,7 @@ describe('server answers', () => {
   it('413 on a single record: blocked, not held, not lost', async () => {
     const ctx = await seeded();
     await ctx.db.runAsync("UPDATE sync_state SET state = 'sent'", []);
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const mock = createMockTransport([{ status: 413, body: null }]);
     const q = ctx.repo.syncQueue(mock.transport);
     expect(await q.runOnce()).toMatchObject({ kind: 'blocked', status: 413 });
@@ -259,21 +259,41 @@ describe('server answers', () => {
 describe('batch contents and order', () => {
   it('trip_start before catch before correction before trip_close, across two trips', async () => {
     const ctx = await store();
-    const t2 = await ctx.repo.startTrip({ crewCount: 2, departureAt: ctx.deps.clock.now() });
-    const k = await ctx.repo.logCatch({ speciesId: sid('kibua'), quantity: 3, gps: null });
-    await ctx.repo.correctCatch({ catchId: k.id, previousCorrectionId: null, quantity: 3.3 });
-    await ctx.repo.closeTrip({ tripId: t2.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 2, landingSiteId: devLandingSite.id, distanceKm: 3 });
+    const t2 = await ctx.repo.startTrip({ crewDeparted: 2, departureAt: ctx.deps.clock.now() });
+    const k = await ctx.repo.logCatch({ speciesId: sid('kibua'), quantity: 3000, gps: null });
+    await ctx.repo.correctCatch({ catchId: k.id, previousCorrectionId: null, quantity: 3300 });
+    const o = await ctx.repo.logCatch({ speciesId: null, speciesLocalName: 'kaa', quantity: 15, gps: null });
+    // Crew mismatch: 2 left, 1 came back.
+    await ctx.repo.closeTrip({ tripId: t2.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 1, crewChangeReason: 'alishuka Kizingitini', landingSiteId: devLandingSite.id, distanceKm: 3 });
     const q = ctx.repo.syncQueue(createMockTransport().transport);
     const batch = buildBatch(await q.pending());
     const kinds = batch.records.map((r) => KIND_ORDER[r.kind]);
     expect(kinds).toEqual([...kinds].sort((a, b) => a - b));
     expect(batch.contract_version).toBe(1);
-    const catchRec = batch.records.find((r) => r.kind === 'catch')!;
-    expect(typeof catchRec.data.quantity).toBe('string');
-    expect(catchRec.data.quantity).toMatch(/^\d+\.\d$/);
-    const close = batch.records.find((r) => r.kind === 'trip_close')!;
-    expect(Array.isArray(close.data.catch_ids)).toBe(true);
-    expect(close.data.total_quantity).toMatch(/^\d+\.\d$/);
+    // Whole kg as decimal strings with no fraction, unit kg.
+    for (const r of batch.records.filter((x) => x.kind === 'catch' || x.kind === 'catch_correction')) {
+      expect(typeof r.data.quantity).toBe('string');
+      expect(r.data.quantity).toMatch(/^[1-9]\d*$/);
+      expect(r.data.unit).toBe('kg');
+    }
+    const tafi = batch.records.find((r) => r.data.id === ctx.catches[2].id)!;
+    expect(tafi.data.quantity).toBe('15');
+    // "Other": species_id null, the name as typed.
+    expect(batch.records.find((r) => r.data.id === o.id)!.data).toMatchObject({ species_id: null, species_local_name: 'kaa', quantity: '15' });
+    const starts = batch.records.filter((r) => r.kind === 'trip_start');
+    for (const st of starts) expect(st.data.trip_id).toBe(st.data.id);
+    const closes = batch.records.filter((r) => r.kind === 'trip_close');
+    for (const cl of closes) {
+      expect(Array.isArray(cl.data.catch_ids)).toBe(true);
+      expect(cl.data.total_quantity).toMatch(/^(0|[1-9]\d*)$/);
+      expect(cl.data).not.toHaveProperty('crew_count');
+    }
+    expect(closes.find((cl) => cl.data.trip_id === t2.trip_id)!.data).toMatchObject({
+      crew_returned: 1,
+      crew_change_reason: 'alishuka Kizingitini',
+      total_quantity: '3315',
+    });
+    expect(starts.find((st) => st.data.id === t2.id)!.data).toMatchObject({ crew_departed: 2 });
   });
 
   // BUG-9 (fixed): corrections in a batch were ordered by recorded_at only.
@@ -283,7 +303,7 @@ describe('batch contents and order', () => {
   it('a correction is always sent after the correction it follows, even if the clock went back', async () => {
     const ctx = await seeded();
     await ctx.db.runAsync("UPDATE sync_state SET state = 'sent'", []);
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const c = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 5, gps: null });
     ctx.deps.tick(30 * MIN);
     const c1 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 4 });
@@ -300,7 +320,7 @@ describe('batch contents and order', () => {
   it('a catch is sent after its trip_start even when its recorded_at is earlier', async () => {
     const ctx = await seeded();
     await ctx.db.runAsync("UPDATE sync_state SET state = 'sent'", []);
-    const t = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const t = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     ctx.deps.tick(-120 * MIN);
     const c = await ctx.repo.logCatch({ speciesId: sid('tewa'), quantity: 5, gps: null });
     const mock = createMockTransport();
@@ -312,12 +332,12 @@ describe('batch contents and order', () => {
   it(`more than ${MAX_BATCH} records go in several batches of at most ${MAX_BATCH}, each record once`, async () => {
     const ctx = await seeded();
     await ctx.db.runAsync("UPDATE sync_state SET state = 'sent'", []);
-    const trip = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const trip = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     for (let i = 0; i < 120; i++) {
       ctx.deps.tick(MIN);
-      await ctx.repo.logCatch({ speciesId: sid('tafi'), quantity: 0.1 * ((i % 9) + 1), gps: null });
+      await ctx.repo.logCatch({ speciesId: sid('tafi'), quantity: ((i % 9) + 1) * 100, gps: null });
     }
-    await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewCount: 4, landingSiteId: devLandingSite.id, distanceKm: null });
+    await ctx.repo.closeTrip({ tripId: trip.trip_id, arrivalAt: ctx.deps.clock.now(), crewReturned: 4, landingSiteId: devLandingSite.id, distanceKm: null });
     const mock = createMockTransport();
     const out = await drain(ctx.repo.syncQueue(mock.transport));
     expect(out.map((o) => o.kind)).toEqual(['sent', 'sent', 'sent', 'idle']);

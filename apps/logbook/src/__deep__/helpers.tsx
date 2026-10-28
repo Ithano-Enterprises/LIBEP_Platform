@@ -81,7 +81,7 @@ export function press(id: string) {
   fireEvent.press(screen.getByTestId(id));
 }
 
-/** Backspace until the keypad figure is empty (the correction sheet starts with e.g. "18.0"). */
+/** Backspace until the keypad figure is empty (the correction sheet starts with e.g. "2400"). */
 export function clearKeys(max = 8) {
   for (let i = 0; i < max; i++) press('key-back');
 }
@@ -101,13 +101,13 @@ export async function startTripUI(crewDelta = 0) {
 }
 
 /** From S3.3 (menu visible): pick, type, save, wait for the confirmation card. */
-export async function saveCatchUI(fish: string, tonnes: string) {
+export async function saveCatchUI(fish: string, kg: string) {
   press(await (async () => {
     await screen.findByTestId(`fish-${fish}`);
     return `fish-${fish}`;
   })());
   await screen.findByTestId('entry-sheet');
-  typeKeys(tonnes);
+  typeKeys(kg);
   press('save');
   await screen.findByTestId('confirm-card');
 }
@@ -119,10 +119,10 @@ export async function logAnother() {
 }
 
 /** Home → S3.3 → save one catch → back home. */
-export async function logCatchUI(fish: string, tonnes: string) {
+export async function logCatchUI(fish: string, kg: string) {
   await screen.findByTestId('primary');
   press('primary');
-  await saveCatchUI(fish, tonnes);
+  await saveCatchUI(fish, kg);
   press('view-list');
   await screen.findByTestId('trip-total');
 }

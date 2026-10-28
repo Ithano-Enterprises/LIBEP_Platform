@@ -6,8 +6,9 @@ import { strings } from '../i18n/strings';
 import { plausibility } from '../screens/logCatch/model';
 import { clearKeys, count, logAnother, mountApp, press, seeded, sid, startTripUI, typeKeys } from './helpers';
 
-// Area 4: soft plausibility warnings for each tonnage class. A warning is
-// shown, and Save always still writes the catch.
+// Area 4: soft plausibility warnings for each tonnage class. Quantities are
+// whole kg; the cap is tonnage_class x 1000. A warning is shown, and Save
+// always still writes the catch.
 
 jest.mock('expo-network', () => ({
   useNetworkState: jest.fn(() => ({ isConnected: false, isInternetReachable: false })),
@@ -29,14 +30,15 @@ const fishFor = (cls: TonnageClass) => devMenus[cls][0];
 
 describe('plausibility model at each class edge', () => {
   it.each(CLASSES)('class %i: equal to the class is fine, above is a warning', (cls) => {
-    expect(plausibility(cls, 0, cls)).toBeNull();
-    expect(plausibility(cls + 0.1, 0, cls)).toBe('entry_over_class');
-    expect(plausibility(1, cls - 1, cls)).toBeNull(); // reaches the class exactly
-    expect(plausibility(1.1, cls - 1, cls)).toBe('trip_would_pass');
-    expect(plausibility(0.1, cls, cls)).toBe('trip_would_pass');
-    expect(plausibility(null, cls * 5, cls)).toBeNull();
-    // Float edges: 0.1 + 0.2 style sums do not trip the warning.
-    expect(plausibility(0.2, cls - 0.2, cls)).toBeNull();
+    const cap = cls * 1000;
+    expect(plausibility(cap, 0, cls)).toBeNull();
+    expect(plausibility(cap + 1, 0, cls)).toBe('entry_over_class');
+    expect(plausibility(1000, cap - 1000, cls)).toBeNull(); // reaches the class exactly
+    expect(plausibility(1001, cap - 1000, cls)).toBe('trip_would_pass');
+    expect(plausibility(1, cap, cls)).toBe('trip_would_pass');
+    expect(plausibility(null, cap * 5, cls)).toBeNull();
+    // A 15 kg catch is far from any class.
+    expect(plausibility(15, 0, cls)).toBeNull();
   });
 });
 
@@ -49,16 +51,17 @@ describe.each(CLASSES)('vessel class %i t', (cls) => {
     const fish = fishFor(cls);
     await screen.findByTestId(`fish-${fish}`);
     press(`fish-${fish}`);
-    typeKeys(String(cls));
+    typeKeys(String(cls * 1000));
     expect(screen.queryByTestId('cap-hint')).toBeNull();
-    typeKeys('.1');
+    clearKeys();
+    typeKeys(String(cls * 1000 + 1));
     expect(screen.getByTestId('cap-hint')).toHaveTextContent(sw.capHint.replace('{c}', label));
     expect(screen.getByTestId('save').props.accessibilityState.disabled).toBe(false);
     press('save');
     await screen.findByTestId('confirm-card');
     const trip = (await ctx.repo.getOpenTrip())!;
     const [e] = await ctx.repo.listTripEntries(trip.trip_id);
-    expect(e.quantity).toBe(cls + 0.1);
+    expect(e).toMatchObject({ quantity: cls * 1000 + 1, unit: 'kg' });
     expect(e.species_id).toBe(sid(fish));
   });
 
@@ -68,17 +71,18 @@ describe.each(CLASSES)('vessel class %i t', (cls) => {
     const fish = fishFor(cls);
     await screen.findByTestId(`fish-${fish}`);
     press(`fish-${fish}`);
-    typeKeys(String(cls - 1));
+    typeKeys(String(cls * 1000 - 1000));
     expect(screen.queryByTestId('cap-hint')).toBeNull();
     press('save');
     await screen.findByTestId('confirm-card');
     await logAnother();
-    // The total on the device now is cls - 1: the next 1 t reaches it, 1.5 t passes it.
+    // The total on the device is now 1,000 kg under the class: the next
+    // 1,000 kg reaches it, 1,001 kg passes it.
     press(`fish-${fish}`);
-    typeKeys('1');
+    typeKeys('1000');
     expect(screen.queryByTestId('cap-hint')).toBeNull();
     clearKeys();
-    typeKeys('1.5');
+    typeKeys('1001');
     await waitFor(() => expect(screen.getByTestId('cap-hint')).toHaveTextContent(sw.tripCapHint.replace('{c}', label)));
     press('save');
     await screen.findByTestId('confirm-card');
@@ -99,15 +103,15 @@ describe.each(CLASSES)('vessel class %i t', (cls) => {
   it('the trip warning uses the latest correction, not the original figure', async () => {
     const ctx = await vesselOfClass(cls);
     const trip = (await ctx.repo.getOpenTrip())!;
-    const big = await ctx.repo.logCatch({ speciesId: sid(fishFor(cls)), quantity: cls, gps: null });
-    await ctx.repo.correctCatch({ catchId: big.id, previousCorrectionId: null, quantity: 1 });
-    expect((await ctx.repo.listTripEntries(trip.trip_id))[0].quantity).toBe(1);
+    const big = await ctx.repo.logCatch({ speciesId: sid(fishFor(cls)), quantity: cls * 1000, gps: null });
+    await ctx.repo.correctCatch({ catchId: big.id, previousCorrectionId: null, quantity: 1000 });
+    expect((await ctx.repo.listTripEntries(trip.trip_id))[0].quantity).toBe(1000);
     // Refresh the screens' data: go home and back through the UI.
     press('primary');
     const fish = fishFor(cls);
     await screen.findByTestId(`fish-${fish}`);
     press(`fish-${fish}`);
-    typeKeys('2');
+    typeKeys('2000');
     expect(screen.queryByTestId('cap-hint')).toBeNull();
   });
 });

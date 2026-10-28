@@ -42,18 +42,18 @@ async function oldData(db: SqlDb, deps: ReturnType<typeof testDeps>) {
   await ensureDevice(db, deps.uuid);
   await seedDevReference(db);
   const repo = createRepository(db, deps);
-  const t1 = await repo.startTrip({ crewCount: 3, departureAt: deps.clock.now() });
+  const t1 = await repo.startTrip({ crewDeparted: 3, departureAt: deps.clock.now() });
   deps.tick(60_000);
-  const a = await repo.logCatch({ speciesId: sid('tewa'), quantity: 2.4, gps: { latitude: -2.27, longitude: 40.93, gps_accuracy_m: 8 } });
-  const b = await repo.logCatch({ speciesId: sid('tafi'), quantity: 0.6, gps: null, note: 'wavu' });
+  const a = await repo.logCatch({ speciesId: sid('tewa'), quantity: 2400, gps: { latitude: -2.27, longitude: 40.93, gps_accuracy_m: 8 } });
+  const b = await repo.logCatch({ speciesId: sid('tafi'), quantity: 15, gps: null, note: 'wavu' });
   const dev = (await db.getFirstAsync<{ device_id: string }>('SELECT device_id FROM device_profile', []))!.device_id;
   await db.runAsync(
-    `INSERT INTO catch_corrections (id, device_id, recorded_at, device_clock_skew_ms, catch_id, previous_correction_id, reason, species_id, quantity, unit, hold_code, note)
-     VALUES ('c0000000-0000-4000-8000-000000000001', ?, ?, -1500, ?, NULL, NULL, ?, 2.1, 't', 'A', NULL)`,
+    `INSERT INTO catch_corrections (id, device_id, recorded_at, device_clock_skew_ms, catch_id, previous_correction_id, reason, species_id, species_local_name, quantity, unit, hold_code, note)
+     VALUES ('c0000000-0000-4000-8000-000000000001', ?, ?, -1500, ?, NULL, NULL, ?, 'tewa', 2100, 'kg', 'A', NULL)`,
     [dev, deps.clock.now().toISOString(), a.id, sid('tewa')],
   );
   await db.runAsync("UPDATE sync_state SET state = 'sent' WHERE record_id = ?", [t1.id]);
-  await repo.closeTrip({ tripId: t1.trip_id, arrivalAt: deps.clock.now(), crewCount: 3, landingSiteId: devLandingSite.id, distanceKm: 4 });
+  await repo.closeTrip({ tripId: t1.trip_id, arrivalAt: deps.clock.now(), crewReturned: 3, landingSiteId: devLandingSite.id, distanceKm: 4 });
   await db.runAsync("INSERT INTO preferences (key, value) VALUES ('lang', 'en')", []);
   return { trip: t1, a, b };
 }
@@ -109,12 +109,12 @@ describe('migrations', () => {
 
     // The upgraded store works with the current repository.
     const repo = createRepository(db, deps);
-    expect((await repo.getEntry(b.id))!.plant_weight_t).toBe(from === 2 ? 0.58 : null);
+    expect((await repo.getEntry(b.id))!.plant_weight_kg).toBe(from === 2 ? 580 : null);
     const prefs = await repo.getPreferences();
     expect(prefs.lang).toBe('en');
-    await repo.startTrip({ crewCount: 2, departureAt: deps.clock.now() });
+    await repo.startTrip({ crewDeparted: 2, departureAt: deps.clock.now() });
     const c = await repo.logCatch({ speciesId: sid('nguru'), quantity: 1, gps: null });
-    await repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 1.5 });
+    await repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 15 });
     const q = repo.syncQueue({ send: async (batch) => ({ status: 200, body: { results: batch.records.map((r) => ({ id: String(r.data.id), status: 'inserted' })) } }) });
     await q.runOnce();
     expect(await q.pending()).toHaveLength(0);
