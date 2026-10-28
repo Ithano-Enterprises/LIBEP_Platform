@@ -3,9 +3,13 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { PlaceholderScreen } from './src/screens/PlaceholderScreen';
+import { LogbookProvider, openLogbook } from './src/data';
+import { AppScreens } from './src/screens/AppScreens';
 import { NIGHT, plexFontAssets, plexFonts, systemFonts } from './src/theme/tokens';
 import { PreferencesProvider } from './src/ui/preferences';
+
+// Stable reference so the store opens once.
+const openStore = () => openLogbook();
 
 export default function App() {
   // Fonts ship inside the app bundle, so this works offline.
@@ -23,9 +27,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <PreferencesProvider fonts={fontError ? systemFonts : plexFonts}>
-        <PlaceholderScreen />
-      </PreferencesProvider>
+      <LogbookProvider open={openStore}>
+        <PreferencesProvider fonts={fontError ? systemFonts : plexFonts}>
+          <AppScreens />
+        </PreferencesProvider>
+      </LogbookProvider>
     </SafeAreaProvider>
   );
 }
