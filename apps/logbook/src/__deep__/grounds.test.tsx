@@ -215,8 +215,8 @@ describe('My grounds screen', () => {
     expect(byTrips).toEqual(['spot--227:4093', 'spot--230:4100']);
     press('metric-tonnes');
     expect(spotOrder()).toEqual(['spot--230:4100', 'spot--227:4093']);
-    expect(screen.getByTestId('spot-value--230:4100')).toHaveTextContent(/^9$/);
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent('10 t');
+    expect(screen.getByTestId('spot-value--230:4100')).toHaveTextContent(/^9,000$/);
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent('10,000 kg');
   });
 
   it('filters change the totals: range, species and season through the sheet', async () => {
@@ -229,27 +229,27 @@ describe('My grounds screen', () => {
     mountApp(ctx);
     press(await (async () => (await screen.findByTestId('open-grounds'), 'open-grounds'))());
     await screen.findByTestId('grounds-panel');
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^19\.5 t$/); // default 90 days, 19,500 kg
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^19,500 kg$/); // default 90 days
     expect(screen.getByTestId('grounds-excluded')).toHaveTextContent(sw.excludedN.replace('{n}', '1'));
 
     press('chip-range');
     await screen.findByTestId('flt-sheet');
     press('flt-range-all');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^22\.5 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^22,500 kg$/));
 
     press('chip-range');
     await screen.findByTestId('flt-sheet');
     press('flt-range-30');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^14 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^14,000 kg$/));
 
     press('chip-species');
     await screen.findByTestId('flt-sheet');
     press('flt-range-all');
     press('flt-species-kibua');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^15 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^15,000 kg$/));
     expect(screen.queryByTestId('grounds-excluded')).toBeNull();
 
     // The store's clock runs from 1 Jan: only the oldest trip (tewa 3,000 kg) is in Kaskazi.
@@ -258,7 +258,7 @@ describe('My grounds screen', () => {
     press('flt-species-all');
     press('flt-season-kaskazi');
     press('flt-apply');
-    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^3 t$/));
+    await waitFor(() => expect(screen.getByTestId('grounds-total')).toHaveTextContent(/^3,000 kg$/));
   });
 
   it('the filter sheet shows a live count before applying, and closing it changes nothing', async () => {

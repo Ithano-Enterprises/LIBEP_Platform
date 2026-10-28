@@ -54,6 +54,7 @@ export function mountApp(
     locator?: { getFix(): Promise<Gps | null> };
     lang?: Lang;
     mode?: Mode;
+    unit?: 't' | 'kg';
     repo?: Repository;
   } = {},
 ) {
@@ -68,7 +69,7 @@ export function mountApp(
   const ui = () => (
     <SafeAreaProvider initialMetrics={metrics}>
       <LogbookProvider open={open}>
-        <PreferencesProvider initialLang={opts.lang} initialMode={opts.mode}>
+        <PreferencesProvider initialLang={opts.lang} initialMode={opts.mode} initialUnit={opts.unit}>
           <AppScreens now={now} locator={locator} />
         </PreferencesProvider>
       </LogbookProvider>

@@ -82,7 +82,7 @@ describe('1a normal day', () => {
     press('view-list');
     await screen.findByTestId('trip-total');
     // 2400 + 1200 + 18000 + 15 + 3000 + 800 = 25,415 kg: the 15 kg is not lost.
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('25.415 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('25,415 kg'));
     expect(await count(ctx.db, 'catches', 'trip_id = ?', [trip.trip_id])).toBe(6);
 
     // Correction 18,000 kg → 1,800 kg.
@@ -94,16 +94,16 @@ describe('1a normal day', () => {
     clearKeys();
     typeKeys('1800');
     press('correct-save');
-    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent(esc('1.8')));
+    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent(esc('1,800')));
     press('back');
     await screen.findByTestId('trip-total');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('9.215 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('9,215 kg'));
 
     // Close.
     ctx.deps.tick(2 * 60 * MIN);
     press('close-trip');
     await screen.findByTestId('close-total');
-    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('9.215'));
+    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('9,215'));
     press('submit');
     await screen.findByTestId('read-only');
     const close = (await ctx.repo.getTripClose(trip.trip_id))!;
@@ -142,7 +142,7 @@ describe('1a normal day', () => {
     press(`prev-trip-${trip.trip_id}`);
     press(`prev-entry-${tewa.id}`);
     await screen.findByTestId('detail-species');
-    expect(screen.getByTestId('detail-actual')).toHaveTextContent(esc('2.2'));
+    expect(screen.getByTestId('detail-actual')).toHaveTextContent(esc('2,200'));
     expect(screen.queryByTestId('correct')).toBeNull();
     expect(screen.getByTestId('corr-closed')).toBeTruthy();
   });
@@ -279,7 +279,7 @@ describe('1d app killed mid-trip', () => {
       await logCatchUI(fish, t);
       await restart();
     }
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('6.6 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('6,600 kg'));
 
     // Killed with the sheet open and a figure typed: nothing saved.
     press('primary');
@@ -297,9 +297,9 @@ describe('1d app killed mid-trip', () => {
     clearKeys();
     typeKeys('2100');
     press('correct-save');
-    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent(esc('2.1')));
+    await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent(esc('2,100')));
     await restart();
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('7.5 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('7,500 kg'));
 
     // Close, then restart.
     press('close-trip');
@@ -372,10 +372,10 @@ describe('1e offline the whole trip, sync next morning, second trip same day', (
     expect(trip2.trip_id).not.toBe(trip1.trip_id);
     await logCatchUI('kibua', '4000');
     // Trip 2's total does not include trip 1.
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('4 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('4,000 kg'));
     press('close-trip');
     await screen.findByTestId('close-total');
-    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('4'));
+    expect(screen.getByTestId('close-total')).toHaveTextContent(esc('4,000'));
     press('submit');
     await screen.findByTestId('read-only');
     await drain(q);
@@ -396,25 +396,25 @@ describe('1f very long trip', () => {
       kg += q;
       await ctx.repo.logCatch({ speciesId: sid(menu[i % menu.length]), quantity: q, gps: { latitude: -2.2 - (i % 9) / 100, longitude: 41 + (i % 7) / 100, gps_accuracy_m: 10 } });
     }
-    const total = formatQuantity(kg);
+    const total = formatQuantity(kg, 'kg');
 
     const t0 = Date.now();
     mountApp(ctx);
     await screen.findByTestId('trip-total');
     const homeMs = Date.now() - t0;
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc(`${total} t`));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc(`${total} kg`));
     expect(screen.getAllByTestId(/^entry-/)).toHaveLength(200);
     expect(homeMs).toBeLessThan(8000);
 
     // One more through the UI on top of 200.
     await logCatchUI('tewa', '15');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc(`${formatQuantity(kg + 15)} t`));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc(`${formatQuantity(kg + 15, 'kg')} kg`));
 
     const t1 = Date.now();
     press('close-trip');
     await screen.findByTestId('close-total');
     expect(Date.now() - t1).toBeLessThan(8000);
-    expect(screen.getByTestId('close-total')).toHaveTextContent(esc(formatQuantity(kg + 15)));
+    expect(screen.getByTestId('close-total')).toHaveTextContent(esc(formatQuantity(kg + 15, 'kg')));
     // Top 3 by type, then "Zaidi (+4)".
     expect(screen.getAllByTestId(/^type-/)).toHaveLength(3);
     expect(screen.getByTestId('types-toggle')).toHaveTextContent(`${sw.more} (+4)`);
@@ -480,7 +480,7 @@ describe('1g languages and modes all the way through', () => {
     press('toggle-lang');
     press('toggle-mode');
     await screen.findByText(strings.en.trip);
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('2.5 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('2,500 kg'));
     expect(within(screen.getByTestId('screen')).getByText('tewa')).toBeTruthy();
     expect(await ledgerSnapshot(ctx.db)).toEqual(before);
     fireEvent.press(screen.getByTestId('toggle-lang'));
@@ -507,7 +507,7 @@ describe('1h whole kg, "Other" and a crew mismatch', () => {
     await screen.findByTestId('confirm-card');
     press('view-list');
     await screen.findByTestId('trip-total');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('0.055 t'));
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('55 kg'));
     expect(screen.getByText('Kaa wa mawe')).toBeTruthy();
 
     // 5 left, 4 came back: confirm, give a reason, close.
@@ -540,5 +540,21 @@ describe('1h whole kg, "Other" and a crew mismatch', () => {
       total_quantity: '55',
       unit: 'kg',
     });
+  });
+});
+
+describe('1i display unit preference', () => {
+  it('kg by default; with t chosen, every screen shows t from the same stored kg, and 15 kg is never 0.0 t', async () => {
+    const ctx = await seeded();
+    await ctx.repo.setPreference('unit', 't');
+    mountApp(ctx);
+    await screen.findByText(sw.startToLog);
+    await startTripUI();
+    await logCatchUI('tewa', '15');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent(esc('0.015 t'));
+    press('close-trip');
+    expect(await screen.findByTestId('close-total')).toHaveTextContent(esc('0.015'));
+    const [e] = await ctx.repo.listTripEntries((await ctx.repo.getOpenTrip())!.trip_id);
+    expect(e).toMatchObject({ quantity: 15, unit: 'kg' }); // stored in kg whatever the view
   });
 });
