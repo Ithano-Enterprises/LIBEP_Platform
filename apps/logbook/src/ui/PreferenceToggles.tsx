@@ -25,6 +25,6 @@ export function PreferenceToggles() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 8 },
+  row: { flexDirection: 'row', gap: 4 },
   code: { fontSize: 14 },
 });
