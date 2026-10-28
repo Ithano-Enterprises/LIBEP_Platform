@@ -9,7 +9,7 @@ import { formatQuantity } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { buildGrounds, type Filters, type Range, type Season } from './model';
 
@@ -37,6 +37,7 @@ export function FiltersSheet({
   const { lang } = usePreferences();
   const insets = useSafeAreaInsets();
   const f = useFontSet();
+  const unit = useUnit();
   const [draft, setDraft] = useState<Filters>(value);
   const result = buildGrounds(catches, { now, ...draft });
   const toggleSpecies = (id: string) =>
@@ -148,7 +149,7 @@ export function FiltersSheet({
             <Text testID="flt-count" style={[styles.count, f.mono, { color: c.onAccent }]}>
               {t.spotsN.replace('{n}', String(result.spots.length))} ·{' '}
               {draft.species.length
-                ? `${formatQuantity(result.totalKg)} t`
+                ? `${formatQuantity(result.totalKg, unit)} ${unit}`
                 : t.tripsN.replace('{n}', String(result.tripCount)).toLowerCase()}
             </Text>
             {draft.species.length ? <TierChip tier="S" /> : null}

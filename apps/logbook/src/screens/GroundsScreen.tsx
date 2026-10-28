@@ -101,7 +101,6 @@ function Shell({
   const wide = useIsTablet();
   const f = useFontSet();
   return (
-  const unit = useUnit();
     <View testID="screen" style={[styles.screen, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       <StatusBar style={theme === 'night' ? 'light' : 'dark'} />
       <View style={[styles.header, wide && styles.headerWide]}>
@@ -150,6 +149,7 @@ function GroundsView({
   const wide = useIsTablet();
   const { width: windowWidth } = useWindowDimensions();
   const f = useFontSet();
+  const unit = useUnit();
   const [focus] = useState(() => initialFocus(data, now(), focusCatchId));
   const [metric, setMetric] = useState<Metric>('trips');
   const [filters, setFilters] = useState<Filters>(focus.filters);

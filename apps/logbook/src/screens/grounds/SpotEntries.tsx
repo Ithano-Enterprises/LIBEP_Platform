@@ -5,7 +5,7 @@ import { radius } from '../../theme/tokens';
 import { formatDay, formatQuantity, formatTime } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { stateKey } from '../tripHome/model';
 import { stateStyle } from '../tripHome/stateStyle';
@@ -23,6 +23,7 @@ export function SpotEntries({
   const t = useStrings();
   const { lang } = usePreferences();
   const f = useFontSet();
+  const unit = useUnit();
   return (
     <View testID="spot-entries" style={styles.wrap}>
       <View style={styles.inline}>
@@ -46,8 +47,8 @@ export function SpotEntries({
                 ) : null}
               </View>
               <View style={styles.inline}>
-                <Text style={[styles.value, f.monoSemiBold, { color: c.text }]}>{formatQuantity(e.quantity)}</Text>
-                <Text style={[styles.meta, f.mono, { color: c.dim }]}>t</Text>
+                <Text style={[styles.value, f.monoSemiBold, { color: c.text }]}>{formatQuantity(e.quantity, unit)}</Text>
+                <Text style={[styles.meta, f.mono, { color: c.dim }]}>{unit}</Text>
                 <TierChip tier="S" />
               </View>
             </View>

@@ -6,7 +6,7 @@ import { formatQuantity, formatTime } from '../../ui/format';
 import { HoldBox } from '../../ui/HoldBox';
 import { Icon } from '../../ui/Icon';
 import { PlaceholderTag } from '../../ui/PlaceholderTag';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { daysAgo, formatCoord, formatWindow, type Spot } from './model';
 
@@ -33,6 +33,7 @@ export function SpotDetail({
   const t = useStrings();
   const { lang } = usePreferences();
   const f = useFontSet();
+  const unit = useUnit();
   const ago = daysAgo(spot.lastAt, now);
   const tile = (label: string, value: React.ReactNode, sub: React.ReactNode, id: string) => (
     <View testID={id} style={[styles.tile, { backgroundColor: wide ? c.surface : c.raised }]}>
@@ -44,7 +45,7 @@ export function SpotDetail({
   const fig = (v: string) => (
     <View style={styles.fig}>
       <Text style={[styles.figValue, f.monoSemiBold, { color: c.text }]}>{v}</Text>
-      <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
+      <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
     </View>
   );
 
@@ -60,10 +61,10 @@ export function SpotDetail({
           <Text style={[styles.tileSub, f.sans, { color: c.dim }]}>{t.tripsHere}</Text>,
           'tile-trips',
         )}
-        {tile(t.totalL, fig(formatQuantity(spot.kg)), <TierChip tier="S" size={16} />, 'tile-total')}
+        {tile(t.totalL, fig(formatQuantity(spot.kg, unit)), <TierChip tier="S" size={16} />, 'tile-total')}
         {tile(
           t.avgL,
-          fig(formatQuantity(spot.avg)),
+          fig(formatQuantity(spot.avg, unit)),
           <View style={styles.inline}>
             <TierChip tier="S" size={16} />
             <Text style={[styles.tileSub, f.sans, { color: c.dim }]}>{t.perTrip}</Text>
@@ -81,7 +82,7 @@ export function SpotDetail({
         <View testID="spot-plant" style={styles.inline}>
           <Icon name="check" size={18} strokeWidth={2} color={c.ok} />
           <Text style={[styles.plant, f.sansMedium, { color: c.ok }]}>{t.plantPre}</Text>
-          <Text style={[styles.plantValue, f.monoSemiBold, { color: c.ok }]}>{formatQuantity(spot.plantKg)} t</Text>
+          <Text style={[styles.plantValue, f.monoSemiBold, { color: c.ok }]}>{formatQuantity(spot.plantKg, unit)} {unit}</Text>
           <TierChip tier="W" />
           <Text style={[styles.plant, f.sansMedium, { color: c.ok }]}>
             {t.plantPost.replace('{a}', String(spot.plantTrips)).replace('{b}', String(spot.trips))}
@@ -108,8 +109,8 @@ export function SpotDetail({
                 ) : null}
               </View>
               <View style={styles.inline}>
-                <Text style={[styles.barValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(s.kg)}</Text>
-                <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
+                <Text style={[styles.barValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(s.kg, unit)}</Text>
+                <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
                 <TierChip tier="S" size={16} />
               </View>
             </View>

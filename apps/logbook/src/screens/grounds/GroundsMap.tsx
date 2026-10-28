@@ -115,7 +115,7 @@ export function GroundsMap({
                   testID={`cell-${s.key}`}
                   accessibilityRole="button"
                   accessibilityState={{ selected: sel }}
-                  accessibilityLabel={`${label(metricValue(s, metric))} ${metric === 'trips' ? t.tripsWord : 't'}`}
+                  accessibilityLabel={`${label(metricValue(s, metric))} ${metric === 'trips' ? t.tripsWord : unit}`}
                   onPress={() => onSelect(s.key)}
                   style={[styles.hit, { left: px - hit / 2, top: py - hit / 2, width: hit, height: hit, zIndex: sel ? 4 : 3 }]}
                 >
@@ -175,7 +175,7 @@ export function GroundsMap({
             ))}
           </View>
           <Text style={[styles.legendRange, f.monoMedium, { color: c.text }]}>
-            {label(min)} → {label(max)} {metric === 'trips' ? t.tripsWord : 't'}
+            {label(min)} → {label(max)} {metric === 'trips' ? t.tripsWord : unit}
           </Text>
         </View>
       ) : null}
