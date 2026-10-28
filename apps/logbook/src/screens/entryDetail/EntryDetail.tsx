@@ -36,7 +36,7 @@ export function EntryDetail({
   const f = useFontSet();
   const k = stateKey[entry.sync_state];
   const s = stateStyle(k, c);
-  const w = entry.plant_weight_t;
+  const w = entry.plant_weight_kg;
   const corrected = entry.correction_count > 0;
   const gps =
     entry.latitude == null || entry.longitude == null

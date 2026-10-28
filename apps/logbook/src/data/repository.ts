@@ -373,10 +373,11 @@ export function createRepository(db: SqlDb, deps: RepoDeps) {
     return record;
   }
 
-  // Effective catch + sync state + plant weight (converted to t for display).
+  // Effective catch + sync state + plant weight in kg (finer than whole kg if
+  // the plant's scale is; converted when the feed sends t).
   const ENTRY_SELECT = `
     SELECT e.*, coalesce(s.state, 'on_device') AS sync_state,
-           CASE p.unit WHEN 'kg' THEN p.weight / 1000.0 ELSE p.weight END AS plant_weight_t,
+           CASE p.unit WHEN 't' THEN p.weight * 1000.0 ELSE p.weight END AS plant_weight_kg,
            p.weighed_at AS plant_weighed_at
       FROM v_catches_effective e
       LEFT JOIN sync_state s ON s.record_id = e.id

@@ -58,13 +58,14 @@ export function EntryDetailScreen({ catchId, onDone }: { catchId: string; onDone
   }
   const gloss = menu.find((m) => m.id === entry.species_id)?.english_gloss ?? null;
 
-  const onSave = async (input: { speciesId: string; quantity: number }) => {
+  const onSave = async (input: { speciesId: string | null; quantity: number }) => {
     setSaving(true);
     setSaveError(null);
     try {
       await correct({
         previousCorrectionId: entry.head_correction_id,
-        speciesId: input.speciesId === entry.species_id ? undefined : input.speciesId,
+        // Unchanged, or an "Other" catch left on its typed name: keep the species.
+        speciesId: input.speciesId === entry.species_id || input.speciesId === null ? undefined : input.speciesId,
         quantity: input.quantity,
       });
       setCorrecting(false);

@@ -109,7 +109,7 @@ export async function seedDevFixtures(
     await repo.applyPlantWeighing({
       id: deps.uuid(),
       trip_id: prev.trip_id,
-      species_id: c.species_id,
+      species_id: speciesId(devPreviousTripEntries[i].species),
       catch_id: c.id,
       weight: e.plant,
       unit: 'kg',

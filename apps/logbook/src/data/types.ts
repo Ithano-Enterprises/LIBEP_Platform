@@ -102,8 +102,8 @@ export type Entry = CatchRecord & {
   head_correction_id: string | null;
   correction_count: number;
   sync_state: SyncStateValue;
-  /** Plant weight (W) in t when the plant weighed this catch. Never mixed with S. */
-  plant_weight_t: number | null;
+  /** Plant weight (W) in kg when the plant weighed this catch. Never mixed with S. */
+  plant_weight_kg: number | null;
   plant_weighed_at: string | null;
 };
 

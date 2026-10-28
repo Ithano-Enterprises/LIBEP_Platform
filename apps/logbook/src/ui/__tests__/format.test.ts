@@ -16,10 +16,12 @@ describe('format', () => {
     expect(sumKg([])).toBe(0);
   });
 
-  it('signs a difference in t without float drift', () => {
-    expect(formatSigned(6.1 - 6.4)).toBe('−0.3');
-    expect(formatSigned(2.4 - 2.2)).toBe('+0.2');
-    expect(formatSigned(0)).toBe('±0.0');
+  it('signs a kg difference, shown in t or kg', () => {
+    expect(formatSigned(6100 - 6400)).toBe('−0.3');
+    expect(formatSigned(2400 - 2200)).toBe('+0.2');
+    expect(formatSigned(0)).toBe('±0');
+    expect(formatSigned(20 - 15)).toBe('+0.005');
+    expect(formatSigned(-300, 'kg')).toBe('−300');
   });
 
   it('names today for the start trip header', () => {

@@ -16,11 +16,14 @@ export function sumKg(values: number[]): number {
   return Math.round(values.reduce((a, v) => a + v * 1000, 0)) / 1000;
 }
 
-/** Signed difference in t, e.g. "+0.2", "−0.3", "±0.0" (design style). */
-export function formatSigned(tonnes: number): string {
-  const d = Math.round(tonnes * 10) / 10;
+/**
+ * Signed difference of two kg figures, in the chosen unit (design style):
+ * e.g. "+0.2", "−0.3", "±0" in t, or "+200", "−300" in kg.
+ */
+export function formatSigned(kg: number, unit: 't' | 'kg' = 't'): string {
+  const d = Math.round(kg);
   const sign = d > 0 ? '+' : d < 0 ? '−' : '±';
-  return `${sign}${Math.abs(d).toFixed(1)}`;
+  return `${sign}${formatQuantity(Math.abs(d), unit)}`;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');

@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Entry, MenuItem } from '../../data/types';
 import { radius } from '../../theme/tokens';
-import { formatQuantity } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
 import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
@@ -27,20 +26,22 @@ export function CorrectionSheet({
   saving: boolean;
   error: string | null;
   onClose: () => void;
-  onSave: (input: { speciesId: string; quantity: number }) => void;
+  /** speciesId null: an "Other" catch left on its typed name. */
+  onSave: (input: { speciesId: string | null; quantity: number }) => void;
 }) {
   const c = useTheme();
   const t = useStrings();
   const insets = useSafeAreaInsets();
-  const [speciesId, setSpeciesId] = useState(entry.species_id);
+  const [speciesId, setSpeciesId] = useState<string | null>(entry.species_id);
   const f = useFontSet();
-  const [value, setValue] = useState(formatQuantity(entry.quantity));
+  // Whole kg, as the keypad takes it.
+  const [value, setValue] = useState(String(entry.quantity));
   // The old figure starts selected, so typing replaces it rather than
-  // appending (backspace twice then 1.8 on "18.0" must give 1.8, not 181.8).
+  // appending (typing 20 on "15" must give 20, not 1520).
   const [selected, setSelected] = useState(true);
   const quantity = parseEntry(value);
   const changed =
-    quantity != null && (speciesId !== entry.species_id || Math.round(quantity * 10) !== Math.round(entry.quantity * 10));
+    quantity != null && (speciesId !== entry.species_id || quantity !== entry.quantity);
   const valid = changed && !saving;
 
   return (
@@ -75,7 +76,7 @@ export function CorrectionSheet({
               >
                 {value || '0'}
               </Text>
-              <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
+              <Text style={[styles.unit, f.mono, { color: c.dim }]}>kg</Text>
               <TierChip tier="S" size={22} />
             </View>
           </View>

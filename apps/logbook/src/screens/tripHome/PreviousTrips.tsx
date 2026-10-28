@@ -100,7 +100,7 @@ function TripCard({
           </Text>
           <Text style={[styles.meta, f.mono, { color: c.dim }]} numberOfLines={1}>
             {trip.entries.length} {t.entriesWord}
-            {trip.entries.some((e) => e.plant_weight_t != null) ? ` · ${t.weighedShort}` : ''}
+            {trip.entries.some((e) => e.plant_weight_kg != null) ? ` · ${t.weighedShort}` : ''}
           </Text>
         </View>
         <View style={styles.figure}>
@@ -132,10 +132,10 @@ function PrevEntry({
   const c = useTheme();
   const t = useStrings();
   const f = useFontSet();
-  const w = entry.plant_weight_t;
+  const w = entry.plant_weight_kg;
   const meta =
     w != null
-      ? `${formatTime(entry.recorded_at)} · ${t.est} ${formatQuantity(entry.quantity, unit)} · ${formatSigned(w - entry.quantity)}`
+      ? `${formatTime(entry.recorded_at)} · ${t.est} ${formatQuantity(entry.quantity, unit)} · ${formatSigned(w - entry.quantity, unit)}`
       : formatTime(entry.recorded_at);
   return (
     <Pressable

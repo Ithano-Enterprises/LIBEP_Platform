@@ -26,7 +26,7 @@ export function EntryRow({
   const f = useFontSet();
   const k = stateKey[entry.sync_state];
   const s = stateStyle(k, c);
-  const weighed = entry.plant_weight_t != null;
+  const weighed = entry.plant_weight_kg != null;
   const note = weighed
     ? `· ${t.est} ${formatQuantity(entry.quantity, unit)}`
     : entry.correction_count > 0
@@ -52,7 +52,7 @@ export function EntryRow({
           </View>
           <View style={styles.figure}>
             <Text style={[styles.weight, f.monoSemiBold, { color: c.text }]}>
-              {formatQuantity(weighed ? entry.plant_weight_t! : entry.quantity, unit)}
+              {formatQuantity(weighed ? entry.plant_weight_kg! : entry.quantity, unit)}
             </Text>
             <Text style={[styles.unit, f.mono, { color: c.dim }]}>{unit}</Text>
             <View style={styles.tiers}>

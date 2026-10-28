@@ -34,10 +34,10 @@ function renderDetail(repo: Repository, catchId: string, lang: Lang = 'sw') {
 async function openEntry(lang: Lang = 'sw', state?: string) {
   const ctx = await openTestRepo();
   await seedDevReference(ctx.db);
-  await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+  await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
   const c = await ctx.repo.logCatch({
     speciesId: speciesId('tewa'),
-    quantity: 2.4,
+    quantity: 2400,
     gps: { latitude: -2.27, longitude: 40.93, gps_accuracy_m: 15 },
   });
   if (state) await ctx.db.runAsync('UPDATE sync_state SET state = ? WHERE record_id = ?', [state, c.id]);
@@ -66,8 +66,8 @@ describe('EntryDetailScreen', () => {
     const { repo, c } = await openEntry();
     fireEvent.press(screen.getByTestId('correct'));
     expect(screen.getByTestId('correct-save')).toBeDisabled(); // nothing changed yet
-    for (const k of ['2', '.', '6']) fireEvent.press(screen.getByTestId(`key-${k}`));
-    expect(screen.getByTestId('correct-value')).toHaveTextContent('2.6');
+    for (const k of ['2', '6', '0', '0']) fireEvent.press(screen.getByTestId(`key-${k}`));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent('2600');
     fireEvent.press(screen.getByTestId('fish-kibua'));
     fireEvent.press(screen.getByTestId('correct-save'));
 
@@ -85,33 +85,34 @@ describe('EntryDetailScreen', () => {
     expect(await repo.getSyncState(h.corrections[0].id)).toBe('on_device');
     // Totals use the latest revision.
     const [e] = await repo.listTripEntries(c.trip_id);
-    expect(e.quantity).toBe(2.6);
+    expect(e).toMatchObject({ quantity: 2600, unit: 'kg' });
 
     // A second correction links to the first.
     fireEvent.press(screen.getByTestId('correct'));
-    fireEvent.press(screen.getByTestId('quick-1'));
+    fireEvent.press(screen.getByTestId('quick-1000'));
     fireEvent.press(screen.getByTestId('correct-save'));
     await waitFor(() => expect(screen.getByTestId('detail-estimate')).toHaveTextContent('3.6'));
     const h2 = (await repo.getCatchHistory(c.id))!;
     expect(h2.corrections[1].previous_correction_id).toBe(h2.corrections[0].id);
   });
 
-  it('the old figure starts selected: backspace twice then 1.8 on 18.0 gives 1.8, not 181.8', async () => {
+  it('the old figure starts selected: typing 20 on 15 kg gives 20, not 1520', async () => {
     const ctx = await openTestRepo();
     await seedDevReference(ctx.db);
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
-    const c = await ctx.repo.logCatch({ speciesId: speciesId('tewa'), quantity: 18, gps: null });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const c = await ctx.repo.logCatch({ speciesId: speciesId('tewa'), quantity: 15, gps: null });
     renderDetail(ctx.repo, c.id);
     await screen.findByTestId('detail-species');
+    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('0.015');
     fireEvent.press(screen.getByTestId('correct'));
-    expect(screen.getByTestId('correct-value')).toHaveTextContent('18.0');
+    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^15$/);
     expect(screen.getByTestId('correct-value').props.accessibilityState).toEqual({ selected: true });
-    for (const k of ['back', 'back', '1', '.', '8']) fireEvent.press(screen.getByTestId(`key-${k}`));
-    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^1\.8$/);
+    for (const k of ['2', '0']) fireEvent.press(screen.getByTestId(`key-${k}`));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^20$/);
     fireEvent.press(screen.getByTestId('correct-save'));
     await waitFor(() => expect(screen.queryByTestId('correct-sheet')).toBeNull());
     const [e] = await ctx.repo.listTripEntries(c.trip_id);
-    expect(e.quantity).toBe(1.8);
+    expect(e).toMatchObject({ quantity: 20, unit: 'kg' });
   });
 
   it('typing a digit first replaces the old figure; a quick key adds to it', async () => {
@@ -123,8 +124,26 @@ describe('EntryDetailScreen', () => {
     expect(screen.getByTestId('correct-scrim').props.accessibilityRole).toBe('button');
     fireEvent.press(screen.getByTestId('correct-scrim'));
     fireEvent.press(screen.getByTestId('correct'));
-    fireEvent.press(screen.getByTestId('quick-0.5'));
-    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^2\.9$/);
+    fireEvent.press(screen.getByTestId('quick-500'));
+    expect(screen.getByTestId('correct-value')).toHaveTextContent(/^2900$/);
+  });
+
+  it('an "Other" catch shows its name as typed; correcting the quantity keeps it', async () => {
+    const ctx = await openTestRepo();
+    await seedDevReference(ctx.db);
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
+    const c = await ctx.repo.logCatch({ speciesId: null, speciesLocalName: 'Pweza Mdogo', quantity: 15, gps: null });
+    renderDetail(ctx.repo, c.id);
+    await screen.findByTestId('detail-species');
+    expect(screen.getByTestId('detail-species')).toHaveTextContent('Pweza Mdogo');
+    fireEvent.press(screen.getByTestId('correct'));
+    for (const k of ['2', '0']) fireEvent.press(screen.getByTestId(`key-${k}`));
+    fireEvent.press(screen.getByTestId('correct-save'));
+    await waitFor(() => expect(screen.queryByTestId('correct-sheet')).toBeNull());
+    expect(await screen.findByTestId('linked-1')).toHaveTextContent(/0\.02/);
+    expect(screen.getByTestId('detail-species')).toHaveTextContent('Pweza Mdogo');
+    const h = (await ctx.repo.getCatchHistory(c.id))!;
+    expect(h.corrections[0]).toMatchObject({ species_id: null, species_local_name: 'Pweza Mdogo', quantity: 20 });
   });
 
   it('a weighed entry shows W and the difference, and corrections are closed', async () => {
@@ -135,8 +154,9 @@ describe('EntryDetailScreen', () => {
     const fx = devPreviousTripEntries[devPreviousTripEntries.length - 1];
     renderDetail(ctx.repo, e.id, 'en');
     await screen.findByTestId('detail-species');
-    expect(screen.getByTestId('detail-estimate')).toHaveTextContent(fx.t.toFixed(1));
-    expect(screen.getByTestId('detail-actual')).toHaveTextContent(fx.plant.toFixed(1));
+    expect(fx).toMatchObject({ kg: 6400, plant: 6100 });
+    expect(screen.getByTestId('detail-estimate')).toHaveTextContent('6.4');
+    expect(screen.getByTestId('detail-actual')).toHaveTextContent('6.1');
     expect(screen.getByTestId('detail-diff')).toHaveTextContent('−0.3');
     expect(screen.getByText(/weighed at plant$/)).toBeTruthy();
     expect(screen.getByText('Weighed at plant. Corrections closed.')).toBeTruthy();
