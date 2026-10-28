@@ -6,7 +6,7 @@ import { dayNames, monthNames, type Lang } from '../i18n/strings';
  * A quantity stored in kg, shown in the chosen unit: whole kg, or t with up
  * to 3 decimals and no trailing zeros (15 kg -> 0.015 t, 2400 kg -> 2.4 t).
  */
-export function formatQuantity(kg: number, unit: 't' | 'kg' = 't'): string {
+export function formatQuantity(kg: number, unit: 't' | 'kg'): string {
   if (unit === 'kg') return Math.round(kg).toLocaleString('en-US');
   return (Math.round(kg) / 1000).toFixed(3).replace(/\.?0+$/, '');
 }

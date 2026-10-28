@@ -5,14 +5,15 @@ import type { ClosedTrip, Entry } from '../../data/types';
 import { radius, touchTarget } from '../../theme/tokens';
 import { formatQuantity, formatTime, formatTripDate, sumKg } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { HoldBox } from './EntryRow';
 import { tripState } from './model';
 import { stateStyle } from './stateStyle';
 
 // Collapsible list of closed trips, each expandable to its entries.
-export function PreviousTrips({ trips, now, unit = 't' }: { trips: ClosedTrip[]; now: Date; unit?: 't' | 'kg' }) {
+export function PreviousTrips({ trips, now }: { trips: ClosedTrip[]; now: Date }) {
+  const unit = useUnit();
   const c = useTheme();
   const t = useStrings();
   const [open, setOpen] = useState(false);

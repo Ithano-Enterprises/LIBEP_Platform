@@ -16,12 +16,12 @@ const entry = {
 } as Entry;
 
 describe('EntryRow', () => {
-  it('shows a 15 kg catch from the stored kg, in t or kg', () => {
-    renderWithProviders(<EntryRow entry={entry} unit="t" />);
+  it('shows a 15 kg catch in the preferred unit: kg by default, or t', () => {
+    renderWithProviders(<EntryRow entry={entry} />, { unit: 't' });
     expect(screen.getByText('0.015')).toBeTruthy();
     expect(screen.getByText('t')).toBeTruthy();
     screen.unmount();
-    renderWithProviders(<EntryRow entry={entry} unit="kg" />);
+    renderWithProviders(<EntryRow entry={entry} />);
     expect(screen.getByText('15')).toBeTruthy();
     expect(screen.getByText('kg')).toBeTruthy();
   });

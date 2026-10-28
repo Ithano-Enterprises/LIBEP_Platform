@@ -4,14 +4,15 @@ import type { Entry } from '../../data/types';
 import { radius } from '../../theme/tokens';
 import { formatQuantity, formatTime } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
-import { useFontSet, useStrings, useTheme } from '../../ui/preferences';
+import { useFontSet, useStrings, useTheme, useUnit } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
 import { stateKey } from './model';
 import { stateStyle } from './stateStyle';
 
 // One catch entry in the trip list (72dp). Opening the entry detail comes
 // with the entry detail slice.
-export function EntryRow({ entry, unit = 't' }: { entry: Entry; unit?: 't' | 'kg' }) {
+export function EntryRow({ entry }: { entry: Entry }) {
+  const unit = useUnit();
   const c = useTheme();
   const t = useStrings();
   const f = useFontSet();

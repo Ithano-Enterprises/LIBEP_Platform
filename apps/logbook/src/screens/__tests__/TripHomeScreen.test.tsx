@@ -37,9 +37,10 @@ function renderHome(repo: Repository, now: Date) {
   );
 }
 
-async function withFixtures() {
+async function withFixtures(unit?: 't' | 'kg') {
   const ctx = await openTestRepo();
   await seedDevFixtures(ctx.db, ctx.deps);
+  if (unit) await ctx.repo.setPreference('unit', unit);
   renderHome(ctx.repo, ctx.deps.clock.now());
   await screen.findByText('Baraka');
   return ctx;
@@ -63,15 +64,24 @@ describe('TripHomeScreen', () => {
     expect(screen.getByText('Mokowe')).toBeTruthy();
   });
 
-  it('shows the open trip line with entry count and total in t', async () => {
+  it('shows the open trip line with entry count and total in kg by default', async () => {
     const { repo } = await withFixtures();
     const trip = (await repo.getOpenTrip())!;
     const n = devOpenTripEntries.length;
     expect(screen.getByText(`Ilianza ${formatTime(trip.departure_at)} · ${n} maingizo ·`)).toBeTruthy();
     // Fixture entries add up to 17,000 kg.
     expect(sumKg(devOpenTripEntries.map((e) => e.kg))).toBe(17000);
-    expect(screen.getByTestId('trip-total')).toHaveTextContent('17 t');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17,000 kg');
+    const tewa = devOpenTripEntries[devOpenTripEntries.length - 1];
+    expect(screen.getAllByText('2,400').length).toBeGreaterThan(0);
+    expect(tewa.kg).toBe(2400);
     expect(screen.getAllByTestId(/^entry-/)).toHaveLength(n);
+  });
+
+  it('follows the stored unit preference: t when the captain chose t', async () => {
+    await withFixtures('t');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17 t');
+    expect(screen.getAllByText('2.4').length).toBeGreaterThan(0);
   });
 
   it('filters entries by state, with counts', async () => {

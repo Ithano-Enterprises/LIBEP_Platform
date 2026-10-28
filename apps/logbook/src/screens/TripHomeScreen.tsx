@@ -7,7 +7,7 @@ import type { StateKey } from '../i18n/strings';
 import { radius, touchTarget } from '../theme/tokens';
 import { formatQuantity, formatTime, sumKg } from '../ui/format';
 import { Icon } from '../ui/Icon';
-import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
+import { useFontSet, usePreferences, useStrings, useTheme, useUnit } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
 import { EntryRow } from './tripHome/EntryRow';
 import { FilterRow } from './tripHome/FilterRow';
@@ -29,7 +29,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
   const f = useFontSet();
   const [filter, setFilter] = useState<StateKey | null>(null);
   const [noticesOff, setNoticesOff] = useState(false);
-  const unit = 't' as const;
+  const unit = useUnit();
 
   const shell = (children: ReactNode) => (
     <View testID="screen" style={[styles.screen, { backgroundColor: c.bg, paddingTop: insets.top }]}>
@@ -94,7 +94,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {showNotices ? <NoticesCard onDismiss={() => setNoticesOff(true)} /> : null}
         {visible.map((e) => (
-          <EntryRow key={e.id} entry={e} unit={unit} />
+          <EntryRow key={e.id} entry={e} />
         ))}
         {visible.length === 0 ? (
           <View testID="empty" style={styles.empty}>
@@ -103,7 +103,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
             {!openTrip ? <Text style={[styles.emptyBody, f.sans, { color: c.dim }]}>{t.startToLog}</Text> : null}
           </View>
         ) : null}
-        <PreviousTrips trips={closedTrips} now={now()} unit={unit} />
+        <PreviousTrips trips={closedTrips} now={now()} />
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
