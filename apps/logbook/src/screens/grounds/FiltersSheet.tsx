@@ -148,7 +148,7 @@ export function FiltersSheet({
             <Text testID="flt-count" style={[styles.count, f.mono, { color: c.onAccent }]}>
               {t.spotsN.replace('{n}', String(result.spots.length))} ·{' '}
               {draft.species.length
-                ? `${formatQuantity(result.totalT)} t`
+                ? `${formatQuantity(result.totalKg)} t`
                 : t.tripsN.replace('{n}', String(result.tripCount)).toLowerCase()}
             </Text>
             {draft.species.length ? <TierChip tier="S" /> : null}

@@ -41,7 +41,7 @@ export function SpotEntries({
                 <Icon name="fish" size={18} color={c.dim} />
                 <Text style={[styles.species, f.sans, { color: c.text }]}>{e.species_local_name}</Text>
                 {e.hold_code ? <HoldBox code={e.hold_code} /> : null}
-                {lang === 'en' && glosses[e.species_id] ? (
+                {lang === 'en' && e.species_id && glosses[e.species_id] ? (
                   <Text style={[styles.meta, f.mono, { color: c.dim }]}>{glosses[e.species_id]}</Text>
                 ) : null}
               </View>

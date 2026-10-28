@@ -55,7 +55,7 @@ function renderGrounds(repo: Repository, now: Date, focusCatchId: string | null 
 describe('S5.2 spot detail and S5.4 entries (phone)', () => {
   it('a spot with plant weights: tiles, W line, species bars, last fished, then my entries', async () => {
     const { repo, now, grounds, catches } = await setup();
-    const weighed = grounds.spots.find((s) => s.plantT != null) as Spot;
+    const weighed = grounds.spots.find((s) => s.plantKg != null) as Spot;
     renderGrounds(repo, now);
     fireEvent.press(await screen.findByTestId('grounds-expand'));
     fireEvent.press(screen.getByTestId(`spot-${weighed.key}`));
@@ -63,9 +63,9 @@ describe('S5.2 spot detail and S5.4 entries (phone)', () => {
     expect(await screen.findByTestId('spot-detail')).toBeTruthy();
     expect(screen.getByTestId('panel-title')).toHaveTextContent(formatCoord(weighed.lat, weighed.lon));
     expect(screen.getByTestId('tile-trips')).toHaveTextContent(new RegExp(`Safari${weighed.trips}safari zilizogusa`));
-    expect(screen.getByTestId('tile-total')).toHaveTextContent(new RegExp(`${formatQuantity(weighed.t)}t`));
+    expect(screen.getByTestId('tile-total')).toHaveTextContent(new RegExp(`${formatQuantity(weighed.kg)}t`));
     expect(screen.getByTestId('spot-plant')).toHaveTextContent(
-      new RegExp(`Kiwanda kilipima:${formatQuantity(weighed.plantT!)} tW\\(safari ${weighed.plantTrips} kati ya ${weighed.trips}\\)`),
+      new RegExp(`Kiwanda kilipima:${formatQuantity(weighed.plantKg!)} tW\\(safari ${weighed.plantTrips} kati ya ${weighed.trips}\\)`),
     );
     for (const s of weighed.bySpecies) expect(screen.getByTestId(`bar-${s.name}`)).toBeTruthy();
     expect(screen.getByText('Makadirio yako (S). Uzito wa kiwanda (W) unaonekana safari ikifungwa.')).toBeTruthy();
@@ -110,11 +110,11 @@ describe('S5.5 filters', () => {
     expect(screen.getByTestId('flt-scrim').props.accessibilityRole).toBe('button');
     fireEvent.press(screen.getByTestId('flt-species-kibua'));
     expect(screen.getByTestId('flt-count')).toHaveTextContent(
-      `Maeneo ${only.spots.length} · ${formatQuantity(only.totalT)} t`,
+      `Maeneo ${only.spots.length} · ${formatQuantity(only.totalKg)} t`,
     );
     fireEvent.press(screen.getByTestId('flt-apply'));
     expect(screen.queryByTestId('flt-sheet')).toBeNull();
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(only.totalT)} t`);
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(only.totalKg)} t`);
     expect(screen.getByText(`kibua · Maeneo ${only.spots.length} ·`)).toBeTruthy();
     fireEvent.press(screen.getByTestId('grounds-expand'));
     expect(screen.getAllByTestId(/^spot-[^v]/).map((n) => n.props.testID.slice(5))).toEqual(
@@ -135,7 +135,7 @@ describe('S5.5 filters', () => {
     expect(screen.getByText('Kaskazi Nov–Mac · Kusi Apr–Okt')).toBeTruthy();
     fireEvent.press(screen.getByTestId('flt-apply'));
     expect(screen.getByTestId('chip-range')).toHaveTextContent(/zote/);
-    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(all.totalT)} t`);
+    expect(screen.getByTestId('grounds-total')).toHaveTextContent(`${formatQuantity(all.totalKg)} t`);
   });
 });
 

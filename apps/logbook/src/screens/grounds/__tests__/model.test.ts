@@ -160,9 +160,9 @@ describe('grounds model: detail and filters', () => {
       c({ recorded_at: new Date(2026, 6, 2).toISOString(), quantity: 2 }),
       c({ recorded_at: new Date(2026, 9, 2).toISOString(), quantity: 4 }),
     ];
-    expect(buildGrounds(all, { now, range: 'all', species: [], season: 'kaskazi' }).totalT).toBe(1);
-    expect(buildGrounds(all, { now, range: 'all', species: [], season: 'kusi' }).totalT).toBe(6);
-    expect(buildGrounds(all, { now, range: 'season', species: [] }).totalT).toBe(1);
+    expect(buildGrounds(all, { now, range: 'all', species: [], season: 'kaskazi' }).totalKg).toBe(1);
+    expect(buildGrounds(all, { now, range: 'all', species: [], season: 'kusi' }).totalKg).toBe(6);
+    expect(buildGrounds(all, { now, range: 'season', species: [] }).totalKg).toBe(1);
   });
 
   it('entries of a spot, newest first, and the spot of a catch', () => {

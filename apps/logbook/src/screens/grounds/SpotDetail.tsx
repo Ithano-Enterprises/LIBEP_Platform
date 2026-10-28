@@ -60,7 +60,7 @@ export function SpotDetail({
           <Text style={[styles.tileSub, f.sans, { color: c.dim }]}>{t.tripsHere}</Text>,
           'tile-trips',
         )}
-        {tile(t.totalL, fig(formatQuantity(spot.t)), <TierChip tier="S" size={16} />, 'tile-total')}
+        {tile(t.totalL, fig(formatQuantity(spot.kg)), <TierChip tier="S" size={16} />, 'tile-total')}
         {tile(
           t.avgL,
           fig(formatQuantity(spot.avg)),
@@ -77,11 +77,11 @@ export function SpotDetail({
           <Text style={[styles.note, f.sans, { color: c.dim }]}>{t.rough.replace('{n}', String(spot.trips))}</Text>
         </View>
       ) : null}
-      {spot.plantT != null ? (
+      {spot.plantKg != null ? (
         <View testID="spot-plant" style={styles.inline}>
           <Icon name="check" size={18} strokeWidth={2} color={c.ok} />
           <Text style={[styles.plant, f.sansMedium, { color: c.ok }]}>{t.plantPre}</Text>
-          <Text style={[styles.plantValue, f.monoSemiBold, { color: c.ok }]}>{formatQuantity(spot.plantT)} t</Text>
+          <Text style={[styles.plantValue, f.monoSemiBold, { color: c.ok }]}>{formatQuantity(spot.plantKg)} t</Text>
           <TierChip tier="W" />
           <Text style={[styles.plant, f.sansMedium, { color: c.ok }]}>
             {t.plantPost.replace('{a}', String(spot.plantTrips)).replace('{b}', String(spot.trips))}
@@ -97,18 +97,18 @@ export function SpotDetail({
       <View style={styles.bars}>
         <Text style={[styles.section, f.sansMedium, { color: c.dim }]}>{t.speciesL}</Text>
         {spot.bySpecies.map((s, i) => (
-          <View key={s.species_id} testID={`bar-${s.name}`} style={styles.bar}>
+          <View key={s.key} testID={`bar-${s.name}`} style={styles.bar}>
             <View style={styles.barHead}>
               <View style={styles.inline}>
                 <Icon name="fish" size={18} color={c.dim} />
                 <Text style={[styles.barName, f.sans, { color: c.text }]}>{s.name}</Text>
                 {s.hold ? <HoldBox code={s.hold} /> : null}
-                {lang === 'en' && glosses[s.species_id] ? (
+                {lang === 'en' && s.species_id && glosses[s.species_id] ? (
                   <Text style={[styles.note, f.sans, { color: c.dim }]}>{glosses[s.species_id]}</Text>
                 ) : null}
               </View>
               <View style={styles.inline}>
-                <Text style={[styles.barValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(s.t)}</Text>
+                <Text style={[styles.barValue, f.monoSemiBold, { color: c.text }]}>{formatQuantity(s.kg)}</Text>
                 <Text style={[styles.unit, f.mono, { color: c.dim }]}>t</Text>
                 <TierChip tier="S" size={16} />
               </View>
@@ -117,7 +117,7 @@ export function SpotDetail({
               <View
                 style={{
                   height: '100%',
-                  width: `${Math.min(100, (s.t / spot.t) * 100)}%`,
+                  width: `${Math.min(100, (s.kg / spot.kg) * 100)}%`,
                   backgroundColor: c.accent,
                   opacity: BAR_OPACITY[i] ?? 0.5,
                 }}
