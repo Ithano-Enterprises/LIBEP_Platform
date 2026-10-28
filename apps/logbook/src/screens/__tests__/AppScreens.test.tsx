@@ -68,7 +68,7 @@ describe('S2.1 -> S3.3 -> S2.1', () => {
     );
 
     await screen.findByText('Rekodi samaki');
-    expect(screen.getByTestId('trip-total')).toHaveTextContent('17 t');
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17,000 kg');
     fireEvent.press(screen.getByTestId('primary'));
     fireEvent.press(await screen.findByTestId('fish-tewa'));
     fireEvent.press(screen.getByTestId('key-1'));
@@ -76,8 +76,8 @@ describe('S2.1 -> S3.3 -> S2.1', () => {
     fireEvent.press(screen.getByTestId('save'));
 
     await screen.findByTestId('trip-total');
-    // A 15 kg catch is not lost to rounding: 17,015 kg.
-    expect(screen.getByTestId('trip-total')).toHaveTextContent('17.015 t');
+    // A 15 kg catch is not lost to rounding (default unit kg).
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17,015 kg');
     const entries = await ctx.repo.listTripEntries((await ctx.repo.getOpenTrip())!.trip_id);
     expect(entries[0]).toMatchObject({ species_local_name: 'tewa', quantity: 15, unit: 'kg', latitude: -2.27 });
     expect(screen.getAllByTestId(/^entry-/)[0].props.testID).toBe(`entry-${entries[0].id}`);
