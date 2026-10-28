@@ -11,7 +11,7 @@ describe('SyncLoop', () => {
   it('a failed send leaves records waiting and schedules a retry', async () => {
     const ctx = await openTestRepo();
     await seedDevReference(ctx.db);
-    const start = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const start = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const c = await ctx.repo.logCatch({ speciesId: devSpecies[0].id, quantity: 1, gps: null });
     const mock = createMockTransport(['offline']);
     const outcomes: string[] = [];
@@ -33,7 +33,7 @@ describe('SyncLoop', () => {
   it('does nothing without a transport', async () => {
     const ctx = await openTestRepo();
     await seedDevReference(ctx.db);
-    const s = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const s = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const open = () => Promise.resolve(ctx.repo);
     render(
       <LogbookProvider open={open}>
@@ -47,7 +47,7 @@ describe('SyncLoop', () => {
   it('acks become sent', async () => {
     const ctx = await openTestRepo();
     await seedDevReference(ctx.db);
-    const s = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    const s = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const mock = createMockTransport();
     const open = () => Promise.resolve(ctx.repo);
     render(

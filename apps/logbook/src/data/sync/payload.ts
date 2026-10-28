@@ -2,8 +2,9 @@ import type { CatchCorrection, CatchRecord, RecordKind, TripClose, TripStart } f
 
 // The POST /sync-batch body. Envelope from the backend contract proposal
 // (§5): { contract_version, records: [{ kind, data }] }. Record fields from
-// the frontend data contract (§2). Measured quantities go as decimal
-// strings, as the proposal asks for numbers in JSON.
+// the frontend data contract (§2). Quantities are whole kg, sent as decimal
+// strings with no fraction (e.g. "15"), as the proposal asks for numbers in
+// JSON.
 // [TO CONFIRM: device_id is in each record per the frontend contract; the
 // backend proposal says it is server-managed]
 
@@ -28,18 +29,19 @@ export const KIND_ORDER: Record<RecordKind, number> = {
   trip_close: 3,
 };
 
-const decimal = (n: number) => n.toFixed(1);
+/** Whole kg as a decimal string, e.g. 15 -> "15". */
+const wholeKg = (n: number) => String(Math.round(n));
 
 function toData(q: QueuedRecord): Record<string, unknown> {
   switch (q.kind) {
     case 'trip_start':
       return { ...q.record };
     case 'catch':
-      return { ...q.record, quantity: decimal(q.record.quantity) };
+      return { ...q.record, quantity: wholeKg(q.record.quantity) };
     case 'catch_correction':
-      return { ...q.record, quantity: decimal(q.record.quantity) };
+      return { ...q.record, quantity: wholeKg(q.record.quantity) };
     case 'trip_close':
-      return { ...q.record, catch_ids: [...q.record.catch_ids], total_quantity: decimal(q.record.total_quantity) };
+      return { ...q.record, catch_ids: [...q.record.catch_ids], total_quantity: wholeKg(q.record.total_quantity) };
   }
 }
 

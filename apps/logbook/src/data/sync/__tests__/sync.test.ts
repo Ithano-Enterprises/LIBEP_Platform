@@ -12,22 +12,24 @@ const speciesId = (n: string) => devSpecies.find((s) => s.local_name === n)!.id;
 async function trip() {
   const ctx = await openTestRepo();
   await seedDevReference(ctx.db);
-  const start = await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+  const start = await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
   ctx.deps.tick(60_000);
+  // A 15 kg catch, and an "Other" species typed by the captain.
   const c1 = await ctx.repo.logCatch({
     speciesId: speciesId('tewa'),
-    quantity: 2.4,
+    quantity: 15,
     gps: { latitude: -2.27, longitude: 40.93, gps_accuracy_m: 15 },
   });
   ctx.deps.tick(60_000);
-  const c2 = await ctx.repo.logCatch({ speciesId: speciesId('kibua'), quantity: 3, gps: null });
+  const c2 = await ctx.repo.logCatch({ speciesId: null, speciesLocalName: 'Kaa wa mawe', quantity: 3000, gps: null });
   ctx.deps.tick(60_000);
-  const fix = await ctx.repo.correctCatch({ catchId: c1.id, previousCorrectionId: null, quantity: 2.6 });
+  const fix = await ctx.repo.correctCatch({ catchId: c1.id, previousCorrectionId: null, quantity: 20 });
   ctx.deps.tick(60_000);
   const close = await ctx.repo.closeTrip({
     tripId: start.trip_id,
     arrivalAt: ctx.deps.clock.now(),
-    crewCount: 4,
+    crewReturned: 3,
+    crewChangeReason: 'dropped at Lamu',
     landingSiteId: (await ctx.repo.getLandingSites())[0].id,
     distanceKm: null,
   });
@@ -62,7 +64,7 @@ describe('state machine', () => {
 });
 
 describe('payload', () => {
-  it('matches the contract: envelope, kinds, fields, decimal strings, dependency order', async () => {
+  it('matches the contract: envelope, kinds, fields, whole-kg strings, dependency order', async () => {
     const { repo, start, c1, c2, fix, close } = await trip();
     const queue = repo.syncQueue(createMockTransport().transport);
     const pending = await queue.pending();
@@ -78,11 +80,35 @@ describe('payload', () => {
     ]);
     const [s, a, b, corr, cl] = batch.records.map((r) => r.data);
     expect(s).toEqual({ ...start });
+    // One UUID per trip, and the crew headcount at departure.
+    expect(s).toMatchObject({ trip_id: start.id, crew_departed: 4 });
+    expect(s).not.toHaveProperty('crew_count');
     expect(Object.keys(a).sort()).toEqual(Object.keys(c1).sort());
-    expect(a).toMatchObject({ id: c1.id, quantity: '2.4', unit: 't', tier: 'S', species_local_name: 'tewa' });
-    expect(b).toMatchObject({ id: c2.id, quantity: '3.0', latitude: null });
-    expect(corr).toMatchObject({ id: fix.id, catch_id: c1.id, previous_correction_id: null, quantity: '2.6' });
-    expect(cl).toMatchObject({ id: close.id, total_quantity: '5.6', catch_ids: close.catch_ids });
+    expect(a).toMatchObject({ id: c1.id, quantity: '15', unit: 'kg', tier: 'S', species_local_name: 'tewa' });
+    // "Other": the name exactly as typed, no species id.
+    expect(b).toMatchObject({ id: c2.id, quantity: '3000', species_id: null, species_local_name: 'Kaa wa mawe', latitude: null });
+    expect(corr).toMatchObject({
+      id: fix.id,
+      catch_id: c1.id,
+      previous_correction_id: null,
+      quantity: '20',
+      unit: 'kg',
+      species_local_name: 'tewa',
+    });
+    expect(cl).toMatchObject({
+      id: close.id,
+      total_quantity: '3020',
+      unit: 'kg',
+      catch_ids: close.catch_ids,
+      crew_returned: 3,
+      crew_change_reason: 'dropped at Lamu',
+    });
+    expect(cl).not.toHaveProperty('crew_count');
+    for (const r of batch.records) {
+      for (const k of ['quantity', 'total_quantity'] as const) {
+        if (k in r.data) expect(r.data[k]).toMatch(/^[1-9]\d*$|^0$/);
+      }
+    }
     for (const r of batch.records) {
       expect(r.data).toEqual(expect.objectContaining({ device_id: start.device_id, device_clock_skew_ms: null }));
       expect(typeof r.data.recorded_at).toBe('string');
@@ -94,7 +120,7 @@ describe('correction chain order', () => {
   it('a correction follows the correction it points at, even when the clock went back', async () => {
     const ctx = await openTestRepo();
     await seedDevReference(ctx.db);
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     const c = await ctx.repo.logCatch({ speciesId: speciesId('tewa'), quantity: 5, gps: null });
     ctx.deps.tick(30 * 60_000);
     const f1 = await ctx.repo.correctCatch({ catchId: c.id, previousCorrectionId: null, quantity: 4 });
@@ -229,7 +255,7 @@ describe('device feed', () => {
         {
           id: 'w1',
           trip_id: start.trip_id,
-          species_id: c2.species_id,
+          species_id: speciesId('kibua'), // the plant names the species of an "Other" catch
           catch_id: c2.id,
           weight: 2.9,
           unit: 't',
@@ -238,7 +264,7 @@ describe('device feed', () => {
       ],
     });
     expect(await repo.getSyncState(c1.id)).toBe('being_checked');
-    expect((await repo.getEntry(c2.id))!.plant_weight_t).toBe(2.9);
+    expect((await repo.getEntry(c2.id))!.plant_weight_kg).toBe(2900);
     await queue.applyFeed({ reviews: [{ catch_id: c1.id, status: 'cleared', message: null }] });
     expect(await repo.getSyncState(c1.id)).toBe('sent');
     expect(ids).toHaveLength(5);
