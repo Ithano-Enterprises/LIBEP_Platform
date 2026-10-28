@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { StateKey } from '../i18n/strings';
 import { radius, touchTarget } from '../theme/tokens';
-import { formatQuantity, formatTime, sumTonnes } from '../ui/format';
+import { formatQuantity, formatTime, sumKg } from '../ui/format';
 import { Icon } from '../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme } from '../ui/preferences';
 import { TierChip } from '../ui/TierChip';
@@ -50,7 +50,7 @@ export function TripHomeScreen({ now = () => new Date() }: { now?: () => Date })
   const { openTrip, entries, closedTrips } = data;
   const counts = countByState(entries);
   const visible = filterEntries(entries, filter);
-  const total = sumTonnes(entries.map((e) => e.quantity));
+  const total = sumKg(entries.map((e) => e.quantity));
   const showNotices = !!openTrip && !noticesOff && hasRepeatedFigures(entries);
 
   return shell(

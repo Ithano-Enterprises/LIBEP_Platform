@@ -1,15 +1,19 @@
 import { dayNames, monthNames, type Lang } from '../i18n/strings';
 
-// Display formatting. Quantities are stored in tonnes; kg is a view only.
+// Display formatting. Quantities are stored in kg; t is a view only.
 
-export function formatQuantity(tonnes: number, unit: 't' | 'kg' = 't'): string {
-  if (unit === 'kg') return Math.round(tonnes * 1000).toLocaleString('en-US');
-  return tonnes.toFixed(1);
+/**
+ * A quantity stored in kg, shown in the chosen unit: whole kg, or t with up
+ * to 3 decimals and no trailing zeros (15 kg -> 0.015 t, 2400 kg -> 2.4 t).
+ */
+export function formatQuantity(kg: number, unit: 't' | 'kg' = 't'): string {
+  if (unit === 'kg') return Math.round(kg).toLocaleString('en-US');
+  return (Math.round(kg) / 1000).toFixed(3).replace(/\.?0+$/, '');
 }
 
-/** Sum of tonnes, kept to one decimal without float drift. */
-export function sumTonnes(values: number[]): number {
-  return Math.round(values.reduce((a, v) => a + v * 10, 0)) / 10;
+/** Sum of kg. Plant weights may be finer than whole kg, so kept to the gram. */
+export function sumKg(values: number[]): number {
+  return Math.round(values.reduce((a, v) => a + v * 1000, 0)) / 1000;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');

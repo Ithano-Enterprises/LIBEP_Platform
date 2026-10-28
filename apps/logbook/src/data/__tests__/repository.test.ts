@@ -16,7 +16,7 @@ const speciesId = (name: string) => devSpecies.find((s) => s.local_name === name
 async function seeded() {
   const ctx = await openTestRepo();
   await seedDevReference(ctx.db);
-  await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+  await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
   return ctx;
 }
 

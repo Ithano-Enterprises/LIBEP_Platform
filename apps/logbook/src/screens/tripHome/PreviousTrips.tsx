@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClosedTrip, Entry } from '../../data/types';
 import { radius, touchTarget } from '../../theme/tokens';
-import { formatQuantity, formatTime, formatTripDate, sumTonnes } from '../../ui/format';
+import { formatQuantity, formatTime, formatTripDate, sumKg } from '../../ui/format';
 import { Icon } from '../../ui/Icon';
 import { useFontSet, usePreferences, useStrings, useTheme } from '../../ui/preferences';
 import { TierChip } from '../../ui/TierChip';
@@ -69,7 +69,7 @@ function TripCard({
   const f = useFontSet();
   const k = tripState(trip.entries);
   const s = stateStyle(k, c);
-  const total = sumTonnes(trip.entries.map((e) => e.quantity));
+  const total = sumKg(trip.entries.map((e) => e.quantity));
 
   return (
     <View style={styles.trip}>

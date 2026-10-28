@@ -80,13 +80,13 @@ export async function seedDevFixtures(db: SqlDb, deps: RepoDeps): Promise<boolea
 
   const prevStart = now.getTime() - 24 * 60 * MIN - devOpenTrip.departedMinutesAgo * MIN;
   t = prevStart;
-  const prev = await repo.startTrip({ crewCount: devOpenTrip.crewCount, departureAt: new Date(t) });
+  const prev = await repo.startTrip({ crewDeparted: devOpenTrip.crewDeparted, departureAt: new Date(t) });
   await logEntries(repo, db, devPreviousTripEntries, prevStart, (ms) => (t = ms));
   t = prevStart + devTripHours * 60 * MIN;
   const prevClose = await repo.closeTrip({
     tripId: prev.trip_id,
     arrivalAt: new Date(t),
-    crewCount: devOpenTrip.crewCount,
+    crewReturned: devOpenTrip.crewDeparted,
     landingSiteId: devLandingSite.id,
     distanceKm: null,
   });
@@ -94,7 +94,7 @@ export async function seedDevFixtures(db: SqlDb, deps: RepoDeps): Promise<boolea
 
   const openStart = now.getTime() - devOpenTrip.departedMinutesAgo * MIN;
   t = openStart;
-  const open = await repo.startTrip({ crewCount: devOpenTrip.crewCount, departureAt: new Date(t) });
+  const open = await repo.startTrip({ crewDeparted: devOpenTrip.crewDeparted, departureAt: new Date(t) });
   await setState(db, [open.id], 'sent');
   await logEntries(repo, db, devOpenTripEntries, openStart, (ms) => (t = ms));
   return true;
@@ -117,7 +117,7 @@ async function logEntries(
     setTime(start + (i + 1) * devEntryStepMinutes * MIN);
     const c = await repo.logCatch({
       speciesId: speciesId(e.species),
-      quantity: e.t,
+      quantity: e.kg,
       gps: { latitude: e.lat, longitude: e.lon, gps_accuracy_m: devGpsAccuracyM },
     });
     await setState(db, [c.id], e.state);

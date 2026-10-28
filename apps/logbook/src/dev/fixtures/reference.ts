@@ -75,35 +75,35 @@ export const devHoldCodes: Record<string, HoldCode> = {
 export const devOpenTrip = { crewDeparted: 4, departedMinutesAgo: 150 };
 
 // Sample entries so the trip home list can be checked on a phone. Species,
-// tonnes, positions and states copied from the design prototype's mock
-// entries, oldest first. Times are relative to seeding.
+// quantities (the prototype's tonnes, in kg), positions and states copied
+// from the design prototype's mock entries, oldest first. Times are relative to seeding.
 // [TO CONFIRM: not real catches; GPS accuracy 15 m is the design's example]
 type DevEntry = {
   species: string;
-  t: number;
+  kg: number;
   lat: number;
   lon: number;
   state: 'on_device' | 'waiting' | 'sent' | 'being_checked';
 };
 
 export const devOpenTripEntries: DevEntry[] = [
-  { species: 'tafi', t: 1.4, lat: -2.24, lon: 41.05, state: 'sent' },
-  { species: 'mzia', t: 1.3, lat: -2.25, lon: 41.04, state: 'being_checked' },
-  { species: 'kibua', t: 3.1, lat: -2.26, lon: 41.02, state: 'sent' },
-  { species: 'kolekole', t: 1.6, lat: -2.28, lon: 41.01, state: 'sent' },
-  { species: 'changu', t: 0.4, lat: -2.3, lon: 40.99, state: 'waiting' },
-  { species: 'kibua', t: 5.6, lat: -2.31, lon: 40.97, state: 'waiting' },
-  { species: 'nguru', t: 1.2, lat: -2.29, lon: 40.95, state: 'on_device' },
-  { species: 'tewa', t: 2.4, lat: -2.27, lon: 40.93, state: 'on_device' },
+  { species: 'tafi', kg: 1400, lat: -2.24, lon: 41.05, state: 'sent' },
+  { species: 'mzia', kg: 1300, lat: -2.25, lon: 41.04, state: 'being_checked' },
+  { species: 'kibua', kg: 3100, lat: -2.26, lon: 41.02, state: 'sent' },
+  { species: 'kolekole', kg: 1600, lat: -2.28, lon: 41.01, state: 'sent' },
+  { species: 'changu', kg: 400, lat: -2.3, lon: 40.99, state: 'waiting' },
+  { species: 'kibua', kg: 5600, lat: -2.31, lon: 40.97, state: 'waiting' },
+  { species: 'nguru', kg: 1200, lat: -2.29, lon: 40.95, state: 'on_device' },
+  { species: 'tewa', kg: 2400, lat: -2.27, lon: 40.93, state: 'on_device' },
 ];
 
 // One closed trip from the previous day, all sent.
 export const devPreviousTripEntries: DevEntry[] = [
-  { species: 'changu', t: 0.9, lat: -2.24, lon: 41.05, state: 'sent' },
-  { species: 'tewa', t: 1.6, lat: -2.25, lon: 41.03, state: 'sent' },
-  { species: 'kibua', t: 4.8, lat: -2.27, lon: 41.0, state: 'sent' },
-  { species: 'nguru', t: 2.2, lat: -2.3, lon: 40.98, state: 'sent' },
-  { species: 'kibua', t: 6.4, lat: -2.29, lon: 40.96, state: 'sent' },
+  { species: 'changu', kg: 900, lat: -2.24, lon: 41.05, state: 'sent' },
+  { species: 'tewa', kg: 1600, lat: -2.25, lon: 41.03, state: 'sent' },
+  { species: 'kibua', kg: 4800, lat: -2.27, lon: 41.0, state: 'sent' },
+  { species: 'nguru', kg: 2200, lat: -2.3, lon: 40.98, state: 'sent' },
+  { species: 'kibua', kg: 6400, lat: -2.29, lon: 40.96, state: 'sent' },
 ];
 
 export const devGpsAccuracyM = 15;

@@ -1,15 +1,19 @@
-import { formatQuantity, formatTripDate, sumTonnes } from '../format';
+import { formatQuantity, formatTripDate, sumKg } from '../format';
 
 describe('format', () => {
-  it('shows tonnes with one decimal and kg as whole numbers', () => {
-    expect(formatQuantity(2.4)).toBe('2.4');
-    expect(formatQuantity(12)).toBe('12.0');
-    expect(formatQuantity(2.4, 'kg')).toBe('2,400');
+  it('shows stored kg as t with up to 3 decimals, or as whole kg', () => {
+    expect(formatQuantity(2400)).toBe('2.4');
+    expect(formatQuantity(12000)).toBe('12');
+    expect(formatQuantity(15)).toBe('0.015');
+    expect(formatQuantity(240)).toBe('0.24');
+    expect(formatQuantity(2400, 'kg')).toBe('2,400');
+    expect(formatQuantity(15, 'kg')).toBe('15');
   });
 
-  it('sums tonnes without float drift', () => {
-    expect(sumTonnes([0.1, 0.2])).toBe(0.3);
-    expect(sumTonnes([])).toBe(0);
+  it('sums kg without float drift', () => {
+    expect(sumKg([15, 2400])).toBe(2415);
+    expect(sumKg([0.1, 0.2])).toBe(0.3);
+    expect(sumKg([])).toBe(0);
   });
 
   it('names the day, and marks yesterday', () => {

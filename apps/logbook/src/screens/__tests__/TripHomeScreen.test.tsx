@@ -10,7 +10,7 @@ import { seedDevFixtures, seedDevReference } from '../../dev/fixtures/seed';
 import { en, sw } from '../../i18n/strings';
 import { openTestRepo } from '../../test/sqlite';
 import { DAY, NIGHT } from '../../theme/tokens';
-import { formatTime, sumTonnes } from '../../ui/format';
+import { formatTime, sumKg } from '../../ui/format';
 import { PreferencesProvider } from '../../ui/preferences';
 import { TripHomeScreen } from '../TripHomeScreen';
 
@@ -68,8 +68,9 @@ describe('TripHomeScreen', () => {
     const trip = (await repo.getOpenTrip())!;
     const n = devOpenTripEntries.length;
     expect(screen.getByText(`Ilianza ${formatTime(trip.departure_at)} · ${n} maingizo ·`)).toBeTruthy();
-    const total = sumTonnes(devOpenTripEntries.map((e) => e.t)).toFixed(1);
-    expect(screen.getByTestId('trip-total')).toHaveTextContent(`${total} t`);
+    // Fixture entries add up to 17,000 kg.
+    expect(sumKg(devOpenTripEntries.map((e) => e.kg))).toBe(17000);
+    expect(screen.getByTestId('trip-total')).toHaveTextContent('17 t');
     expect(screen.getAllByTestId(/^entry-/)).toHaveLength(n);
   });
 
@@ -139,9 +140,9 @@ describe('TripHomeScreen', () => {
   it('shows the training notice for three equal figures, and dismisses it', async () => {
     const ctx = await openTestRepo();
     await seedDevReference(ctx.db);
-    await ctx.repo.startTrip({ crewCount: 4, departureAt: ctx.deps.clock.now() });
+    await ctx.repo.startTrip({ crewDeparted: 4, departureAt: ctx.deps.clock.now() });
     for (let i = 0; i < 3; i++) {
-      await ctx.repo.logCatch({ speciesId: devSpecies[0].id, quantity: 1.5, gps: null });
+      await ctx.repo.logCatch({ speciesId: devSpecies[0].id, quantity: 1500, gps: null });
     }
     renderHome(ctx.repo, ctx.deps.clock.now());
     await screen.findByTestId('notices');
