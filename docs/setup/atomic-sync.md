@@ -1,7 +1,8 @@
 # Atomic logbook intake and device scope
 
 Status: implementation for review; disabled by default, not deployed. Backend owner
-approved atomic batches and administrator-enrolled devices on 2026-10-29.
+approved atomic batches on 2026-10-29. The latest instruction keeps device
+enrolment pending Ryan. The device lookup schema is a candidate for review.
 This does not claim Ryan/mobile/plant approval of all remaining policies.
 
 ## Implemented decisions
@@ -29,8 +30,7 @@ This does not claim Ryan/mobile/plant approval of all remaining policies.
 
 ## Database components
 
-New migrations add minimal private reference IDs, devices, device events and an
-administrator allowlist; trip starts, catches, trip closes, unmatched species,
+New migrations add minimal private reference IDs, devices, device events ; trip starts, catches, trip closes, unmatched species,
 and shared idempotency receipts. No real reference data or administrator is seeded.
 No existing migration is edited.
 
@@ -53,7 +53,7 @@ collisions are resolved with `INSERT ... ON CONFLICT DO NOTHING` and content che
 Parallel-session load/concurrency verification is still required before rollout.
 
 All identity/event/ledger/receipt/side rows have update/delete/truncate guards.
-Reference and administrator maintenance is not exposed to clients.
+Reference and device maintenance is not exposed to clients.
 
 ## HTTP path
 
@@ -81,19 +81,23 @@ Absent/invalid configuration fails closed. No hosted config or secrets were chan
 The adapter has bounded upstream request timeouts; full inbound request deadline,
 rate limiting, operational metrics and log retention remain incomplete.
 
-## Administrator enrolment boundary
+## Device enrolment remains pending Ryan
 
-`libep_private.manage_device` checks an administrator allowlist, enrolls an
-existing Auth user against existing fisher/vessel references, and appends an
-idempotent enable/revoke event. It cannot silently reassign a device. This internal
-adapter is owner-only for now: no EXECUTE grant to service/client roles, no public
-RPC, no alternate public write endpoint.
+There is no enrolment adapter, administrator allowlist, public registration RPC,
+credential provisioning or recovery implementation. The earlier draft adapter
+was removed after the owner's latest instruction to wait for Ryan. No real
+identity/reference rows are seeded and no service/client role can directly
+insert or change device assignments or events.
 
-It is exercised with synthetic users by database tests. The initial administrator,
-Auth account creation, reference import, proof of physical-device ownership,
-credential distribution/renewal and lost-phone recovery still need a reviewed
-runbook and an administrative operation through the single sync write path.
-Do not provision real devices by copying test SQL or granting the app direct DML.
+The schema represents the candidate current-device lookup needed to test atomic
+intake and scoped rejection. Tests use explicitly synthetic users, assignments and
+events. Its captain/vessel assignment and event shape still require Ryan's review;
+they must not be presented as an agreed enrolment design or enabled in staging.
+
+Initial administrator bootstrap, reference import, proof of device ownership,
+Auth account creation, credential delivery/renewal, revocation operations and
+lost-phone recovery require an agreed runbook through the single write path.
+Do not provision devices by copying test SQL.
 
 ## Intentionally unavailable
 
@@ -115,8 +119,8 @@ services. Correction-bearing batches must not be silently dropped or rewritten.
 ## Verification
 
 - Deno: formatting, lint, typecheck and 83 permission-free tests.
-- `supabase/tests/atomic_sync_test.sql`: 60 pgTAP assertions, plus the earlier 33.
-- Local embedded PostgreSQL: 44 batch/device checks and the same 60 SQL scenarios
+- `supabase/tests/atomic_sync_test.sql`: 54 pgTAP assertions, plus the earlier 33.
+- Local embedded PostgreSQL: the same 54 SQL scenarios
   through local assertion shims. This is not a real Supabase/Docker replay.
 - Mobile payload compatibility remains checked against PR #43 at `946b10d`.
 - GitHub CI runs real migration replay, pgTAP and pinned Deno checks. Record its

@@ -72,8 +72,8 @@ be trusted as authenticated identity.
 
 ## Approved implementation update
 
-Aaron approved atomic batches and administrator-enrolled devices scoped to one
-captain/vessel. See [atomic sync setup](../docs/setup/atomic-sync.md). The validator
+Aaron approved atomic batches. His latest instruction keeps device enrolment
+pending Ryan; the device lookup schema remains a candidate. See [atomic sync setup](../docs/setup/atomic-sync.md). The validator
 recognises all four mobile kinds, but the disabled-by-default storage increment
 accepts only trip_start, catch and trip_close. Corrections fail closed until their
 permissions/closure policy is agreed. Do not switch the app to real transport yet.

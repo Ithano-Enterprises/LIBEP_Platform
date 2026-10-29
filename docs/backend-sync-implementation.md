@@ -2,14 +2,15 @@
 
 ## Update: approved rules implemented for review
 
-Aaron approved atomic batches and administrator-enrolled, captain/vessel-scoped
-devices. The new implementation and its explicit rollout boundaries are described
+Aaron approved atomic batches. His latest instruction keeps device enrolment
+pending Ryan; the device lookup schema remains a candidate. The new implementation and its explicit rollout boundaries are described
 in [atomic sync setup](setup/atomic-sync.md). This supersedes the pending D03/D04
-entries and initial-validator-only descriptions below. Joint policy review,
+atomic-batch entry and initial-validator-only descriptions below. D03 enrolment
+remains pending Ryan. Joint policy review,
 administrative bootstrap and production provisioning remain outstanding.
 
-- B1: minimal reference IDs, immutable assignment, device events and owner-only
-  admin adapter implemented; real imports/enrolment workflow incomplete.
+- B1: minimal reference IDs, immutable assignment, candidate device events implemented; admin adapter removed, real imports and
+  enrolment workflow pending Ryan.
 - B2: trip starts, catches, closes, receipts and free-text side rows implemented;
   correction/plant ledger and agreed late-catch policy incomplete.
 - B3/B4: atomic RPC and disabled-by-default authenticated HTTP handler implemented;
