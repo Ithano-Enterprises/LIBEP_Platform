@@ -1,0 +1,83 @@
+{
+  "contract_version": 1,
+  "records": [
+    {
+      "kind": "trip_start",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "device_id": "00000000-0000-4000-8000-000000000090",
+        "recorded_at": "2026-10-28T06:00:00.000Z",
+        "device_clock_skew_ms": null,
+        "trip_id": "00000000-0000-4000-8000-000000000001",
+        "captain_id": "00000000-0000-4000-8000-000000000091",
+        "vessel_id": "00000000-0000-4000-8000-000000000092",
+        "crew_departed": 3,
+        "departure_at": "2026-10-28T06:00:00.000Z"
+      }
+    },
+    {
+      "kind": "catch",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "device_id": "00000000-0000-4000-8000-000000000090",
+        "recorded_at": "2026-10-28T06:00:00.000Z",
+        "device_clock_skew_ms": null,
+        "trip_id": "00000000-0000-4000-8000-000000000001",
+        "captain_id": "00000000-0000-4000-8000-000000000091",
+        "vessel_id": "00000000-0000-4000-8000-000000000092",
+        "species_id": null,
+        "species_local_name": " TEST ONLY \u2014 unmatched local name ",
+        "quantity": "15",
+        "unit": "kg",
+        "tier": "S",
+        "hold_code": null,
+        "latitude": null,
+        "longitude": null,
+        "gps_accuracy_m": null,
+        "zone": null,
+        "season": null,
+        "water_temp_c": null,
+        "note": "TEST ONLY",
+        "short_ref": "TEST-001"
+      }
+    },
+    {
+      "kind": "catch_correction",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000003",
+        "device_id": "00000000-0000-4000-8000-000000000090",
+        "recorded_at": "1970-01-01T00:00:00.000Z",
+        "device_clock_skew_ms": null,
+        "catch_id": "00000000-0000-4000-8000-000000000002",
+        "previous_correction_id": null,
+        "reason": null,
+        "species_id": null,
+        "species_local_name": " TEST ONLY \u2014 unmatched local name ",
+        "quantity": "20",
+        "unit": "kg",
+        "hold_code": null,
+        "note": null
+      }
+    },
+    {
+      "kind": "trip_close",
+      "data": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "device_id": "00000000-0000-4000-8000-000000000090",
+        "recorded_at": "2026-10-28T06:00:00.000Z",
+        "device_clock_skew_ms": null,
+        "trip_id": "00000000-0000-4000-8000-000000000001",
+        "arrival_at": "2026-10-28T06:00:00.000Z",
+        "crew_returned": 2,
+        "crew_change_reason": null,
+        "landing_site_id": "00000000-0000-4000-8000-000000000093",
+        "distance_km": null,
+        "catch_ids": [
+          "00000000-0000-4000-8000-000000000002"
+        ],
+        "total_quantity": "20",
+        "unit": "kg"
+      }
+    }
+  ]
+}

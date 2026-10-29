@@ -1,1 +1,4 @@
 project_id = "liebp-platform"
+
+[functions.sync-batch]
+verify_jwt = true
