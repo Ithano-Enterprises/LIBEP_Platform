@@ -1,5 +1,10 @@
 # Shared backend handoff
 
+> Current status: see [M1 implementation inventory](backend-sync-implementation.md)
+> and [executable contract candidate](../contract/README.md). The foundation in
+> #26 is merged into Develop. The preview and PR-order sections below are
+> historical; new work starts from Develop, not feat/reporting-conversion.
+
 This is the entry point for the mobile, plant and backend developers working in
 this repository. Source ownership determines review responsibility; it does not
 require the app owners to wait for Aaron to explain the code privately. Use the
@@ -10,10 +15,10 @@ For a beginner-friendly inventory and failure report, read
 
 ## Availability and compatibility
 
-The backend foundation is on `feat/reporting-conversion`, in draft
-[PR #26](https://github.com/Ithano-Enterprises/LIBEP_Platform/pull/26), targeting
-`Develop`. It includes the earlier implementation branches. It is available for
-inspection and local experiments, but is not merged, released or a working API.
+The backend foundation from
+[PR #26](https://github.com/Ithano-Enterprises/LIBEP_Platform/pull/26) is merged
+into `Develop` at `9d1d848`. It is available to all app owners from the shared
+integration branch. It is not a deployed or working sync API.
 No application tables, authenticated endpoint or production read views exist.
 A passing helper test is not evidence that an app can sync records.
 

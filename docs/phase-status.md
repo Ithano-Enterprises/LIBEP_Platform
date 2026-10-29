@@ -1,5 +1,10 @@
 # Backend phase status
 
+> This file records the original foundation phases. For the refreshed M1 B0–B7
+> plan, latest PR baseline and remaining decisions, use
+> [backend sync implementation](backend-sync-implementation.md). #20 and #26
+> are now merged; references below to those PRs awaiting merge are historical.
+
 For teammate setup and integration dependencies, see the
 [shared backend handoff](backend-handoff.md).
 
